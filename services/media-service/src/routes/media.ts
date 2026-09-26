@@ -11,12 +11,34 @@ import {
 
 import {
   createMediaSchema,
+  getMediaQuerySchema,
   mediaIdParamSchema,
+  validateMediaUpload,
 } from "../validators/media.validator";
 import { error, success } from "../lib/response";
 
 
 const mediaRoutes = new Hono();
+
+mediaRoutes.get("/", async (c) => {
+  const queryResult = getMediaQuerySchema.safeParse(c.req.query());
+
+  if (!queryResult.success) {
+    return c.json(
+      error(
+        "VALIDATION_ERROR",
+        "Validation failed",
+        queryResult.error.flatten(),
+      ),
+      400,
+    );
+  }
+
+  const mediaList = await getMediaByWeddingId(queryResult.data.weddingId);
+
+  return c.json(success(mediaList));
+});
+
 
 mediaRoutes.get("/:id/url", async (c) => {
   const id = c.req.param("id");
@@ -77,53 +99,34 @@ mediaRoutes.get("/:id", async (c) => {
 mediaRoutes.post("/", async (c) => {
   const body = await c.req.parseBody();
 
-  const weddingId = body.weddingId;
-  const file = body.file;
-
-  const validation = createMediaSchema.safeParse({
-    weddingId,
+  const validation = validateMediaUpload({
+    weddingId: body.weddingId,
+    file: body.file,
   });
 
   if (!validation.success) {
     return c.json(
-      {
-        error: "Validation failed",
-        details: validation.error.flatten(),
-      },
+      error(
+        validation.error.code,
+        validation.error.message,
+        validation.error.details,
+      ),
       400,
     );
   }
 
-  if (!(file instanceof File)) {
-    return c.json(
-      {
-        error: "Validation failed",
-        details: {
-          fieldErrors: {
-            file: ["File is required"],
-          },
-        },
-      },
-      400,
-    );
-  }
-
+  const { weddingId, file, sanitizedFilename } = validation.data;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const createdMedia = await createMedia({
-    weddingId: validation.data.weddingId,
+    weddingId,
     file: buffer,
-    filename: file.name,
+    filename: sanitizedFilename,
     mimeType: file.type,
     size: file.size,
   });
 
-  return c.json(
-    {
-      data: createdMedia,
-    },
-    201,
-  );
+  return c.json(success(createdMedia), 201);
 });
 
 mediaRoutes.delete("/:id", async (c) => {

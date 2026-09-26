@@ -45,10 +45,19 @@ export async function createMedia(input: CreateMediaInput) {
 }
 
 export async function getMediaByWeddingId(weddingId: string) {
-  return db
-    .select()
+  const items = await db
+    .select({
+      id: media.id,
+      weddingId: media.weddingId,
+      filename: media.filename,
+      mimeType: media.mimeType,
+      size: media.size,
+      createdAt: media.createdAt,
+    })
     .from(media)
     .where(eq(media.weddingId, weddingId));
+
+  return items.map(({ storageKey: _storageKey, ...rest }: any) => rest);
 }
 
 export async function getMediaById(id: string) {
