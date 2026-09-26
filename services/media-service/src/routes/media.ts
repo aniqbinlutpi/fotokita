@@ -1,10 +1,41 @@
 import { Hono } from "hono";
 //import { z } from "zod";
 
-import { createMedia } from "../services/media.service";
+import {
+  createMedia,
+  getMediaByWeddingId,
+  getMediaUrl,
+} from "../services/media.service";
+
+
 import { createMediaSchema } from "../validators/media.validator";
 
+
 const mediaRoutes = new Hono();
+
+mediaRoutes.get("/:id/url", async (c) => {
+  const id = c.req.param("id");
+
+  const result = await getMediaUrl(id);
+
+  if (!result) {
+    return c.json(
+      {
+        error: "Media not found",
+      },
+      404,
+    );
+  }
+
+  return c.json({
+    data: {
+      id: result.id,
+      url: result.url,
+      filename: result.filename,
+      mimeType: result.mimeType,
+    },
+  });
+});
 
 mediaRoutes.post("/", async (c) => {
   const body = await c.req.parseBody();

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",
+    "@aws-sdk/s3-request-presigner": "^3.1141.0",
     "dotenv": "^18.0.4",
     "drizzle-orm": "^0.45.3",
     "hono": "^4.13.9",
@@ -22,5 +23,4 @@
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts"
   }
-
 }
