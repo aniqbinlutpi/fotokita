@@ -3,12 +3,17 @@ import { Hono } from "hono";
 
 import {
   createMedia,
+  deleteMedia,
+  getMediaById,
   getMediaByWeddingId,
   getMediaUrl,
 } from "../services/media.service";
 
-
-import { createMediaSchema } from "../validators/media.validator";
+import {
+  createMediaSchema,
+  mediaIdParamSchema,
+} from "../validators/media.validator";
+import { error, success } from "../lib/response";
 
 
 const mediaRoutes = new Hono();
@@ -36,6 +41,38 @@ mediaRoutes.get("/:id/url", async (c) => {
     },
   });
 });
+
+mediaRoutes.get("/:id", async (c) => {
+  const paramResult = mediaIdParamSchema.safeParse(c.req.param());
+
+  if (!paramResult.success) {
+    return c.json(
+      error(
+        "VALIDATION_ERROR",
+        "Validation failed",
+        paramResult.error.flatten(),
+      ),
+      400,
+    );
+  }
+
+  const mediaItem = await getMediaById(paramResult.data.id);
+
+  if (!mediaItem) {
+    return c.json(
+      error(
+        "MEDIA_NOT_FOUND",
+        "Media not found",
+      ),
+      404,
+    );
+  }
+
+  const { storageKey: _storageKey, ...safeMedia } = mediaItem;
+
+  return c.json(success(safeMedia));
+});
+
 
 mediaRoutes.post("/", async (c) => {
   const body = await c.req.parseBody();
@@ -87,6 +124,32 @@ mediaRoutes.post("/", async (c) => {
     },
     201,
   );
+});
+
+mediaRoutes.delete("/:id", async (c) => {
+  const paramResult = mediaIdParamSchema.safeParse(c.req.param());
+
+  if (!paramResult.success) {
+    return c.json(
+      error(
+        "VALIDATION_ERROR",
+        "Validation failed",
+        paramResult.error.flatten(),
+      ),
+      400,
+    );
+  }
+
+  const result = await deleteMedia(paramResult.data.id);
+
+  if (!result.success) {
+    return c.json(
+      error(result.code, result.message),
+      result.status,
+    );
+  }
+
+  return c.json(success(result.data));
 });
 
 export default mediaRoutes;

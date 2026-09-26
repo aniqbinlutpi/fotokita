@@ -1,4 +1,5 @@
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -42,3 +43,13 @@ export async function generatePresignedUrl(key: string) {
     expiresIn: 60 * 10,
   });
 }
+
+export async function deleteFromS3(key: string) {
+  await s3.send(
+    new DeleteObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME!,
+      Key: key,
+    }),
+  );
+}
+
