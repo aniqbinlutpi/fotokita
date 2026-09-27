@@ -54,8 +54,8 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         src={imgExpand}
         alt={wedding?.name ? `${wedding.name} Wedding Archive` : "Wedding Archive"}
         useWindowScroll={true}
-        startWidth={isMobile ? 86 : 46}
-        startHeight={isMobile ? 56 : 62}
+        startWidth={isMobile ? 86 : 36}
+        startHeight={isMobile ? 44 : 50}
         startRadius={20}
         endRadius={0}
         mediaZoom={1.28}
@@ -83,21 +83,21 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         title={
           <div className="flex flex-col items-center justify-center text-center w-full max-w-xl mx-auto px-2 sm:px-4 pointer-events-auto">
             {/* Frosted Editorial Card for maximum legibility */}
-            <div className="bg-[#2F2926]/35 backdrop-blur-md rounded-lg p-5 sm:p-8 border border-white/20 shadow-2xl text-white w-[92%] sm:w-auto max-w-md mx-auto">
+            <div className="bg-[#2F2926]/35 backdrop-blur-md rounded-lg p-4 sm:p-6 border border-white/20 shadow-2xl text-white w-[88%] sm:w-auto max-w-[390px] mx-auto">
               {/* Editorial eyebrow */}
-              <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.28em] text-white/90 mb-3">
+              <div className="flex items-center justify-center gap-3 text-[11px] sm:text-xs uppercase tracking-[0.25em] text-white/90 mb-2 sm:mb-2.5">
                 <span className="w-6 h-px bg-white/60" />
                 <span>Wedding Archive</span>
                 <span className="w-6 h-px bg-white/60" />
               </div>
 
               {/* Couple Name / Title in Cormorant Garamond */}
-              <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-normal text-white tracking-tight leading-[1.1] mb-3 drop-shadow-md">
+              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-white tracking-tight leading-[1.1] mb-2.5 drop-shadow-md">
                 {wedding?.name ?? "Afiq & Wieam"}
               </h1>
 
               {/* Date & Meta Details */}
-              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs sm:text-sm text-white/90 mb-6 font-sans">
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-white/90 mb-4 sm:mb-5 font-sans">
                 {formattedDate && (
                   <div className="inline-flex items-center gap-1.5">
                     <Calendar className="size-3.5 text-[#E7DED5]" />
@@ -112,7 +112,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-center max-w-xs mx-auto mb-6">
+              <div className="flex items-center justify-center max-w-[200px] mx-auto mb-4 sm:mb-5">
                 <Separator className="bg-white/30" />
               </div>
 
@@ -121,7 +121,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 <Button
                   onClick={onOpenUpload}
                   variant="outline"
-                  className="border-white/50 bg-white/10 hover:bg-white hover:text-[#2F2926] hover:border-white text-white transition-all duration-300 px-6 py-2.5 rounded-sm text-xs uppercase tracking-widest font-medium shadow-md gap-2 h-auto cursor-pointer pointer-events-auto"
+                  className="border-white/50 bg-white/10 hover:bg-white hover:text-[#2F2926] hover:border-white text-white transition-all duration-300 px-5 py-2 rounded-sm text-[11px] sm:text-xs uppercase tracking-widest font-medium shadow-md gap-2 h-auto cursor-pointer pointer-events-auto"
                 >
                   <UploadCloud className="size-3.5 text-[#E7DED5]" />
                   <span>Contribute Memories</span>
