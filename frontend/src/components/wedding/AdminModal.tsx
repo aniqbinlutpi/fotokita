@@ -1,0 +1,370 @@
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  KeyRound,
+  Calendar,
+  Users,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  ShieldCheck,
+  Check,
+  Sparkles,
+} from "lucide-react";
+import { toast } from "sonner";
+import { updateWedding } from "@/api/wedding";
+import type { Wedding } from "@/types/wedding";
+
+interface AdminModalProps {
+  wedding: Wedding | null;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onWeddingUpdated: (updatedWedding: Wedding) => void;
+}
+
+export const AdminModal: React.FC<AdminModalProps> = ({
+  wedding,
+  isOpen,
+  onOpenChange,
+  onWeddingUpdated,
+}) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [passcode, setPasscode] = useState<string>("");
+  const [showPasscode, setShowPasscode] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const parseNames = (w: Wedding | null) => {
+    if (!w) return { p1: "", p2: "" };
+    if (w.name.includes("&")) {
+      const parts = w.name.split("&").map((s) => s.trim());
+      return { p1: parts[0] || "", p2: parts[1] || "" };
+    }
+    if (w.name.includes("and")) {
+      const parts = w.name.split("and").map((s) => s.trim());
+      return { p1: parts[0] || "", p2: parts[1] || "" };
+    }
+    return { p1: w.name, p2: "" };
+  };
+
+  const parseDate = (w: Wedding | null) => {
+    if (!w?.date) return "2026-12-20";
+    try {
+      const d = new Date(w.date);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    } catch {
+      return "2026-12-20";
+    }
+  };
+
+  // Form states initialized dynamically
+  const [partner1, setPartner1] = useState<string>(() => parseNames(wedding).p1);
+  const [partner2, setPartner2] = useState<string>(() => parseNames(wedding).p2);
+  const [weddingDate, setWeddingDate] = useState<string>(() => parseDate(wedding));
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Synchronize when dialog opens
+  const [prevOpen, setPrevOpen] = useState(isOpen);
+  if (isOpen !== prevOpen) {
+    setPrevOpen(isOpen);
+    if (isOpen) {
+      const { p1, p2 } = parseNames(wedding);
+      setPartner1(p1);
+      setPartner2(p2);
+      setWeddingDate(parseDate(wedding));
+    }
+  }
+
+  // Reset auth and fields when dialog closes
+  const handleOpenChange = (open: boolean) => {
+    onOpenChange(open);
+    if (!open) {
+      setPasscode("");
+      setAuthError(null);
+      setShowPasscode(false);
+      // Keep isAuthenticated reset on modal close for security
+      setIsAuthenticated(false);
+    }
+  };
+
+  const handleVerifyPasscode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passcode.trim().toLowerCase() === "porsche") {
+      setIsAuthenticated(true);
+      setAuthError(null);
+      toast.success("Akses admin dibenarkan", {
+        description: "Anda kini boleh mengemaskini maklumat arkib perkahwinan.",
+      });
+    } else {
+      setAuthError("Kod admin tidak sah. Sila masukkan kod laluan yang betul.");
+      toast.error("Akses ditolak", {
+        description: "Kod laluan yang dimasukkan salah.",
+      });
+    }
+  };
+
+  const handleSaveWedding = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const name1 = partner1.trim();
+    const name2 = partner2.trim();
+
+    if (!name1) {
+      toast.error("Sila masukkan nama pengantin.");
+      return;
+    }
+
+    const combinedName = name2 ? `${name1} & ${name2}` : name1;
+    const slug = combinedName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    const isoDate = weddingDate
+      ? new Date(`${weddingDate}T00:00:00.000Z`).toISOString()
+      : wedding?.date || new Date().toISOString();
+
+    setIsSubmitting(true);
+
+    const updatedData: Wedding = {
+      id: wedding?.id || "123e4567-e89b-12d3-a456-426614174000",
+      name: combinedName,
+      slug: slug || "wedding-archive",
+      date: isoDate,
+      createdAt: wedding?.createdAt || new Date().toISOString(),
+    };
+
+    try {
+      // Attempt backend update if wedding id is present
+      if (wedding?.id) {
+        try {
+          const apiResult = await updateWedding(wedding.id, {
+            name: combinedName,
+            slug,
+            date: isoDate,
+          });
+          if (apiResult) {
+            updatedData.name = apiResult.name;
+            updatedData.slug = apiResult.slug;
+            updatedData.date = apiResult.date;
+          }
+        } catch (apiErr) {
+          console.warn("Backend update error (using local override fallback):", apiErr);
+        }
+      }
+
+      // Always persist to localStorage for continuous resilience
+      try {
+        localStorage.setItem("fotokita_wedding_override", JSON.stringify(updatedData));
+      } catch {
+        // Ignored
+      }
+
+      onWeddingUpdated(updatedData);
+      toast.success("Maklumat perkahwinan berjaya dikemaskini!", {
+        description: `Nama: ${combinedName} | Tarikh: ${new Date(isoDate).toLocaleDateString("ms-MY", { day: "numeric", month: "long", year: "numeric" })}`,
+      });
+      handleOpenChange(false);
+    } catch (err: any) {
+      console.error("Failed to update wedding:", err);
+      toast.error("Gagal mengemaskini maklumat", {
+        description: err?.message || "Sila cuba lagi sebentar lagi.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md bg-[#FFFCF8] text-[#2F2926] border border-[#E7DED5] shadow-2xl p-6 sm:p-8">
+        <DialogHeader className="text-left space-y-2">
+          <div className="flex items-center gap-2 text-[#A67C6B] text-xs uppercase tracking-widest font-medium">
+            {isAuthenticated ? (
+              <>
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Admin Panel</span>
+              </>
+            ) : (
+              <>
+                <KeyRound className="w-4 h-4" />
+                <span>Pengesahan Admin</span>
+              </>
+            )}
+          </div>
+          <DialogTitle className="font-serif text-2xl sm:text-3xl text-[#2F2926] font-normal tracking-tight">
+            {isAuthenticated ? "Ubah Maklumat Arkib" : "Akses Pentadbir"}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-[#7A7069] leading-relaxed">
+            {isAuthenticated
+              ? "Kemaskini nama pengantin dan tarikh majlis. Perubahan akan diaplikasikan di seluruh halaman galeri."
+              : "Sila masukkan kod keselamatan untuk mengubah nama pengantin dan tarikh majlis perkahwinan."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {!isAuthenticated ? (
+          /* Step 1: Passcode Verification */
+          <form onSubmit={handleVerifyPasscode} className="space-y-5 mt-4">
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block">
+                Kod Keselamatan
+              </label>
+              <div className="relative">
+                <input
+                  type={showPasscode ? "text" : "password"}
+                  value={passcode}
+                  onChange={(e) => {
+                    setPasscode(e.target.value);
+                    if (authError) setAuthError(null);
+                  }}
+                  placeholder="Masukkan kod admin..."
+                  autoFocus
+                  className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-4 py-2.5 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors pr-10 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasscode(!showPasscode)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A7069] hover:text-[#2F2926] transition-colors p-1"
+                >
+                  {showPasscode ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+
+              {authError && (
+                <div className="flex items-center gap-1.5 text-rose-600 text-xs mt-1.5 animate-fadeIn">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => handleOpenChange(false)}
+                className="text-xs uppercase tracking-wider text-[#7A7069] hover:text-[#2F2926] hover:bg-[#F8F5F0] rounded-none"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#2F2926] text-[#FFFCF8] hover:bg-[#433B37] text-xs uppercase tracking-widest px-6 py-2.5 rounded-none font-medium transition-colors"
+              >
+                Sahkan
+              </Button>
+            </div>
+          </form>
+        ) : (
+          /* Step 2: Edit Form */
+          <form onSubmit={handleSaveWedding} className="space-y-5 mt-4">
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block mb-1.5 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-[#A67C6B]" />
+                  <span>Nama Pasangan Pengantin</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-[11px] text-[#7A7069] block mb-1">Pengantin 1</span>
+                    <input
+                      type="text"
+                      value={partner1}
+                      onChange={(e) => setPartner1(e.target.value)}
+                      placeholder="cth: Afiq"
+                      required
+                      className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-3.5 py-2 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-[#7A7069] block mb-1">Pengantin 2</span>
+                    <input
+                      type="text"
+                      value={partner2}
+                      onChange={(e) => setPartner2(e.target.value)}
+                      placeholder="cth: Wieam"
+                      className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-3.5 py-2 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block mb-1.5 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#A67C6B]" />
+                  <span>Tarikh Majlis Perkahwinan</span>
+                </label>
+                <input
+                  type="date"
+                  value={weddingDate}
+                  onChange={(e) => setWeddingDate(e.target.value)}
+                  required
+                  className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-3.5 py-2 text-sm text-[#2F2926] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
+                />
+              </div>
+
+              {/* Live Preview Box */}
+              <div className="bg-[#F8F5F0] border border-[#E7DED5] p-3 text-xs space-y-1">
+                <span className="uppercase tracking-widest text-[10px] text-[#A67C6B] font-medium flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Pratonton Galeri
+                </span>
+                <p className="font-serif text-base text-[#2F2926] font-medium">
+                  {partner1 ? partner1 : "Pengantin 1"} {partner2 ? `& ${partner2}` : ""}
+                </p>
+                <p className="text-[11px] text-[#7A7069]">
+                  {weddingDate
+                    ? new Date(`${weddingDate}T00:00:00`).toLocaleDateString("en-US", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "Pilih tarikh"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E7DED5]">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => handleOpenChange(false)}
+                disabled={isSubmitting}
+                className="text-xs uppercase tracking-wider text-[#7A7069] hover:text-[#2F2926] hover:bg-[#F8F5F0] rounded-none"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-[#2F2926] text-[#FFFCF8] hover:bg-[#433B37] text-xs uppercase tracking-widest px-6 py-2.5 rounded-none font-medium transition-colors flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <span>Menyimpan...</span>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Simpan Perubahan</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};

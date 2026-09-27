@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { WeddingHero } from "@/components/wedding/WeddingHero";
 import { Gallery } from "@/components/wedding/Gallery";
 import { UploadPhotos } from "@/components/wedding/UploadPhotos";
+import { AdminModal } from "@/components/wedding/AdminModal";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { getWeddings, createWedding, getWeddingById } from "@/api/wedding";
@@ -16,6 +17,7 @@ export const WeddingGalleryPage: React.FC = () => {
   const [isLoadingMedia, setIsLoadingMedia] = useState<boolean>(true);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
+  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
 
   // Fetch active wedding
   const fetchWeddingData = useCallback(async (): Promise<Wedding> => {
@@ -58,7 +60,16 @@ export const WeddingGalleryPage: React.FC = () => {
 
     async function loadInitialData() {
       try {
-        const activeWedding = await fetchWeddingData();
+        let activeWedding = await fetchWeddingData();
+        try {
+          const savedOverride = localStorage.getItem("fotokita_wedding_override");
+          if (savedOverride) {
+            const parsed = JSON.parse(savedOverride);
+            activeWedding = { ...activeWedding, ...parsed };
+          }
+        } catch {
+          // ignore
+        }
         if (isCancelled) return;
         setWedding(activeWedding);
         setIsLoadingWedding(false);
@@ -79,13 +90,22 @@ export const WeddingGalleryPage: React.FC = () => {
       } catch (err: any) {
         if (isCancelled) return;
         console.error("Failed to load wedding details:", err);
-        const fallback: Wedding = {
+        let fallback: Wedding = {
           id: "123e4567-e89b-12d3-a456-426614174000",
           name: "Afiq & Wieam",
           slug: "afiq-wieam",
           date: new Date("2026-12-20T02:00:00Z").toISOString(),
           createdAt: new Date().toISOString(),
         };
+        try {
+          const savedOverride = localStorage.getItem("fotokita_wedding_override");
+          if (savedOverride) {
+            const parsed = JSON.parse(savedOverride);
+            fallback = { ...fallback, ...parsed };
+          }
+        } catch {
+          // ignore
+        }
         setWedding(fallback);
         setIsLoadingWedding(false);
         setIsLoadingMedia(false);
@@ -154,11 +174,22 @@ export const WeddingGalleryPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             {wedding && (
-              <span className="text-xs text-[#7A7069] hidden md:inline-block">
-                Archive: <span className="text-[#2F2926] font-medium">{wedding.name}</span>
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[#7A7069] hidden md:inline-block">
+                  Archive: <span className="text-[#2F2926] font-medium">{wedding.name}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsAdminOpen(true)}
+                  title="Akses Admin (Ubah Nama & Tarikh)"
+                  className="w-5 h-5 rounded-full border border-[#D5CCC2] text-[#8C7E74] hover:text-[#2F2926] hover:border-[#2F2926] hover:bg-[#EFE9DF]/50 flex items-center justify-center text-xs font-serif italic transition-all duration-150 cursor-pointer shadow-2xs select-none"
+                  aria-label="Akses Admin"
+                >
+                  ?
+                </button>
+              </div>
             )}
             <button
               onClick={() => setIsUploadOpen(true)}
@@ -208,6 +239,18 @@ export const WeddingGalleryPage: React.FC = () => {
           isOpen={isUploadOpen}
           onOpenChange={setIsUploadOpen}
           onUploadSuccess={handleUploadSuccess}
+        />
+      )}
+
+      {/* Admin Settings Modal */}
+      {wedding && (
+        <AdminModal
+          wedding={wedding}
+          isOpen={isAdminOpen}
+          onOpenChange={setIsAdminOpen}
+          onWeddingUpdated={(updated) => {
+            setWedding(updated);
+          }}
         />
       )}
 

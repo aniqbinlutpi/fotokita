@@ -23,3 +23,18 @@ export async function createWedding(input: CreateWeddingInput): Promise<Wedding>
   });
   return handleApiResponse<Wedding>(response);
 }
+
+export async function updateWedding(
+  id: string,
+  input: Partial<CreateWeddingInput>
+): Promise<Wedding> {
+  const response = await fetch(`${WEDDINGS_BASE_URL}/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  return handleApiResponse<Wedding>(response);
+}
+
