@@ -4,6 +4,10 @@ export interface MediaItem {
   filename: string;
   mimeType: string;
   size: number;
+  wishes?: string;
+  fromName?: string;
+  signature?: string;
+  code?: string;
   createdAt: string;
 }
 

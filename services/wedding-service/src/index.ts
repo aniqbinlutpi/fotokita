@@ -1,10 +1,13 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import weddings from "./routes/weddings";
 import { error } from "./lib/response";
 
 const app = new Hono();
+
+app.use("*", cors());
 
 app.onError((err, c) => {
   console.error(err);

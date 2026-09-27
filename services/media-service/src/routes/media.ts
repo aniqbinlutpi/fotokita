@@ -102,6 +102,10 @@ mediaRoutes.post("/", async (c) => {
   const validation = validateMediaUpload({
     weddingId: body.weddingId,
     file: body.file,
+    wishes: body.wishes,
+    fromName: body.from ?? body.fromName,
+    signature: body.signature,
+    secretCode: body.code ?? body.secretCode,
   });
 
   if (!validation.success) {
@@ -115,7 +119,15 @@ mediaRoutes.post("/", async (c) => {
     );
   }
 
-  const { weddingId, file, sanitizedFilename } = validation.data;
+  const {
+    weddingId,
+    file,
+    sanitizedFilename,
+    wishes,
+    fromName,
+    signature,
+    secretCode,
+  } = validation.data;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const createdMedia = await createMedia({
@@ -124,6 +136,10 @@ mediaRoutes.post("/", async (c) => {
     filename: sanitizedFilename,
     mimeType: file.type,
     size: file.size,
+    wishes,
+    fromName,
+    signature,
+    secretCode,
   });
 
   return c.json(success(createdMedia), 201);
@@ -143,7 +159,22 @@ mediaRoutes.delete("/:id", async (c) => {
     );
   }
 
-  const result = await deleteMedia(paramResult.data.id);
+  const queryCode = c.req.query("code");
+  const headerCode = c.req.header("x-secret-code");
+  let bodyCode: string | undefined;
+  try {
+    const contentType = c.req.header("content-type");
+    if (contentType?.includes("application/json")) {
+      const body = await c.req.json();
+      bodyCode = body?.code;
+    }
+  } catch {
+    // optional body
+  }
+
+  const code = queryCode || headerCode || bodyCode;
+
+  const result = await deleteMedia(paramResult.data.id, code);
 
   if (!result.success) {
     return c.json(

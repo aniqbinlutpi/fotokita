@@ -21,15 +21,31 @@ export async function getMediaUrl(id: string): Promise<MediaUrlData> {
 export interface UploadOptions {
   weddingId: string;
   file: File;
+  wishes?: string;
+  from?: string;
+  signature?: string;
+  code?: string;
   onProgress?: (progress: number) => void;
 }
 
-export function uploadMedia({ weddingId, file, onProgress }: UploadOptions): Promise<MediaItem> {
+export function uploadMedia({
+  weddingId,
+  file,
+  wishes,
+  from,
+  signature,
+  code,
+  onProgress,
+}: UploadOptions): Promise<MediaItem> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
     formData.append("weddingId", weddingId);
     formData.append("file", file);
+    if (wishes) formData.append("wishes", wishes);
+    if (from) formData.append("from", from);
+    if (signature) formData.append("signature", signature);
+    if (code) formData.append("code", code);
 
     xhr.open("POST", MEDIA_BASE_URL, true);
 
@@ -78,9 +94,14 @@ export function uploadMedia({ weddingId, file, onProgress }: UploadOptions): Pro
   });
 }
 
-export async function deleteMedia(id: string): Promise<{ id: string }> {
-  const response = await fetch(`${MEDIA_BASE_URL}/${encodeURIComponent(id)}`, {
+export async function deleteMedia(id: string, code?: string): Promise<{ id: string }> {
+  const url = code
+    ? `${MEDIA_BASE_URL}/${encodeURIComponent(id)}?code=${encodeURIComponent(code)}`
+    : `${MEDIA_BASE_URL}/${encodeURIComponent(id)}`;
+
+  const response = await fetch(url, {
     method: "DELETE",
+    headers: code ? { "x-secret-code": code } : {},
   });
   return handleApiResponse<{ id: string }>(response);
 }

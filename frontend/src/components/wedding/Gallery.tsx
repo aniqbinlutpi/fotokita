@@ -1,22 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { GalleryItem } from "./GalleryItem";
 import { ImageLightbox } from "./ImageLightbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Camera, AlertCircle, RefreshCw, UploadCloud } from "lucide-react";
+import { getMediaUrl } from "@/api/media";
 import type { MediaItem } from "@/types/media";
+import type { Wedding } from "@/types/wedding";
 
 interface GalleryProps {
   weddingId: string;
+  wedding?: Wedding | null;
   mediaList: MediaItem[];
   isLoading: boolean;
   error: string | null;
   onRefresh: () => void;
-  onDeleteMedia: (id: string) => Promise<void>;
+  onDeleteMedia: (id: string, code?: string) => Promise<void>;
   onOpenUpload: () => void;
 }
 
 export const Gallery: React.FC<GalleryProps> = ({
+  wedding,
   mediaList,
   isLoading,
   error,
@@ -24,14 +28,25 @@ export const Gallery: React.FC<GalleryProps> = ({
   onDeleteMedia,
   onOpenUpload,
 }) => {
+  const [urlCache, setUrlCache] = useState<Record<string, string>>({});
   const [selectedMedia, setSelectedMedia] = useState<{
     item: MediaItem;
     url: string;
     index: number;
   } | null>(null);
 
+  const handleUrlLoaded = useCallback((id: string, loadedUrl: string) => {
+    setUrlCache((prev) => {
+      if (prev[id] === loadedUrl) return prev;
+      return { ...prev, [id]: loadedUrl };
+    });
+  }, []);
+
   const handleSelectMedia = (item: MediaItem, url: string) => {
     const index = mediaList.findIndex((m) => m.id === item.id);
+    if (url) {
+      setUrlCache((prev) => ({ ...prev, [item.id]: url }));
+    }
     setSelectedMedia({ item, url, index });
   };
 
@@ -43,23 +58,86 @@ export const Gallery: React.FC<GalleryProps> = ({
     if (!selectedMedia || selectedMedia.index >= mediaList.length - 1) return;
     const nextIndex = selectedMedia.index + 1;
     const nextItem = mediaList[nextIndex];
+    const cachedUrl = urlCache[nextItem.id] || "";
+
     setSelectedMedia({
       item: nextItem,
-      url: "",
+      url: cachedUrl,
       index: nextIndex,
     });
+
+    if (!cachedUrl) {
+      getMediaUrl(nextItem.id)
+        .then((res) => {
+          setUrlCache((prev) => ({ ...prev, [nextItem.id]: res.url }));
+          setSelectedMedia((curr) => {
+            if (curr && curr.item.id === nextItem.id) {
+              return { ...curr, url: res.url };
+            }
+            return curr;
+          });
+        })
+        .catch((err) => console.error("Error loading next image URL:", err));
+    }
   };
 
   const handlePrev = () => {
     if (!selectedMedia || selectedMedia.index <= 0) return;
     const prevIndex = selectedMedia.index - 1;
     const prevItem = mediaList[prevIndex];
+    const cachedUrl = urlCache[prevItem.id] || "";
+
     setSelectedMedia({
       item: prevItem,
-      url: "",
+      url: cachedUrl,
       index: prevIndex,
     });
+
+    if (!cachedUrl) {
+      getMediaUrl(prevItem.id)
+        .then((res) => {
+          setUrlCache((prev) => ({ ...prev, [prevItem.id]: res.url }));
+          setSelectedMedia((curr) => {
+            if (curr && curr.item.id === prevItem.id) {
+              return { ...curr, url: res.url };
+            }
+            return curr;
+          });
+        })
+        .catch((err) => console.error("Error loading previous image URL:", err));
+    }
   };
+
+  // Prefetch adjacent image URLs and browser image assets for zero-lag navigation
+  useEffect(() => {
+    if (!selectedMedia) return;
+    const currentIndex = selectedMedia.index;
+    const targets: MediaItem[] = [];
+
+    if (currentIndex + 1 < mediaList.length) {
+      targets.push(mediaList[currentIndex + 1]);
+    }
+    if (currentIndex - 1 >= 0) {
+      targets.push(mediaList[currentIndex - 1]);
+    }
+
+    targets.forEach((target) => {
+      const existingUrl = urlCache[target.id];
+      if (existingUrl) {
+        // Pre-warm browser image cache
+        const img = new Image();
+        img.src = existingUrl;
+      } else {
+        getMediaUrl(target.id)
+          .then((res) => {
+            setUrlCache((prev) => ({ ...prev, [target.id]: res.url }));
+            const img = new Image();
+            img.src = res.url;
+          })
+          .catch(() => {});
+      }
+    });
+  }, [selectedMedia, mediaList, urlCache]);
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
@@ -70,7 +148,7 @@ export const Gallery: React.FC<GalleryProps> = ({
             Visual Archive
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl text-[#2F2926] font-normal mt-1">
-            The Gallery
+            The Photo Collection
           </h2>
         </div>
 
@@ -95,16 +173,20 @@ export const Gallery: React.FC<GalleryProps> = ({
 
       {/* Loading Skeleton Grid */}
       {isLoading && mediaList.length === 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="bg-[#FFFCF8] border border-[#E7DED5] rounded-xs overflow-hidden flex flex-col"
+              className="bg-[#FFFCF8] border border-[#E7DED5] rounded-[2px] p-3.5 pb-4 shadow-xs flex flex-col justify-between"
             >
-              <Skeleton className="aspect-[4/5] bg-[#EDE6DC]/60 animate-pulse rounded-none" />
-              <div className="p-3 border-t border-[#E7DED5] space-y-2">
-                <Skeleton className="h-3.5 w-3/4 bg-[#EDE6DC]/80" />
-                <Skeleton className="h-2.5 w-1/3 bg-[#EDE6DC]/60" />
+              <div className="text-center pb-2">
+                <Skeleton className="h-2 w-24 mx-auto bg-[#EDE6DC]/40" />
+              </div>
+              <Skeleton className="aspect-[3/4] w-full bg-[#EDE6DC]/60 animate-pulse rounded-[1px]" />
+              <div className="pt-3.5 pb-1 space-y-1.5 text-center">
+                <Skeleton className="h-2 w-16 mx-auto bg-[#EDE6DC]/40" />
+                <Skeleton className="h-4 w-32 mx-auto bg-[#EDE6DC]/60" />
+                <Skeleton className="h-2 w-20 mx-auto bg-[#EDE6DC]/40" />
               </div>
             </div>
           ))}
@@ -160,13 +242,15 @@ export const Gallery: React.FC<GalleryProps> = ({
 
       {/* Populated Gallery Grid */}
       {mediaList.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
           {mediaList.map((media) => (
             <GalleryItem
               key={media.id}
               media={media}
+              wedding={wedding}
               onSelect={handleSelectMedia}
               onDelete={onDeleteMedia}
+              onUrlLoaded={handleUrlLoaded}
             />
           ))}
         </div>
@@ -175,9 +259,11 @@ export const Gallery: React.FC<GalleryProps> = ({
       {/* Image Lightbox */}
       <ImageLightbox
         item={selectedMedia?.item ?? null}
+        wedding={wedding}
         url={selectedMedia?.url ?? null}
         isOpen={Boolean(selectedMedia)}
         onClose={handleCloseLightbox}
+        onDelete={onDeleteMedia}
         onNext={handleNext}
         onPrev={handlePrev}
         hasNext={

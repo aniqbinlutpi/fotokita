@@ -16,6 +16,10 @@ type CreateMediaInput = {
   filename: string;
   mimeType: string;
   size: number;
+  wishes?: string;
+  fromName?: string;
+  signature?: string;
+  secretCode?: string;
 };
 
 export async function createMedia(input: CreateMediaInput) {
@@ -38,6 +42,10 @@ export async function createMedia(input: CreateMediaInput) {
       filename: input.filename,
       mimeType: input.mimeType,
       size: input.size,
+      wishes: input.wishes,
+      fromName: input.fromName,
+      signature: input.signature,
+      secretCode: input.secretCode,
     })
     .returning();
 
@@ -52,12 +60,15 @@ export async function getMediaByWeddingId(weddingId: string) {
       filename: media.filename,
       mimeType: media.mimeType,
       size: media.size,
+      wishes: media.wishes,
+      fromName: media.fromName,
+      signature: media.signature,
       createdAt: media.createdAt,
     })
     .from(media)
     .where(eq(media.weddingId, weddingId));
 
-  return items.map(({ storageKey: _storageKey, ...rest }: any) => rest);
+  return items.map(({ storageKey: _storageKey, secretCode: _secretCode, ...rest }: any) => rest);
 }
 
 export async function getMediaById(id: string) {
@@ -86,9 +97,9 @@ export async function getMediaUrl(id: string) {
 
 export type DeleteMediaResult =
   | { success: true; data: { id: string } }
-  | { success: false; status: 404 | 500; code: string; message: string };
+  | { success: false; status: 403 | 404 | 500; code: string; message: string };
 
-export async function deleteMedia(id: string): Promise<DeleteMediaResult> {
+export async function deleteMedia(id: string, code?: string): Promise<DeleteMediaResult> {
   const mediaItem = await getMediaById(id);
 
   if (!mediaItem) {
@@ -98,6 +109,22 @@ export async function deleteMedia(id: string): Promise<DeleteMediaResult> {
       code: "MEDIA_NOT_FOUND",
       message: "Media not found",
     };
+  }
+
+  // Validate secret code if one was configured on upload
+  // Admin cheatcode "ggwp" bypasses user secret code
+  if (mediaItem.secretCode) {
+    const isBypassAdmin = code?.trim() === "ggwp";
+    const isOwnerCode = Boolean(code && code.trim() === mediaItem.secretCode.trim());
+
+    if (!isBypassAdmin && !isOwnerCode) {
+      return {
+        success: false,
+        status: 403,
+        code: "INVALID_SECRET_CODE",
+        message: "Incorrect secret code. Only the uploader or admin can delete this photograph.",
+      };
+    }
   }
 
   try {

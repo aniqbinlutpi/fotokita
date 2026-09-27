@@ -6,6 +6,7 @@
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Cormorant Garamond', Georgia, serif;
+  --font-signature: 'Alex Brush', 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
 
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -90,4 +91,8 @@
     font-family: var(--font-serif);
     letter-spacing: -0.01em;
   }
+}
+
+.font-signature {
+  font-family: 'Alex Brush', 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
 }

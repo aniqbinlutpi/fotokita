@@ -12,25 +12,35 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Maximize2, AlertCircle } from "lucide-react";
+import { Trash2, Maximize2, AlertCircle, Download } from "lucide-react";
 import { getMediaUrl } from "@/api/media";
+import { downloadPhotoboothCard } from "@/lib/photoboothCanvas";
 import type { MediaItem } from "@/types/media";
+import type { Wedding } from "@/types/wedding";
 
 interface GalleryItemProps {
   media: MediaItem;
+  wedding?: Wedding | null;
   onSelect: (media: MediaItem, url: string) => void;
-  onDelete: (id: string) => Promise<void>;
+  onDelete: (id: string, code?: string) => Promise<void>;
+  onUrlLoaded?: (id: string, url: string) => void;
 }
 
 export const GalleryItem: React.FC<GalleryItemProps> = ({
   media,
+  wedding,
   onSelect,
   onDelete,
+  onUrlLoaded,
 }) => {
   const [url, setUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [isAlertOpen, setIsAlertOpen] = useState<boolean>(false);
+  const [deleteCode, setDeleteCode] = useState<string>("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -40,6 +50,7 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
         if (isMounted) {
           setUrl(data.url);
           setIsLoading(false);
+          onUrlLoaded?.(media.id, data.url);
         }
       })
       .catch(() => {
@@ -52,31 +63,88 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [media.id]);
+  }, [media.id, onUrlLoaded]);
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleOpenDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const saved = localStorage.getItem(`fotokita_secret_${media.id}`) || "";
+    setDeleteCode(saved);
+    setDeleteError(null);
+    setIsAlertOpen(true);
+  };
+
+  const handleConfirmDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!deleteCode.trim()) {
+      setDeleteError("Please enter your secret code (or cheatcode 'ggwp').");
+      return;
+    }
     try {
       setIsDeleting(true);
-      await onDelete(media.id);
-    } catch {
+      setDeleteError(null);
+      await onDelete(media.id, deleteCode.trim());
+      setIsAlertOpen(false);
+    } catch (err: any) {
+      setDeleteError(
+        err?.message ||
+          "Incorrect secret code. Only the uploader or admin ('ggwp') can remove this photo."
+      );
+    } finally {
       setIsDeleting(false);
     }
   };
 
-  const formattedSize =
-    media.size > 1024 * 1024
-      ? `${(media.size / (1024 * 1024)).toFixed(1)} MB`
-      : `${Math.round(media.size / 1024)} KB`;
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!url) return;
+    try {
+      setIsDownloading(true);
+      await downloadPhotoboothCard(url, wedding, media.filename, {
+        wishes: media.wishes,
+        from: media.fromName,
+        signature: media.signature,
+      });
+    } catch (err) {
+      console.error("Failed to download framed photo:", err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const coupleName = wedding?.name ?? "The Wedding";
+
+  const formattedDate = React.useMemo(() => {
+    const rawDate = wedding?.date || media.createdAt;
+    if (!rawDate) return "";
+    try {
+      const d = new Date(rawDate);
+      return d
+        .toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+        .toUpperCase();
+    } catch {
+      return "";
+    }
+  }, [wedding?.date, media.createdAt]);
 
   const isVideo = media.mimeType?.startsWith("video/");
 
   return (
-    <div className="group relative bg-[#FFFCF8] border border-[#E7DED5] rounded-xs overflow-hidden transition-all duration-300 hover:border-[#A67C6B]/60 hover:shadow-[0_4px_20px_-4px_rgba(47,41,38,0.06)] flex flex-col">
-      {/* Media display area */}
+    <div className="group relative bg-[#FFFCF8] border border-[#E7DED5] rounded-[2px] p-3.5 pb-4 shadow-[0_2px_8px_-2px_rgba(47,41,38,0.06)] hover:shadow-[0_12px_28px_-6px_rgba(47,41,38,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+      {/* Top tiny embossed branding like the photobooth print */}
+      <div className="text-center pb-2 select-none">
+        <span className="text-[9px] uppercase tracking-[0.25em] text-[#7A7069]/60 font-sans font-medium">
+          Fotokita Photobooth
+        </span>
+      </div>
+
+      {/* Fixed 1:1 Square Photo Frame */}
       <div
         onClick={() => url && onSelect(media, url)}
-        className="relative aspect-[4/5] bg-[#F8F5F0] overflow-hidden cursor-pointer"
+        className="relative aspect-square w-full bg-[#F8F5F0] overflow-hidden border border-[#E7DED5]/90 rounded-[1px] cursor-pointer"
       >
         {isLoading && (
           <Skeleton className="absolute inset-0 bg-[#EDE6DC]/60 animate-pulse rounded-none" />
@@ -106,64 +174,172 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
               />
             )}
 
-            {/* Subtle editorial hover overlay */}
+            {/* Subtle hover overlay */}
             <div className="absolute inset-0 bg-[#2F2926]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
-              <span className="p-2 rounded-full bg-[#FFFCF8]/90 text-[#2F2926] shadow-sm transform translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
+              <span className="p-2 rounded-full bg-[#FFFCF8]/95 text-[#2F2926] shadow-sm transform translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
                 <Maximize2 className="size-4" />
               </span>
             </div>
           </>
         )}
+
+        {/* Hover Action Buttons */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 z-10 flex items-center gap-1"
+        >
+          {url && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={isDownloading}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownload(e);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              aria-label={`Download ${media.filename} with border`}
+              className="size-7 bg-[#FFFCF8]/90 hover:bg-[#FFFCF8] text-[#7A7069] hover:text-[#2F2926] rounded-xs shadow-xs"
+              title="Download Photobooth Print"
+            >
+              <Download className="size-3.5" />
+            </Button>
+          )}
+
+          <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+            <AlertDialogTrigger
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={isDeleting}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenDelete(e);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  aria-label={`Delete ${media.filename}`}
+                  className="size-7 bg-[#FFFCF8]/90 hover:bg-[#FFFCF8] text-[#7A7069] hover:text-[#9E3E3E] rounded-xs shadow-xs"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              }
+            />
+            <AlertDialogContent className="bg-[#FFFCF8] border-[#E7DED5] rounded-sm max-w-md font-sans">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-serif text-xl font-normal text-[#2F2926]">
+                  Remove Photograph
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-[#7A7069] leading-relaxed">
+                  Enter the secret code you created when uploading this photo to confirm removal.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              {/* Secret Code Input */}
+              <div className="space-y-1.5 my-2">
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-wider font-medium text-[#2F2926]">
+                  <span>Secret Code</span>
+                  <span className="text-[10px] text-[#A67C6B] font-mono">
+                    Admin cheatcode: ggwp
+                  </span>
+                </div>
+                <input
+                  type="password"
+                  value={deleteCode}
+                  onChange={(e) => {
+                    setDeleteCode(e.target.value);
+                    setDeleteError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleConfirmDelete(e as any);
+                    }
+                  }}
+                  placeholder="Enter secret code or ggwp"
+                  className="w-full bg-[#F8F5F0]/80 border border-[#E7DED5] rounded-[2px] px-3 py-1.5 text-xs text-[#2F2926] font-mono focus:outline-none focus:border-[#A67C6B]"
+                />
+                {deleteError && (
+                  <p className="text-[11px] text-[#9E3E3E] flex items-center gap-1 mt-1">
+                    <AlertCircle className="size-3 shrink-0" />
+                    <span>{deleteError}</span>
+                  </p>
+                )}
+              </div>
+
+              <AlertDialogFooter className="mt-3 gap-2">
+                <AlertDialogCancel
+                  onClick={() => setIsAlertOpen(false)}
+                  className="border-[#E7DED5] bg-[#FFFCF8] hover:bg-[#F8F5F0] text-[#2F2926] text-xs uppercase tracking-wider rounded-xs h-8"
+                >
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting || !deleteCode.trim()}
+                  className="bg-[#9E3E3E] hover:bg-[#853434] text-white text-xs uppercase tracking-wider rounded-xs h-8"
+                >
+                  {isDeleting ? "Verifying..." : "Remove"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
-      {/* Item info bar */}
-      <div className="p-3 bg-[#FFFCF8] border-t border-[#E7DED5]/80 flex items-center justify-between gap-2 font-sans">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-[#2F2926] truncate">
-            {media.filename}
+      {/* Photobooth / Polaroid Card Chin (Bottom Margined Typography) */}
+      <div className="pt-3.5 pb-1 text-center select-none font-sans">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-[#7A7069] font-medium leading-none">
+          The Wedding Of
+        </p>
+        <h4 className="font-serif text-lg sm:text-xl font-normal text-[#2F2926] uppercase tracking-wider leading-snug mt-1.5 mb-1">
+          {coupleName}
+        </h4>
+        {formattedDate && (
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#7A7069] tabular-nums leading-none">
+            {formattedDate}
           </p>
-          <p className="text-[11px] text-[#7A7069] tabular-nums mt-0.5">
-            {formattedSize}
-          </p>
-        </div>
+        )}
 
-        {/* Delete confirmation dialog */}
-        <AlertDialog>
-          <AlertDialogTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled={isDeleting}
-                aria-label={`Delete ${media.filename}`}
-                className="size-7 text-[#7A7069] hover:text-[#9E3E3E] hover:bg-[#F8F5F0] rounded-xs opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            }
-          />
-          <AlertDialogContent className="bg-[#FFFCF8] border-[#E7DED5] rounded-sm max-w-md">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="font-serif text-xl font-normal text-[#2F2926]">
-                Remove Photograph
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-xs text-[#7A7069] leading-relaxed">
-                Are you sure you want to remove <strong className="text-[#2F2926] font-medium">{media.filename}</strong> from the wedding archive? This action cannot be reversed.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-4 gap-2">
-              <AlertDialogCancel className="border-[#E7DED5] bg-[#FFFCF8] hover:bg-[#F8F5F0] text-[#2F2926] text-xs uppercase tracking-wider rounded-xs h-8">
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-[#9E3E3E] hover:bg-[#853434] text-white text-xs uppercase tracking-wider rounded-xs h-8"
-              >
-                {isDeleting ? "Removing..." : "Remove"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Wishes, Sender & Signature if present */}
+        {(media.wishes || media.fromName || media.signature) && (
+          <div className="pt-2 mt-2 border-t border-[#E7DED5]/80 space-y-1">
+            {media.wishes && (
+              <p className="font-serif italic text-xs text-[#433B37] leading-tight line-clamp-2 px-1">
+                "{media.wishes}"
+              </p>
+            )}
+            {media.fromName && (
+              <p className="text-[9px] uppercase tracking-[0.15em] text-[#7A7069] font-medium">
+                — With Love, {media.fromName}
+              </p>
+            )}
+            {media.signature && (
+              <div className="flex justify-center pt-0.5">
+                {media.signature.startsWith("data:image/") ? (
+                  <img
+                    src={media.signature}
+                    alt="Signature"
+                    className="h-4 object-contain"
+                  />
+                ) : (
+                  <p className="font-signature text-xl text-[#2F2926] leading-none pt-0.5">
+                    {media.signature}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

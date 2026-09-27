@@ -8,6 +8,13 @@
       "when": 1790446476275,
       "tag": "0000_loose_namora",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790494766207,
+      "tag": "0001_lush_guardsmen",
+      "breakpoints": true
     }
   ]
 }

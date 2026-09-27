@@ -19,5 +19,14 @@ export const media = pgTable("media", {
 
   size: integer("size").notNull(),
 
+  wishes: text("wishes"),
+
+  fromName: text("from_name"),
+
+  signature: text("signature"),
+
+  secretCode: text("secret_code"),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+

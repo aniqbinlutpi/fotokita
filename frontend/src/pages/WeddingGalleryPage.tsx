@@ -118,15 +118,20 @@ export const WeddingGalleryPage: React.FC = () => {
     setMediaList((prev) => [newMedia, ...prev]);
   };
 
-  const handleDeleteMedia = async (mediaId: string) => {
+  const handleDeleteMedia = async (mediaId: string, code?: string) => {
     try {
-      await deleteMedia(mediaId);
+      await deleteMedia(mediaId, code);
       setMediaList((prev) => prev.filter((item) => item.id !== mediaId));
+      try {
+        localStorage.removeItem(`fotokita_secret_${mediaId}`);
+      } catch {
+        // Ignored
+      }
       toast.success("Photograph removed from archive");
     } catch (err: any) {
       console.error("Failed to delete media:", err);
       toast.error("Failed to delete photograph", {
-        description: err?.message || "Please check server connection.",
+        description: err?.message || "Please check secret code or server connection.",
       });
       throw err;
     }
@@ -184,6 +189,7 @@ export const WeddingGalleryPage: React.FC = () => {
         {wedding && (
           <Gallery
             weddingId={wedding.id}
+            wedding={wedding}
             mediaList={mediaList}
             isLoading={isLoadingMedia}
             error={mediaError}
@@ -198,6 +204,7 @@ export const WeddingGalleryPage: React.FC = () => {
       {wedding && (
         <UploadPhotos
           weddingId={wedding.id}
+          wedding={wedding}
           isOpen={isUploadOpen}
           onOpenChange={setIsUploadOpen}
           onUploadSuccess={handleUploadSuccess}

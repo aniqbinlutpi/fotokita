@@ -33,6 +33,10 @@ export type ValidateUploadSuccess = {
   weddingId: string;
   file: File;
   sanitizedFilename: string;
+  wishes?: string;
+  fromName?: string;
+  signature?: string;
+  secretCode?: string;
 };
 
 export type ValidateUploadFailure = {
@@ -50,6 +54,10 @@ export type ValidateUploadResult =
 export function validateMediaUpload(input: {
   weddingId?: unknown;
   file?: unknown;
+  wishes?: unknown;
+  fromName?: unknown;
+  signature?: unknown;
+  secretCode?: unknown;
 }): ValidateUploadResult {
   const fieldErrors: Record<string, string[]> = {};
 
@@ -111,6 +119,22 @@ export function validateMediaUpload(input: {
   }
 
   const sanitizedFilename = sanitizeFilename(file.name);
+  const wishes =
+    typeof input.wishes === "string" && input.wishes.trim()
+      ? input.wishes.trim()
+      : undefined;
+  const fromName =
+    typeof input.fromName === "string" && input.fromName.trim()
+      ? input.fromName.trim()
+      : undefined;
+  const signature =
+    typeof input.signature === "string" && input.signature.trim()
+      ? input.signature.trim()
+      : undefined;
+  const secretCode =
+    typeof input.secretCode === "string" && input.secretCode.trim()
+      ? input.secretCode.trim()
+      : undefined;
 
   return {
     success: true,
@@ -118,6 +142,10 @@ export function validateMediaUpload(input: {
       weddingId: weddingIdResult.data!.weddingId,
       file,
       sanitizedFilename,
+      wishes,
+      fromName,
+      signature,
+      secretCode,
     },
   };
 }
