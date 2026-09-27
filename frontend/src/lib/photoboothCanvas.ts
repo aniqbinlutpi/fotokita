@@ -102,13 +102,14 @@ export async function createPhotoboothComposite(
     options?.weddingDate || formatPhotoboothDate(wedding?.date);
 
   // Calculate typography layout positions to determine exact card height
+  const titleSpacing = Math.round(cardWidth * 0.058);
   const eyebrowY = chinStartY + Math.round(cardWidth * 0.048);
-  const nameY = eyebrowY + Math.round(cardWidth * 0.055);
+  const nameY = eyebrowY + titleSpacing;
   let currentY = nameY;
 
   let dateY: number | null = null;
   if (dateStr) {
-    currentY = nameY + Math.round(cardWidth * 0.038);
+    currentY = nameY + titleSpacing;
     dateY = currentY;
   }
 
@@ -257,7 +258,7 @@ export async function createPhotoboothComposite(
   // Date
   if (dateY && dateStr) {
     ctx.fillStyle = "#7A7069";
-    ctx.font = `normal ${Math.round(cardWidth * 0.016)}px Inter, system-ui, sans-serif`;
+    ctx.font = `normal ${Math.round(cardWidth * 0.014)}px Inter, system-ui, sans-serif`;
     ctx.letterSpacing = "4px";
     ctx.fillText(dateStr, cardWidth / 2, dateY);
   }

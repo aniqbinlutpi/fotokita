@@ -190,11 +190,9 @@ export const Gallery: React.FC<GalleryProps> = ({
                 <Skeleton className="h-1.5 sm:h-2 w-10 sm:w-24 bg-[#EDE6DC]/40" />
               </div>
               <Skeleton className="aspect-square w-full bg-[#EDE6DC]/60 animate-pulse rounded-[1px] shrink-0" />
-              <div className="h-3.5 sm:h-5 shrink-0" />
-              <div className="h-[76px] sm:h-[136px] shrink-0 space-y-1 sm:space-y-1.5 text-center flex flex-col items-center">
-                <Skeleton className="h-1.5 sm:h-2 w-8 sm:w-16 bg-[#EDE6DC]/40" />
-                <Skeleton className="h-2.5 sm:h-4 w-12 sm:w-32 bg-[#EDE6DC]/60" />
-                <Skeleton className="h-1.5 sm:h-2 w-10 sm:w-20 bg-[#EDE6DC]/40" />
+              <div className="h-[54px] sm:h-[84px] shrink-0 space-y-1.5 text-center flex flex-col items-center justify-center">
+                <Skeleton className="h-2 sm:h-3 w-20 sm:w-36 bg-[#EDE6DC]/60" />
+                <Skeleton className="h-1.5 sm:h-2 w-12 sm:w-24 bg-[#EDE6DC]/40" />
               </div>
             </div>
           ))}

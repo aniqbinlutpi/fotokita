@@ -136,7 +136,10 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
   const isVideo = media.mimeType?.startsWith("video/");
 
   return (
-    <div className="group relative bg-[#FFFCF8] border border-[#E7DED5] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-[0_2px_8px_-2px_rgba(47,41,38,0.06)] hover:shadow-[0_12px_28px_-6px_rgba(47,41,38,0.12)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-300 flex flex-col justify-start">
+    <div
+      onClick={() => url && onSelect(media, url)}
+      className="group relative bg-[#FFFCF8] border border-[#E7DED5] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-[0_2px_8px_-2px_rgba(47,41,38,0.06)] hover:shadow-[0_12px_28px_-6px_rgba(47,41,38,0.12)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-300 flex flex-col justify-start cursor-pointer"
+    >
       {/* Top tiny embossed branding like the photobooth print */}
       <div className="text-center pb-1 sm:pb-2 select-none shrink-0 h-4 sm:h-6 flex items-center justify-center">
         <span className="text-[6.5px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.25em] text-[#7A7069]/60 font-sans font-medium line-clamp-1 block">
@@ -146,8 +149,7 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
 
       {/* Fixed 1:1 Square Photo Frame */}
       <div
-        onClick={() => url && onSelect(media, url)}
-        className="relative aspect-square w-full bg-[#F8F5F0] overflow-hidden border border-[#E7DED5]/90 rounded-[1px] cursor-pointer shrink-0"
+        className="relative aspect-square w-full bg-[#F8F5F0] overflow-hidden border border-[#E7DED5]/90 rounded-[1px] shrink-0"
       >
         {isLoading && (
           <Skeleton className="absolute inset-0 bg-[#EDE6DC]/60 animate-pulse rounded-none" />
@@ -316,30 +318,17 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
         )}
       </div>
 
-      {/* Photobooth / Polaroid Card Chin (Fixed Height Typography) */}
-      <div className="pt-2 pb-1 h-[76px] sm:h-[136px] flex flex-col justify-start text-center select-none font-sans shrink-0 overflow-hidden">
-        <p className="text-[6px] sm:text-[10px] uppercase tracking-[0.05em] sm:tracking-[0.25em] text-[#7A7069] font-medium leading-none whitespace-nowrap truncate">
-          The Wedding Of
-        </p>
-        <h4 className="font-serif text-[8.5px] sm:text-lg md:text-xl font-normal text-[#2F2926] uppercase tracking-normal sm:tracking-wider leading-tight mt-0.5 sm:mt-1 mb-0.5 line-clamp-1 sm:line-clamp-2">
-          {coupleName}
-        </h4>
-        {formattedDate && (
-          <p className="text-[6px] sm:text-[10px] uppercase tracking-[0.03em] sm:tracking-[0.2em] text-[#7A7069] tabular-nums leading-none whitespace-nowrap truncate">
-            {formattedDate}
-          </p>
-        )}
-
-        {/* Wishes & Sender Area (Fixed height slot with subtle divider) */}
-        {(media.wishes || media.fromName) ? (
-          <div className="pt-1 mt-1 sm:pt-2 sm:mt-2 border-t border-[#E7DED5]/80 space-y-0.5 sm:space-y-1">
+      {/* Photobooth Card Chin — Displaying Guest Wishes & Sender */}
+      <div className="pt-1.5 sm:pt-2.5 pb-1 h-[54px] sm:h-[84px] flex flex-col justify-center items-center text-center select-none font-sans shrink-0 overflow-hidden">
+        {media.wishes || media.fromName ? (
+          <div className="w-full space-y-0.5 sm:space-y-1 px-1">
             {media.wishes && (
-              <p className="font-serif italic text-[7px] sm:text-xs text-[#433B37] leading-tight line-clamp-2 px-0.5 sm:px-1">
+              <p className="font-serif italic text-[7.5px] sm:text-xs md:text-[13px] text-[#433B37] leading-tight line-clamp-2 px-0.5">
                 "{media.wishes}"
               </p>
             )}
             {media.fromName && (
-              <p className="text-[6px] sm:text-[9px] uppercase tracking-[0.03em] sm:tracking-[0.15em] text-[#7A7069] font-medium truncate">
+              <p className="text-[6px] sm:text-[9.5px] uppercase tracking-[0.08em] sm:tracking-[0.18em] text-[#7A7069] font-medium truncate">
                 — With Love, {media.fromName}
               </p>
             )}

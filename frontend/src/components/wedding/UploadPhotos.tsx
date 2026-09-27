@@ -557,11 +557,11 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                   <p className="text-[8px] uppercase tracking-[0.25em] text-[#7A7069] font-medium leading-none">
                     The Wedding Of
                   </p>
-                  <h4 className="font-serif text-sm font-normal text-[#2F2926] uppercase tracking-wider leading-snug mt-1 mb-0.5">
+                  <h4 className="font-serif text-sm font-normal text-[#2F2926] uppercase tracking-wider leading-none my-1.5">
                     {coupleName}
                   </h4>
                   {formattedDate && (
-                    <p className="text-[8px] uppercase tracking-[0.2em] text-[#7A7069] tabular-nums leading-none">
+                    <p className="text-[7px] uppercase tracking-[0.2em] text-[#7A7069] tabular-nums leading-none">
                       {formattedDate}
                     </p>
                   )}
@@ -644,15 +644,15 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                   </div>
 
                   {/* Card Chin with live Typography, Wishes & Signature */}
-                  <div className="pt-2.5 pb-0.5 text-center select-none font-sans space-y-1">
+                  <div className="pt-2.5 pb-0.5 text-center select-none font-sans">
                     <p className="text-[8px] uppercase tracking-[0.25em] text-[#7A7069] font-medium leading-none">
                       The Wedding Of
                     </p>
-                    <h4 className="font-serif text-sm font-normal text-[#2F2926] uppercase tracking-wider leading-snug">
+                    <h4 className="font-serif text-sm font-normal text-[#2F2926] uppercase tracking-wider leading-none my-1.5">
                       {coupleName}
                     </h4>
                     {formattedDate && (
-                      <p className="text-[8px] uppercase tracking-[0.2em] text-[#7A7069] tabular-nums leading-none">
+                      <p className="text-[7px] uppercase tracking-[0.2em] text-[#7A7069] tabular-nums leading-none">
                         {formattedDate}
                       </p>
                     )}

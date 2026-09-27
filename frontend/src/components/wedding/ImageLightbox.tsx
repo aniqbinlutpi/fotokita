@@ -372,18 +372,18 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
           <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#7A7069] font-medium leading-none">
             The Wedding Of
           </p>
-          <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#2F2926] uppercase tracking-wider leading-snug mt-2 mb-1.5">
+          <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#2F2926] uppercase tracking-wider leading-none my-4 sm:my-5">
             {coupleName}
           </h3>
           {formattedWeddingDate && (
-            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-[#7A7069] tabular-nums leading-none">
+            <p className="text-[8.5px] sm:text-[9.5px] uppercase tracking-[0.2em] text-[#7A7069] tabular-nums leading-none">
               {formattedWeddingDate}
             </p>
           )}
 
           {/* Wishes & Sender if present */}
           {(item.wishes || item.fromName) && (
-            <div className="pt-3 mt-3 border-t border-[#E7DED5]/80 space-y-1.5">
+            <div className="pt-3 mt-4 sm:mt-5 border-t border-[#E7DED5]/80 space-y-1.5">
               {item.wishes && (
                 <p className="font-serif italic text-sm text-[#433B37] leading-relaxed line-clamp-3 px-2">
                   "{item.wishes}"
