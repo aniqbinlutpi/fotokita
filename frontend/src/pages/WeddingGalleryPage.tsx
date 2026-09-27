@@ -39,9 +39,9 @@ export const WeddingGalleryPage: React.FC = () => {
     }
 
     return await createWedding({
-      name: "Claire & Julian",
-      slug: "claire-and-julian-2026",
-      date: new Date("2026-09-27T14:00:00Z").toISOString(),
+      name: "Afiq & Wieam",
+      slug: "afiq-wieam",
+      date: new Date("2026-12-20T02:00:00Z").toISOString(),
     });
   }, []);
 
@@ -81,9 +81,9 @@ export const WeddingGalleryPage: React.FC = () => {
         console.error("Failed to load wedding details:", err);
         const fallback: Wedding = {
           id: "123e4567-e89b-12d3-a456-426614174000",
-          name: "Claire & Julian",
-          slug: "claire-and-julian",
-          date: new Date().toISOString(),
+          name: "Afiq & Wieam",
+          slug: "afiq-wieam",
+          date: new Date("2026-12-20T02:00:00Z").toISOString(),
           createdAt: new Date().toISOString(),
         };
         setWedding(fallback);

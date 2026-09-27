@@ -140,7 +140,7 @@ export const Gallery: React.FC<GalleryProps> = ({
   }, [selectedMedia, mediaList, urlCache]);
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+    <section className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pb-24">
       {/* Editorial Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#E7DED5] pb-5 mb-8 gap-4">
         <div>
@@ -173,20 +173,21 @@ export const Gallery: React.FC<GalleryProps> = ({
 
       {/* Loading Skeleton Grid */}
       {isLoading && mediaList.length === 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 items-start gap-1.5 sm:gap-4 md:gap-6 lg:gap-8">
+          {Array.from({ length: 9 }).map((_, i) => (
             <div
               key={i}
-              className="bg-[#FFFCF8] border border-[#E7DED5] rounded-[2px] p-3.5 pb-4 shadow-xs flex flex-col justify-between"
+              className="bg-[#FFFCF8] border border-[#E7DED5] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-xs flex flex-col justify-start"
             >
-              <div className="text-center pb-2">
-                <Skeleton className="h-2 w-24 mx-auto bg-[#EDE6DC]/40" />
+              <div className="text-center pb-1 sm:pb-2 shrink-0 h-4 sm:h-6 flex items-center justify-center">
+                <Skeleton className="h-1.5 sm:h-2 w-10 sm:w-24 bg-[#EDE6DC]/40" />
               </div>
-              <Skeleton className="aspect-[3/4] w-full bg-[#EDE6DC]/60 animate-pulse rounded-[1px]" />
-              <div className="pt-3.5 pb-1 space-y-1.5 text-center">
-                <Skeleton className="h-2 w-16 mx-auto bg-[#EDE6DC]/40" />
-                <Skeleton className="h-4 w-32 mx-auto bg-[#EDE6DC]/60" />
-                <Skeleton className="h-2 w-20 mx-auto bg-[#EDE6DC]/40" />
+              <Skeleton className="aspect-square w-full bg-[#EDE6DC]/60 animate-pulse rounded-[1px] shrink-0" />
+              <div className="h-3.5 sm:h-5 shrink-0" />
+              <div className="h-[76px] sm:h-[136px] shrink-0 space-y-1 sm:space-y-1.5 text-center flex flex-col items-center">
+                <Skeleton className="h-1.5 sm:h-2 w-8 sm:w-16 bg-[#EDE6DC]/40" />
+                <Skeleton className="h-2.5 sm:h-4 w-12 sm:w-32 bg-[#EDE6DC]/60" />
+                <Skeleton className="h-1.5 sm:h-2 w-10 sm:w-20 bg-[#EDE6DC]/40" />
               </div>
             </div>
           ))}
@@ -242,7 +243,7 @@ export const Gallery: React.FC<GalleryProps> = ({
 
       {/* Populated Gallery Grid */}
       {mediaList.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 items-start gap-1.5 sm:gap-4 md:gap-6 lg:gap-8">
           {mediaList.map((media) => (
             <GalleryItem
               key={media.id}

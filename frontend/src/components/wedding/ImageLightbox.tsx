@@ -21,8 +21,10 @@ import {
   ChevronRight,
   Download,
   Trash2,
+  AlertCircle,
 } from "lucide-react";
 import { downloadPhotoboothCard } from "@/lib/photoboothCanvas";
+import { parseSignature } from "@/lib/signature";
 import { getMediaUrl } from "@/api/media";
 import type { MediaItem } from "@/types/media";
 import type { Wedding } from "@/types/wedding";
@@ -131,7 +133,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     e.stopPropagation();
     if (!item || !onDelete) return;
     if (!deleteCode.trim()) {
-      setDeleteError("Please enter your secret code (or cheatcode 'ggwp').");
+      setDeleteError("Please enter your secret code.");
       return;
     }
     try {
@@ -143,7 +145,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     } catch (err: any) {
       setDeleteError(
         err?.message ||
-          "Incorrect secret code. Only the uploader or admin ('ggwp') can remove this photo."
+          "Incorrect secret code. Only the uploader can remove this photo."
       );
     } finally {
       setIsDeleting(false);
@@ -186,7 +188,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         {/* Top embossed branding matching zoom-out card */}
         <div className="text-center pb-2.5 pt-0.5 select-none">
           <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#7A7069]/60 font-sans font-medium">
-            Fotokita Photobooth
+            Fotobooth Kita
           </span>
         </div>
 
@@ -262,9 +264,6 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                   <div className="space-y-1.5 my-2">
                     <div className="flex items-center justify-between text-[11px] uppercase tracking-wider font-medium text-[#2F2926]">
                       <span>Secret Code</span>
-                      <span className="text-[10px] text-[#A67C6B] font-mono">
-                        Admin cheatcode: ggwp
-                      </span>
                     </div>
                     <input
                       type="password"
@@ -279,7 +278,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                           handleConfirmDelete(e as any);
                         }
                       }}
-                      placeholder="Enter secret code or ggwp"
+                      placeholder="Enter secret code"
                       className="w-full bg-[#F8F5F0]/80 border border-[#E7DED5] rounded-[2px] px-3 py-1.5 text-xs text-[#2F2926] font-mono focus:outline-none focus:border-[#A67C6B]"
                     />
                     {deleteError && (
@@ -342,6 +341,30 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
               <ChevronRight className="size-4" />
             </Button>
           )}
+
+          {/* Signature overlay on photo at bottom-right */}
+          {item && (() => {
+            const parsedSignature = parseSignature(item.signature);
+            if (!parsedSignature) return null;
+            return (
+              <div className="absolute bottom-1.5 right-2 sm:bottom-2 sm:right-3 z-10 pointer-events-none select-none max-w-[65%] flex justify-end">
+                {parsedSignature.type === "image" ? (
+                  <img
+                    src={parsedSignature.data}
+                    alt="Signature"
+                    className="h-5 sm:h-7 object-contain filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                  />
+                ) : (
+                  <p
+                    style={{ color: parsedSignature.color || "#FFFFFF" }}
+                    className="font-signature text-2xl sm:text-3xl leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
+                  >
+                    {parsedSignature.data}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Photobooth Bottom Chin Typography (Matching Zoom Out) */}
@@ -358,8 +381,8 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
             </p>
           )}
 
-          {/* Wishes, Sender & Signature if present */}
-          {(item.wishes || item.fromName || item.signature) && (
+          {/* Wishes & Sender if present */}
+          {(item.wishes || item.fromName) && (
             <div className="pt-3 mt-3 border-t border-[#E7DED5]/80 space-y-1.5">
               {item.wishes && (
                 <p className="font-serif italic text-sm text-[#433B37] leading-relaxed line-clamp-3 px-2">
@@ -370,21 +393,6 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                 <p className="text-[10px] uppercase tracking-[0.2em] text-[#7A7069] font-medium">
                   — With Love, {item.fromName}
                 </p>
-              )}
-              {item.signature && (
-                <div className="flex justify-center pt-0.5">
-                  {item.signature.startsWith("data:image/") ? (
-                    <img
-                      src={item.signature}
-                      alt="Signature"
-                      className="h-6 object-contain"
-                    />
-                  ) : (
-                    <p className="font-signature text-2xl sm:text-3xl text-[#2F2926] leading-none pt-0.5">
-                      {item.signature}
-                    </p>
-                  )}
-                </div>
               )}
             </div>
           )}

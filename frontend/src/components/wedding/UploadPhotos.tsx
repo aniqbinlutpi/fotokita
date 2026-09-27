@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import type { Point, Area } from "react-easy-crop";
 import {
@@ -22,18 +22,22 @@ import {
   Sparkles,
   Download,
   PenTool,
-  Type,
   KeyRound,
   Eye,
   EyeOff,
   User,
   HeartHandshake,
   Trash2,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadMedia } from "@/api/media";
 import { getCroppedImg } from "@/lib/cropImage";
 import { downloadPhotoboothCard } from "@/lib/photoboothCanvas";
+import {
+  SIGNATURE_COLOR_PRESETS,
+  DEFAULT_SIGNATURE_COLOR,
+} from "@/lib/signature";
 import type { MediaItem } from "@/types/media";
 import type { Wedding } from "@/types/wedding";
 
@@ -47,6 +51,7 @@ const ALLOWED_TYPES = [
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+const MAX_WISHES_LENGTH = 70; // Character limit for wishes on photobooth print
 
 interface UploadPhotosProps {
   weddingId: string;
@@ -81,13 +86,29 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
   // Form State: Wishes, From, Signature, Secret Code
   const [fromName, setFromName] = useState<string>("");
   const [wishes, setWishes] = useState<string>("");
-  const [secretCode, setSecretCode] = useState<string>(() => {
-    return localStorage.getItem("fotokita_recent_code") || "";
-  });
+  const [secretCode, setSecretCode] = useState<string>("");
   const [showSecretCode, setShowSecretCode] = useState<boolean>(false);
+
+  // Clean up any stale remembered code from previous versions
+  useEffect(() => {
+    try {
+      localStorage.removeItem("fotokita_recent_code");
+    } catch {
+      // Ignored
+    }
+  }, []);
+
+  // Guarantee secret code field is always blank whenever upload modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setSecretCode("");
+      setShowSecretCode(false);
+    }
+  }, [isOpen]);
 
   // Signature state
   const [signatureMode, setSignatureMode] = useState<"draw" | "type">("draw");
+  const [signatureColor, setSignatureColor] = useState<string>(DEFAULT_SIGNATURE_COLOR);
   const [typedSignature, setTypedSignature] = useState<string>("");
   const [drawnSignatureData, setDrawnSignatureData] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -129,7 +150,10 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
     setIsProcessingCrop(false);
     setFromName("");
     setWishes("");
+    setSecretCode("");
+    setShowSecretCode(false);
     setTypedSignature("");
+    setSignatureColor(DEFAULT_SIGNATURE_COLOR);
     setDrawnSignatureData(null);
     clearSignatureCanvas();
     setValidationError(null);
@@ -143,6 +167,21 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
         resetAll();
       }
       onOpenChange(open);
+    }
+  };
+
+  const handleColorChange = (newColor: string) => {
+    setSignatureColor(newColor);
+    if (sigCanvasRef.current && drawnSignatureData) {
+      const canvas = sigCanvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.globalCompositeOperation = "source-in";
+        ctx.fillStyle = newColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = "source-over";
+        setDrawnSignatureData(canvas.toDataURL("image/png"));
+      }
     }
   };
 
@@ -161,7 +200,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
 
     ctx.beginPath();
     ctx.moveTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
-    ctx.strokeStyle = "#2F2926";
+    ctx.strokeStyle = signatureColor;
     ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -196,8 +235,22 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
     }
   };
 
-  const activeSignature =
-    signatureMode === "draw" ? drawnSignatureData || "" : typedSignature.trim();
+  const hasSignature =
+    signatureMode === "draw"
+      ? Boolean(drawnSignatureData)
+      : Boolean(typedSignature.trim());
+
+  const formattedSignaturePayload =
+    signatureMode === "draw"
+      ? drawnSignatureData || undefined
+      : typedSignature.trim()
+      ? JSON.stringify({ text: typedSignature.trim(), color: signatureColor })
+      : undefined;
+
+  const isLightColor =
+    signatureColor.toLowerCase() === "#ffffff" ||
+    signatureColor.toLowerCase() === "#faf5ef" ||
+    signatureColor.toLowerCase() === "#fff";
 
   const validateAndHandleFile = (file: File) => {
     setValidationError(null);
@@ -296,6 +349,13 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
       return;
     }
 
+    if (wishes.length > MAX_WISHES_LENGTH) {
+      setValidationError(
+        `Wishes & prayers must be ${MAX_WISHES_LENGTH} characters or less.`
+      );
+      return;
+    }
+
     if (!secretCode.trim()) {
       setValidationError(
         "Please enter a secret code so you can delete your photo later."
@@ -312,18 +372,17 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
         file: fileToUpload,
         from: fromName.trim(),
         wishes: wishes.trim(),
-        signature: activeSignature.trim() || undefined,
+        signature: formattedSignaturePayload,
         code: secretCode.trim(),
         onProgress: (percent) => setUploadProgress(percent),
       });
 
-      // Save secret code locally for user convenience
+      // Save secret code locally for user convenience when deleting this specific photo
       try {
         localStorage.setItem(
           `fotokita_secret_${createdMedia.id}`,
           secretCode.trim()
         );
-        localStorage.setItem("fotokita_recent_code", secretCode.trim());
       } catch {
         // Safe localStorage fallback
       }
@@ -472,7 +531,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
               <div className="max-w-[280px] sm:max-w-xs mx-auto bg-[#FFFCF8] border border-[#E7DED5] rounded-[2px] p-3 pb-3.5 shadow-[0_4px_20px_-4px_rgba(47,41,38,0.1)] flex flex-col">
                 <div className="text-center pb-1.5 select-none">
                   <span className="text-[8px] uppercase tracking-[0.25em] text-[#7A7069]/60 font-medium">
-                    Fotokita Photobooth
+                    Fotobooth Kita
                   </span>
                 </div>
 
@@ -546,7 +605,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                 <div className="w-56 sm:w-64 max-w-full bg-[#FFFCF8] border border-[#E7DED5] rounded-[2px] p-3 pb-3.5 shadow-[0_4px_16px_-4px_rgba(47,41,38,0.1)] flex flex-col justify-between mx-auto">
                   <div className="text-center pb-1.5 select-none">
                     <span className="text-[8px] uppercase tracking-[0.25em] text-[#7A7069]/60 font-medium">
-                      Fotokita Photobooth
+                      Fotobooth Kita
                     </span>
                   </div>
 
@@ -560,6 +619,26 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[#A67C6B]">
                         <FileImage className="size-8" />
+                      </div>
+                    )}
+
+                    {/* Signature Overlay on Photo (Bottom-Right) */}
+                    {hasSignature && (
+                      <div className="absolute bottom-1 right-2 sm:bottom-1.5 sm:right-2.5 z-10 pointer-events-none select-none max-w-[65%] flex justify-end">
+                        {signatureMode === "draw" && drawnSignatureData ? (
+                          <img
+                            src={drawnSignatureData}
+                            alt="Signature Preview"
+                            className="h-4 sm:h-5 object-contain filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                          />
+                        ) : typedSignature.trim() ? (
+                          <p
+                            style={{ color: signatureColor }}
+                            className="font-signature text-base sm:text-xl leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
+                          >
+                            {typedSignature.trim()}
+                          </p>
+                        ) : null}
                       </div>
                     )}
                   </div>
@@ -578,8 +657,8 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                       </p>
                     )}
 
-                    {/* Live Preview of Wishes & Signature */}
-                    {(wishes || fromName || activeSignature) && (
+                    {/* Live Preview of Wishes */}
+                    {(wishes || fromName) && (
                       <div className="pt-2 border-t border-[#E7DED5]/80 space-y-1 mt-1 text-center">
                         {wishes && (
                           <p className="font-serif italic text-[11px] text-[#433B37] leading-tight line-clamp-3 px-1">
@@ -590,21 +669,6 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                           <p className="text-[8px] uppercase tracking-[0.15em] text-[#7A7069] font-medium">
                             — With Love, {fromName}
                           </p>
-                        )}
-                        {activeSignature && (
-                          <div className="flex justify-center pt-0.5">
-                            {signatureMode === "draw" && drawnSignatureData ? (
-                              <img
-                                src={drawnSignatureData}
-                                alt="Signature"
-                                className="h-5 object-contain"
-                              />
-                            ) : (
-                              <p className="font-signature text-xl sm:text-2xl text-[#2F2926] leading-none pt-0.5">
-                                {activeSignature}
-                              </p>
-                            )}
-                          </div>
                         )}
                       </div>
                     )}
@@ -641,7 +705,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                           {
                             wishes: wishes.trim() || undefined,
                             from: fromName.trim() || undefined,
-                            signature: activeSignature.trim() || undefined,
+                            signature: formattedSignaturePayload,
                           }
                         );
                       }}
@@ -689,7 +753,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                     type="text"
                     value={fromName}
                     onChange={(e) => setFromName(e.target.value)}
-                    placeholder="e.g. Wan & Family"
+                    placeholder="e.g. Harris & Family"
                     disabled={isUploading}
                     className="w-full bg-[#F8F5F0]/60 border border-[#E7DED5] rounded-[2px] px-3 py-2 text-sm text-[#2F2926] placeholder:text-[#7A7069]/60 focus:outline-none focus:border-[#A67C6B] focus:bg-[#FFFCF8] transition-colors"
                   />
@@ -697,22 +761,43 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
 
                 {/* 2. Wishes & Prayers Form */}
                 <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium text-[#2F2926]">
-                    <HeartHandshake className="size-3.5 text-[#A67C6B]" />
-                    <span>Wishes & Prayers</span>
-                    <span className="text-[#9E3E3E]">*</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium text-[#2F2926]">
+                      <HeartHandshake className="size-3.5 text-[#A67C6B]" />
+                      <span>Wishes & Prayers</span>
+                      <span className="text-[#9E3E3E]">*</span>
+                    </label>
+                    <span
+                      className={`text-[11px] font-mono tabular-nums transition-colors ${
+                        wishes.length >= MAX_WISHES_LENGTH
+                          ? "text-[#9E3E3E] font-semibold"
+                          : "text-[#7A7069]"
+                      }`}
+                    >
+                      {wishes.length}/{MAX_WISHES_LENGTH}
+                    </span>
+                  </div>
                   <textarea
                     rows={3}
+                    maxLength={MAX_WISHES_LENGTH}
                     value={wishes}
-                    onChange={(e) => setWishes(e.target.value)}
+                    onChange={(e) =>
+                      setWishes(e.target.value.slice(0, MAX_WISHES_LENGTH))
+                    }
                     placeholder="Write your heartfelt wishes, prayers, or blessings for the bride and groom..."
                     disabled={isUploading}
                     className="w-full bg-[#F8F5F0]/60 border border-[#E7DED5] rounded-[2px] p-3 text-sm text-[#2F2926] placeholder:text-[#7A7069]/60 focus:outline-none focus:border-[#A67C6B] focus:bg-[#FFFCF8] transition-colors resize-none leading-relaxed"
                   />
-                  <p className="text-[11px] text-[#7A7069]">
-                    Your message will be framed alongside your memory in the wedding gallery.
-                  </p>
+                  <div className="flex items-center justify-between text-[11px] text-[#7A7069]">
+                    <span>
+                      Your message will be framed alongside your memory in the wedding gallery.
+                    </span>
+                    {wishes.length >= MAX_WISHES_LENGTH && (
+                      <span className="text-[#9E3E3E] shrink-0 font-medium ml-2">
+                        Limit reached
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* 3. Signature (Draw or Type) */}
@@ -750,9 +835,65 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                     </div>
                   </div>
 
+                  {/* Signature Color Selector */}
+                  <div className="flex items-center justify-between py-1.5 px-2.5 bg-[#F8F5F0]/70 border border-[#E7DED5] rounded-[2px]">
+                    <span className="text-[11px] uppercase tracking-wider font-medium text-[#7A7069]">
+                      Ink Color
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {SIGNATURE_COLOR_PRESETS.map((preset) => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          title={preset.label}
+                          onClick={() => handleColorChange(preset.value)}
+                          className={`size-5 rounded-full border transition-all flex items-center justify-center cursor-pointer ${
+                            signatureColor.toLowerCase() === preset.value.toLowerCase()
+                              ? "ring-2 ring-[#A67C6B] ring-offset-1 scale-110 shadow-xs"
+                              : "hover:scale-105 opacity-90"
+                          }`}
+                          style={{
+                            backgroundColor: preset.value,
+                            borderColor: preset.border || "#D1D5DB",
+                          }}
+                        >
+                          {signatureColor.toLowerCase() === preset.value.toLowerCase() && (
+                            <Check
+                              className={`size-3 ${
+                                preset.value === "#FFFFFF" || preset.value === "#FAF5EF"
+                                  ? "text-[#2F2926]"
+                                  : "text-white"
+                              }`}
+                            />
+                          )}
+                        </button>
+                      ))}
+                      {/* Custom Color Picker Input */}
+                      <label
+                        title="Custom Color"
+                        className="relative size-5 rounded-full border border-[#D1D5DB] cursor-pointer flex items-center justify-center overflow-hidden hover:scale-105 transition-all shadow-2xs"
+                        style={{
+                          background:
+                            "conic-gradient(from 180deg at 50% 50%, #FF0000 0deg, #FFFF00 60deg, #00FF00 120deg, #00FFFF 180deg, #0000FF 240deg, #FF00FF 300deg, #FF0000 360deg)",
+                        }}
+                      >
+                        <input
+                          type="color"
+                          value={signatureColor}
+                          onChange={(e) => handleColorChange(e.target.value)}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
                   {signatureMode === "draw" ? (
                     <div className="space-y-1.5">
-                      <div className="relative border border-[#E7DED5] rounded-[2px] bg-[#F8F5F0]/60 overflow-hidden">
+                      <div
+                        className={`relative border border-[#E7DED5] rounded-[2px] transition-colors overflow-hidden ${
+                          isLightColor ? "bg-[#2F2926]" : "bg-[#F8F5F0]/60"
+                        }`}
+                      >
                         <canvas
                           ref={sigCanvasRef}
                           width={400}
@@ -763,7 +904,11 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                           className="w-full h-24 sm:h-28 touch-none cursor-crosshair block bg-transparent"
                         />
                         {!drawnSignatureData && (
-                          <div className="absolute inset-0 pointer-events-none flex items-center justify-center text-xs text-[#7A7069]/50 italic font-serif">
+                          <div
+                            className={`absolute inset-0 pointer-events-none flex items-center justify-center text-xs italic font-serif ${
+                              isLightColor ? "text-white/40" : "text-[#7A7069]/50"
+                            }`}
+                          >
                             Sign here with finger or mouse
                           </div>
                         )}
@@ -793,7 +938,12 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                         className="w-full bg-[#F8F5F0]/60 border border-[#E7DED5] rounded-[2px] px-3 py-2 text-sm text-[#2F2926] placeholder:text-[#7A7069]/60 focus:outline-none focus:border-[#A67C6B] focus:bg-[#FFFCF8] transition-colors"
                       />
                       {typedSignature && (
-                        <div className="py-3.5 px-3 border border-[#E7DED5] bg-[#FFFCF8] rounded-[2px] text-center font-signature text-3xl sm:text-4xl text-[#2F2926] shadow-xs select-none tracking-wide">
+                        <div
+                          style={{ color: signatureColor }}
+                          className={`py-3.5 px-3 border border-[#E7DED5] rounded-[2px] text-center font-signature text-3xl sm:text-4xl shadow-xs select-none tracking-wide transition-colors ${
+                            isLightColor ? "bg-[#2F2926]" : "bg-[#FFFCF8]"
+                          }`}
+                        >
                           {typedSignature}
                         </div>
                       )}
@@ -818,6 +968,13 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                       onChange={(e) => setSecretCode(e.target.value)}
                       placeholder="e.g. 1234 or your secret phrase"
                       disabled={isUploading}
+                      autoComplete="new-password"
+                      autoCorrect="off"
+                      autoCapitalize="none"
+                      spellCheck="false"
+                      name="fotokita_upload_secret_code"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
                       className="w-full bg-[#F8F5F0]/60 border border-[#E7DED5] rounded-[2px] pl-3 pr-10 py-2 text-sm text-[#2F2926] placeholder:text-[#7A7069]/60 focus:outline-none focus:border-[#A67C6B] focus:bg-[#FFFCF8] transition-colors font-mono tracking-wider"
                     />
                     <button

@@ -47,26 +47,6 @@ app.post("/", async (c) => {
 
   if (!result.success) {
     return c.json(
-      {
-        error: "Validation failed",
-        details: result.error.flatten(),
-      },
-      400,
-    );
-  }
-
-  const wedding = await createWedding(result.data);
-
-  return c.json(wedding, 201);
-});
-
-app.post("/", async (c) => {
-  const body = await c.req.json();
-
-  const result = createWeddingSchema.safeParse(body);
-
-  if (!result.success) {
-    return c.json(
       error(
         "VALIDATION_ERROR",
         "Validation failed",
@@ -79,6 +59,38 @@ app.post("/", async (c) => {
   const wedding = await createWedding(result.data);
 
   return c.json(success(wedding), 201);
+});
+
+app.patch("/:id", async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+
+  const result = updateWeddingSchema.safeParse(body);
+
+  if (!result.success) {
+    return c.json(
+      error(
+        "VALIDATION_ERROR",
+        "Validation failed",
+        result.error.flatten(),
+      ),
+      400,
+    );
+  }
+
+  const wedding = await updateWedding(id, result.data);
+
+  if (!wedding) {
+    return c.json(
+      error(
+        "WEDDING_NOT_FOUND",
+        "Wedding not found",
+      ),
+      404,
+    );
+  }
+
+  return c.json(success(wedding));
 });
 
 
