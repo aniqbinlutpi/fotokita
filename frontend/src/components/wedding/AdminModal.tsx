@@ -101,13 +101,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     if (passcode.trim().toLowerCase() === "porsche") {
       setIsAuthenticated(true);
       setAuthError(null);
-      toast.success("Akses admin dibenarkan", {
-        description: "Anda kini boleh mengemaskini maklumat arkib perkahwinan.",
+      toast.success("Admin access granted", {
+        description: "You can now edit the wedding archive details.",
       });
     } else {
-      setAuthError("Kod admin tidak sah. Sila masukkan kod laluan yang betul.");
-      toast.error("Akses ditolak", {
-        description: "Kod laluan yang dimasukkan salah.",
+      setAuthError("Invalid admin passcode. Please enter the correct code.");
+      toast.error("Access denied", {
+        description: "The passcode entered is incorrect.",
       });
     }
   };
@@ -119,7 +119,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     const name2 = partner2.trim();
 
     if (!name1) {
-      toast.error("Sila masukkan nama pengantin.");
+      toast.error("Please enter at least the first partner's name.");
       return;
     }
 
@@ -170,14 +170,14 @@ export const AdminModal: React.FC<AdminModalProps> = ({
       }
 
       onWeddingUpdated(updatedData);
-      toast.success("Maklumat perkahwinan berjaya dikemaskini!", {
-        description: `Nama: ${combinedName} | Tarikh: ${new Date(isoDate).toLocaleDateString("ms-MY", { day: "numeric", month: "long", year: "numeric" })}`,
+      toast.success("Wedding details updated successfully!", {
+        description: `Names: ${combinedName} | Date: ${new Date(isoDate).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}`,
       });
       handleOpenChange(false);
     } catch (err: any) {
       console.error("Failed to update wedding:", err);
-      toast.error("Gagal mengemaskini maklumat", {
-        description: err?.message || "Sila cuba lagi sebentar lagi.",
+      toast.error("Failed to update wedding details", {
+        description: err?.message || "Please try again shortly.",
       });
     } finally {
       setIsSubmitting(false);
@@ -197,17 +197,17 @@ export const AdminModal: React.FC<AdminModalProps> = ({
             ) : (
               <>
                 <KeyRound className="w-4 h-4" />
-                <span>Pengesahan Admin</span>
+                <span>Admin Authorization</span>
               </>
             )}
           </div>
           <DialogTitle className="font-serif text-2xl sm:text-3xl text-[#2F2926] font-normal tracking-tight">
-            {isAuthenticated ? "Ubah Maklumat Arkib" : "Akses Pentadbir"}
+            {isAuthenticated ? "Edit Wedding Archive" : "Admin Access"}
           </DialogTitle>
           <DialogDescription className="text-xs text-[#7A7069] leading-relaxed">
             {isAuthenticated
-              ? "Kemaskini nama pengantin dan tarikh majlis. Perubahan akan diaplikasikan di seluruh halaman galeri."
-              : "Sila masukkan kod keselamatan untuk mengubah nama pengantin dan tarikh majlis perkahwinan."}
+              ? "Update the couple's names and wedding date. All changes will be reflected immediately across the entire gallery."
+              : "Please enter the master passcode to modify the wedding archive details."}
           </DialogDescription>
         </DialogHeader>
 
@@ -216,7 +216,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
           <form onSubmit={handleVerifyPasscode} className="space-y-5 mt-4">
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block">
-                Kod Keselamatan
+                Master Passcode
               </label>
               <div className="relative">
                 <input
@@ -226,7 +226,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                     setPasscode(e.target.value);
                     if (authError) setAuthError(null);
                   }}
-                  placeholder="Masukkan kod admin..."
+                  placeholder="Enter admin passcode..."
                   autoFocus
                   className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-4 py-2.5 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors pr-10 font-mono"
                 />
@@ -258,13 +258,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                 onClick={() => handleOpenChange(false)}
                 className="text-xs uppercase tracking-wider text-[#7A7069] hover:text-[#2F2926] hover:bg-[#F8F5F0] rounded-none"
               >
-                Batal
+                Cancel
               </Button>
               <Button
                 type="submit"
                 className="bg-[#2F2926] text-[#FFFCF8] hover:bg-[#433B37] text-xs uppercase tracking-widest px-6 py-2.5 rounded-none font-medium transition-colors"
               >
-                Sahkan
+                Authorize
               </Button>
             </div>
           </form>
@@ -275,27 +275,27 @@ export const AdminModal: React.FC<AdminModalProps> = ({
               <div>
                 <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block mb-1.5 flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-[#A67C6B]" />
-                  <span>Nama Pasangan Pengantin</span>
+                  <span>Couple & Archive Names</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <span className="text-[11px] text-[#7A7069] block mb-1">Pengantin 1</span>
+                    <span className="text-[11px] text-[#7A7069] block mb-1">Partner 1 (Left)</span>
                     <input
                       type="text"
                       value={partner1}
                       onChange={(e) => setPartner1(e.target.value)}
-                      placeholder="cth: Afiq"
+                      placeholder="e.g. Afiq"
                       required
                       className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-3.5 py-2 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
                     />
                   </div>
                   <div>
-                    <span className="text-[11px] text-[#7A7069] block mb-1">Pengantin 2</span>
+                    <span className="text-[11px] text-[#7A7069] block mb-1">Partner 2 (Right)</span>
                     <input
                       type="text"
                       value={partner2}
                       onChange={(e) => setPartner2(e.target.value)}
-                      placeholder="cth: Wieam"
+                      placeholder="e.g. Wieam"
                       className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-3.5 py-2 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
                     />
                   </div>
@@ -305,7 +305,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
               <div>
                 <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block mb-1.5 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-[#A67C6B]" />
-                  <span>Tarikh Majlis Perkahwinan</span>
+                  <span>Wedding Date</span>
                 </label>
                 <input
                   type="date"
@@ -320,10 +320,10 @@ export const AdminModal: React.FC<AdminModalProps> = ({
               <div className="bg-[#F8F5F0] border border-[#E7DED5] p-3 text-xs space-y-1">
                 <span className="uppercase tracking-widest text-[10px] text-[#A67C6B] font-medium flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  Pratonton Galeri
+                  Gallery Live Preview
                 </span>
                 <p className="font-serif text-base text-[#2F2926] font-medium">
-                  {partner1 ? partner1 : "Pengantin 1"} {partner2 ? `& ${partner2}` : ""}
+                  {partner1 ? partner1 : "Partner 1"} {partner2 ? `& ${partner2}` : ""}
                 </p>
                 <p className="text-[11px] text-[#7A7069]">
                   {weddingDate
@@ -332,7 +332,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                         month: "long",
                         year: "numeric",
                       })
-                    : "Pilih tarikh"}
+                    : "Select date"}
                 </p>
               </div>
             </div>
@@ -345,7 +345,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                 disabled={isSubmitting}
                 className="text-xs uppercase tracking-wider text-[#7A7069] hover:text-[#2F2926] hover:bg-[#F8F5F0] rounded-none"
               >
-                Batal
+                Cancel
               </Button>
               <Button
                 type="submit"
@@ -353,11 +353,11 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                 className="bg-[#2F2926] text-[#FFFCF8] hover:bg-[#433B37] text-xs uppercase tracking-widest px-6 py-2.5 rounded-none font-medium transition-colors flex items-center gap-2"
               >
                 {isSubmitting ? (
-                  <span>Menyimpan...</span>
+                  <span>Saving...</span>
                 ) : (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    <span>Simpan Perubahan</span>
+                    <span>Save Changes</span>
                   </>
                 )}
               </Button>

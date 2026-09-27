@@ -183,9 +183,9 @@ export const WeddingGalleryPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsAdminOpen(true)}
-                  title="Akses Admin (Ubah Nama & Tarikh)"
+                  title="Admin Access (Edit Names & Date)"
                   className="w-5 h-5 rounded-full border border-[#D5CCC2] text-[#8C7E74] hover:text-[#2F2926] hover:border-[#2F2926] hover:bg-[#EFE9DF]/50 flex items-center justify-center text-xs font-serif italic transition-all duration-150 cursor-pointer shadow-2xs select-none"
-                  aria-label="Akses Admin"
+                  aria-label="Admin Access"
                 >
                   ?
                 </button>
