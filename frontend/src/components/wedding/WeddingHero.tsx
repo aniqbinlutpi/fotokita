@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import ScrollExpand from "@/components/ScrollExpand";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { UploadCloud, Calendar, Camera } from "lucide-react";
+import { UploadCloud, Calendar, Camera, ChevronDown } from "lucide-react";
 import type { Wedding } from "@/types/wedding";
+import imgExpand from "@/assets/images/img-expand.png";
 
 interface WeddingHeroProps {
   wedding: Wedding | null;
@@ -15,7 +17,23 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
   photoCount,
   onOpenUpload,
 }) => {
-  const formattedDate = React.useMemo(() => {
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const formattedDate = useMemo(() => {
     if (!wedding?.date) return "";
     try {
       const d = new Date(wedding.date);
@@ -30,50 +48,104 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
   }, [wedding]);
 
   return (
-    <header className="relative pt-12 pb-10 md:pt-20 md:pb-16 px-6 max-w-5xl mx-auto text-center">
-      {/* Editorial eyebrow */}
-      <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.25em] text-[#7A7069] mb-4">
-        <span className="w-6 h-px bg-[#E7DED5]" />
-        <span>Wedding Archive</span>
-        <span className="w-6 h-px bg-[#E7DED5]" />
-      </div>
+    <section className="relative w-full">
+      <ScrollExpand
+        src={imgExpand}
+        alt={wedding?.name ? `${wedding.name} Wedding Archive` : "Wedding Archive"}
+        useWindowScroll={true}
+        startWidth={isMobile ? 86 : 46}
+        startHeight={isMobile ? 56 : 62}
+        startRadius={20}
+        endRadius={0}
+        mediaZoom={1.28}
+        scrollDistance={1.1}
+        holdDistance={0.35}
+        smoothing={0.08}
+        overlayScrim={0.45}
+        title={
+          <div className="flex flex-col items-center justify-center text-center w-full max-w-xl mx-auto px-2 sm:px-4 pointer-events-auto">
+            {/* Frosted Editorial Card for maximum legibility */}
+            <div className="bg-[#2F2926]/35 backdrop-blur-md rounded-lg p-5 sm:p-8 border border-white/20 shadow-2xl text-white w-[92%] sm:w-auto max-w-md mx-auto">
+              {/* Editorial eyebrow */}
+              <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.28em] text-white/90 mb-3">
+                <span className="w-6 h-px bg-white/60" />
+                <span>Wedding Archive</span>
+                <span className="w-6 h-px bg-white/60" />
+              </div>
 
-      {/* Couple Name / Title in Cormorant Garamond */}
-      <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl font-normal text-[#2F2926] tracking-tight leading-[1.1] mb-4">
-        {wedding?.name ?? "The Celebration of Love"}
-      </h1>
+              {/* Couple Name / Title in Cormorant Garamond */}
+              <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-normal text-white tracking-tight leading-[1.1] mb-3 drop-shadow-md">
+                {wedding?.name ?? "Afiq & Wieam"}
+              </h1>
 
-      {/* Date & Meta Details */}
-      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs md:text-sm text-[#7A7069] mb-8 font-sans">
-        {formattedDate && (
-          <div className="inline-flex items-center gap-1.5">
-            <Calendar className="size-3.5 text-[#A67C6B]" />
-            <span>{formattedDate}</span>
+              {/* Date & Meta Details */}
+              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs sm:text-sm text-white/90 mb-6 font-sans">
+                {formattedDate && (
+                  <div className="inline-flex items-center gap-1.5">
+                    <Calendar className="size-3.5 text-[#E7DED5]" />
+                    <span>{formattedDate}</span>
+                  </div>
+                )}
+                <div className="inline-flex items-center gap-1.5">
+                  <Camera className="size-3.5 text-[#E7DED5]" />
+                  <span>
+                    {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center max-w-xs mx-auto mb-6">
+                <Separator className="bg-white/30" />
+              </div>
+
+              {/* Hero CTA Button */}
+              <div className="flex items-center justify-center">
+                <Button
+                  onClick={onOpenUpload}
+                  variant="outline"
+                  className="border-white/50 bg-white/10 hover:bg-white hover:text-[#2F2926] hover:border-white text-white transition-all duration-300 px-6 py-2.5 rounded-sm text-xs uppercase tracking-widest font-medium shadow-md gap-2 h-auto cursor-pointer pointer-events-auto"
+                >
+                  <UploadCloud className="size-3.5 text-[#E7DED5]" />
+                  <span>Contribute Memories</span>
+                </Button>
+              </div>
+            </div>
           </div>
-        )}
-        <div className="inline-flex items-center gap-1.5">
-          <Camera className="size-3.5 text-[#A67C6B]" />
-          <span>
-            {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
-          </span>
+        }
+        scrollHint={
+          <div className="inline-flex flex-col items-center gap-1 text-[11px] uppercase tracking-[0.25em] text-[#7A7069] drop-shadow-sm">
+            <span>Scroll to expand</span>
+            <ChevronDown className="size-4 animate-bounce text-[#A67C6B]" />
+          </div>
+        }
+      >
+        {/* Full-bleed expanded overlay content */}
+        <div className="flex flex-col items-center justify-center text-center max-w-2xl px-6 pointer-events-auto">
+          <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.3em] text-[#E7DED5] mb-3 drop-shadow">
+            <span className="w-8 h-px bg-[#E7DED5]/70" />
+            <span>Wedding Archive</span>
+            <span className="w-8 h-px bg-[#E7DED5]/70" />
+          </div>
+
+          <h2 className="font-serif text-5xl sm:text-7xl md:text-8xl font-normal text-white tracking-tight leading-[1.05] mb-4 drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
+            {wedding?.name ?? "Afiq & Wieam"}
+          </h2>
+
+          <p className="font-serif italic text-base sm:text-xl text-[#F8F5F0]/95 max-w-lg mx-auto mb-6 drop-shadow">
+            Every candid smile, every heartfelt celebration — preserved for a lifetime.
+          </p>
+
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              onClick={onOpenUpload}
+              className="bg-[#FFFCF8] text-[#2F2926] hover:bg-[#F8F5F0] hover:text-[#2F2926] border border-[#E7DED5] transition-all duration-200 px-7 py-3 rounded-sm text-xs uppercase tracking-widest font-medium shadow-2xl gap-2 h-auto cursor-pointer pointer-events-auto"
+            >
+              <UploadCloud className="size-4 text-[#A67C6B]" />
+              <span>Contribute Memories</span>
+            </Button>
+          </div>
         </div>
-      </div>
-
-      <div className="flex items-center justify-center max-w-xs mx-auto mb-8">
-        <Separator className="bg-[#E7DED5]" />
-      </div>
-
-      {/* Hero CTA Button */}
-      <div className="flex items-center justify-center">
-        <Button
-          onClick={onOpenUpload}
-          variant="outline"
-          className="border-[#E7DED5] bg-[#FFFCF8] text-[#2F2926] hover:bg-[#F8F5F0] hover:border-[#A67C6B] hover:text-[#2F2926] transition-colors duration-200 px-6 py-2.5 rounded-sm text-xs uppercase tracking-widest font-medium shadow-none gap-2 h-auto"
-        >
-          <UploadCloud className="size-3.5 text-[#A67C6B]" />
-          <span>Contribute Memories</span>
-        </Button>
-      </div>
-    </header>
+      </ScrollExpand>
+    </section>
   );
 };

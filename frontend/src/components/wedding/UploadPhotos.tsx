@@ -687,9 +687,19 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                       className="border-[#E7DED5] bg-[#FFFCF8] text-[#2F2926] hover:bg-[#F8F5F0] text-xs h-7 px-2.5 gap-1.5 rounded-xs"
                     >
                       <Crop className="size-3 text-[#A67C6B]" />
-                      <span>Adjust Crop</span>
                     </Button>
                   )}
+
+                                    <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isUploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs text-[#7A7069] hover:text-[#2F2926] h-7 px-2.5 rounded-xs"
+                  >
+                    Change Photo
+                  </Button>
 
                   {croppedPreviewUrl && (
                     <Button
@@ -713,20 +723,8 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                       title="Download print card with border & wishes"
                     >
                       <Download className="size-3 text-[#A67C6B]" />
-                      <span>Download</span>
                     </Button>
                   )}
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={isUploading}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-xs text-[#7A7069] hover:text-[#2F2926] h-7 px-2.5 rounded-xs"
-                  >
-                    Change Photo
-                  </Button>
                 </div>
 
                 {/* Truncated File Name & Size */}
@@ -1048,7 +1046,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
               ) : (
                 <>
                   <Crop className="size-3.5" />
-                  <span>Apply Portrait Framing</span>
+                  <span>Apply</span>
                 </>
               )}
             </Button>
@@ -1064,7 +1062,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
               ) : (
                 <>
                   <CheckCircle2 className="size-3.5" />
-                  <span>Upload Photobooth Print</span>
+                  <span>Upload</span>
                 </>
               )}
             </Button>

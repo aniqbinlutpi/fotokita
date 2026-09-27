@@ -140,20 +140,27 @@ export const Gallery: React.FC<GalleryProps> = ({
   }, [selectedMedia, mediaList, urlCache]);
 
   return (
-    <section className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pb-24">
+    <section className="relative z-20 max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pb-24 -mt-16 sm:-mt-24 md:-mt-28">
       {/* Editorial Section Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#E7DED5] pb-5 mb-8 gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#E7DED5]/80 pb-6 mb-8 gap-4">
         <div>
-          <span className="text-[11px] uppercase tracking-[0.2em] text-[#7A7069] font-sans font-medium">
-            Visual Archive
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl text-[#2F2926] font-normal mt-1">
+          <div className="inline-flex items-center gap-2.5 mb-2">
+            <span className="w-5 h-px bg-[#A67C6B]" />
+            <span className="text-[11px] uppercase tracking-[0.25em] text-[#7A7069] font-sans font-medium">
+              Visual Archive
+            </span>
+            <span className="w-5 h-px bg-[#A67C6B]/50" />
+          </div>
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#2F2926] font-normal tracking-tight leading-tight">
             The Photo Collection
           </h2>
+          <p className="font-serif italic text-sm text-[#7A7069] mt-1.5 font-normal">
+            A curated chronicle of celebration, emotion, and cherished memories
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#7A7069] font-sans tabular-nums">
+          <span className="text-xs text-[#7A7069] font-sans tabular-nums tracking-wide">
             {mediaList.length} {mediaList.length === 1 ? "moment" : "moments"}
           </span>
           <Button
@@ -161,7 +168,7 @@ export const Gallery: React.FC<GalleryProps> = ({
             size="sm"
             onClick={onRefresh}
             disabled={isLoading}
-            className="text-[#7A7069] hover:text-[#2F2926] hover:bg-[#FFFCF8] rounded-xs h-8 px-2 text-xs"
+            className="text-[#7A7069] hover:text-[#2F2926] hover:bg-[#FFFCF8] rounded-xs h-8 px-2.5 text-xs transition-colors"
             title="Refresh gallery"
           >
             <RefreshCw
