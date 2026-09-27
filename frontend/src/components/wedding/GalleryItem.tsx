@@ -16,6 +16,7 @@ import { Trash2, Maximize2, AlertCircle, Download } from "lucide-react";
 import { getMediaUrl } from "@/api/media";
 import { downloadPhotoboothCard } from "@/lib/photoboothCanvas";
 import { parseSignature } from "@/lib/signature";
+import { TrimmedSignatureImage } from "./TrimmedSignatureImage";
 import type { MediaItem } from "@/types/media";
 import type { Wedding } from "@/types/wedding";
 
@@ -296,30 +297,68 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
             </AlertDialogContent>
           </AlertDialog>
         </div>
+      </div>
 
-        {/* Signature overlay at the bottom-right corner of the photo */}
-        {parsedSignature && (
-          <div className="absolute bottom-0.5 right-1 sm:bottom-1 sm:right-2 z-10 pointer-events-none select-none max-w-[65%] flex justify-end">
-            {parsedSignature.type === "image" ? (
-              <img
+      {/* Signature below right of picture (snug to photo, right-aligned) */}
+      <div className="min-h-[14px] sm:min-h-[18px] w-full flex items-center justify-end px-0.5 mt-0.5 select-none shrink-0">
+        {parsedSignature ? (
+          parsedSignature.type === "image" ? (
+            <div className="flex items-center gap-0.5 sm:gap-1 justify-end">
+              <span
+                style={{
+                  color:
+                    parsedSignature.color &&
+                    !["#ffffff", "#fff", "#faf5ef"].includes(
+                      parsedSignature.color.toLowerCase()
+                    )
+                      ? parsedSignature.color
+                      : "#2F2926",
+                }}
+                className="font-signature text-xs sm:text-sm select-none leading-none shrink-0"
+              >
+                -
+              </span>
+              <TrimmedSignatureImage
                 src={parsedSignature.data}
                 alt="Signature"
-                className="h-3 sm:h-5 object-contain filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                className="h-2.5 sm:h-3.5 max-w-[60%] object-contain object-right block"
               />
-            ) : (
-              <p
-                style={{ color: parsedSignature.color || "#FFFFFF" }}
-                className="font-signature text-xs sm:text-lg leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
+              <span
+                style={{
+                  color:
+                    parsedSignature.color &&
+                    !["#ffffff", "#fff", "#faf5ef"].includes(
+                      parsedSignature.color.toLowerCase()
+                    )
+                      ? parsedSignature.color
+                      : "#2F2926",
+                }}
+                className="font-signature text-xs sm:text-sm select-none leading-none shrink-0"
               >
-                {parsedSignature.data}
-              </p>
-            )}
-          </div>
-        )}
+                -
+              </span>
+            </div>
+          ) : (
+            <p
+              style={{
+                color:
+                  parsedSignature.color &&
+                  !["#ffffff", "#fff", "#faf5ef"].includes(
+                    parsedSignature.color.toLowerCase()
+                  )
+                    ? parsedSignature.color
+                    : "#2F2926",
+              }}
+              className="font-signature text-xs sm:text-base leading-none truncate max-w-[65%]"
+            >
+              {parsedSignature.data}
+            </p>
+          )
+        ) : null}
       </div>
 
       {/* Photobooth Card Chin — Displaying Guest Wishes & Sender */}
-      <div className="pt-1.5 sm:pt-2.5 pb-1 h-[54px] sm:h-[84px] flex flex-col justify-center items-center text-center select-none font-sans shrink-0 overflow-hidden">
+      <div className="pt-0.5 sm:pt-1 pb-1 min-h-[36px] sm:min-h-[48px] flex flex-col justify-start items-center text-center select-none font-sans shrink-0 overflow-hidden">
         {media.wishes || media.fromName ? (
           <div className="w-full space-y-0.5 sm:space-y-1 px-1">
             {media.wishes && (

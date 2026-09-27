@@ -37,7 +37,10 @@ import { downloadPhotoboothCard } from "@/lib/photoboothCanvas";
 import {
   SIGNATURE_COLOR_PRESETS,
   DEFAULT_SIGNATURE_COLOR,
+  cropSignatureCanvas,
+  formatTypedSignature,
 } from "@/lib/signature";
+import { TrimmedSignatureImage } from "./TrimmedSignatureImage";
 import type { MediaItem } from "@/types/media";
 import type { Wedding } from "@/types/wedding";
 
@@ -52,6 +55,12 @@ const ALLOWED_TYPES = [
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 const MAX_WISHES_LENGTH = 70; // Character limit for wishes on photobooth print
+const MAX_SIGNATURE_WORDS = 7; // Max words allowed for typed signature
+
+function countWords(text: string): number {
+  const trimmed = text.trim();
+  return trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0;
+}
 
 interface UploadPhotosProps {
   weddingId: string;
@@ -107,7 +116,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
   }, [isOpen]);
 
   // Signature state
-  const [signatureMode, setSignatureMode] = useState<"draw" | "type">("draw");
+  const [signatureMode, setSignatureMode] = useState<"draw" | "type">("type");
   const [signatureColor, setSignatureColor] = useState<string>(DEFAULT_SIGNATURE_COLOR);
   const [typedSignature, setTypedSignature] = useState<string>("");
   const [drawnSignatureData, setDrawnSignatureData] = useState<string | null>(null);
@@ -153,6 +162,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
     setSecretCode("");
     setShowSecretCode(false);
     setTypedSignature("");
+    setSignatureMode("type");
     setSignatureColor(DEFAULT_SIGNATURE_COLOR);
     setDrawnSignatureData(null);
     clearSignatureCanvas();
@@ -180,9 +190,22 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
         ctx.fillStyle = newColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.globalCompositeOperation = "source-over";
-        setDrawnSignatureData(canvas.toDataURL("image/png"));
+        const trimmed = cropSignatureCanvas(canvas);
+        setDrawnSignatureData(trimmed || null);
       }
     }
+  };
+
+  const handleTypedSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const words = val.trim().split(/\s+/).filter(Boolean);
+    if (words.length > MAX_SIGNATURE_WORDS) {
+      const allowed = words.slice(0, MAX_SIGNATURE_WORDS).join(" ");
+      setTypedSignature(allowed);
+      toast.error(`Signature can only contain up to ${MAX_SIGNATURE_WORDS} words.`);
+      return;
+    }
+    setTypedSignature(val);
   };
 
   // Canvas signature pointer drawing handlers
@@ -231,7 +254,8 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
     }
     const canvas = sigCanvasRef.current;
     if (canvas) {
-      setDrawnSignatureData(canvas.toDataURL("image/png"));
+      const trimmed = cropSignatureCanvas(canvas);
+      setDrawnSignatureData(trimmed || null);
     }
   };
 
@@ -244,7 +268,10 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
     signatureMode === "draw"
       ? drawnSignatureData || undefined
       : typedSignature.trim()
-      ? JSON.stringify({ text: typedSignature.trim(), color: signatureColor })
+      ? JSON.stringify({
+          text: formatTypedSignature(typedSignature),
+          color: signatureColor,
+        })
       : undefined;
 
   const isLightColor =
@@ -621,30 +648,44 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                         <FileImage className="size-8" />
                       </div>
                     )}
+                  </div>
 
-                    {/* Signature Overlay on Photo (Bottom-Right) */}
+                  {/* Signature below right of picture (snug to photo, right-aligned) */}
+                  <div className="min-h-[16px] sm:min-h-[20px] w-full flex items-center justify-end px-0.5 mt-0.5 select-none">
                     {hasSignature && (
-                      <div className="absolute bottom-1 right-2 sm:bottom-1.5 sm:right-2.5 z-10 pointer-events-none select-none max-w-[65%] flex justify-end">
-                        {signatureMode === "draw" && drawnSignatureData ? (
-                          <img
+                      signatureMode === "draw" && drawnSignatureData ? (
+                        <div className="flex items-center gap-1 justify-end">
+                          <span
+                            style={{ color: signatureColor }}
+                            className="font-signature text-base sm:text-lg select-none leading-none shrink-0"
+                          >
+                            -
+                          </span>
+                          <TrimmedSignatureImage
                             src={drawnSignatureData}
                             alt="Signature Preview"
-                            className="h-4 sm:h-5 object-contain filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                            className="h-3 sm:h-4 max-w-[60%] object-contain"
                           />
-                        ) : typedSignature.trim() ? (
-                          <p
+                          <span
                             style={{ color: signatureColor }}
-                            className="font-signature text-base sm:text-xl leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
+                            className="font-signature text-base sm:text-lg select-none leading-none shrink-0"
                           >
-                            {typedSignature.trim()}
-                          </p>
-                        ) : null}
-                      </div>
+                            -
+                          </span>
+                        </div>
+                      ) : typedSignature.trim() ? (
+                        <p
+                          style={{ color: signatureColor }}
+                          className="font-signature text-base sm:text-lg leading-none truncate max-w-[65%]"
+                        >
+                          {formatTypedSignature(typedSignature)}
+                        </p>
+                      ) : null
                     )}
                   </div>
 
-                  {/* Card Chin with live Typography, Wishes & Signature */}
-                  <div className="pt-2.5 pb-0.5 text-center select-none font-sans">
+                  {/* Card Chin with live Typography, Wishes */}
+                  <div className="pt-1 pb-0.5 text-center select-none font-sans">
                     <p className="text-[8px] uppercase tracking-[0.25em] text-[#7A7069] font-medium leading-none">
                       The Wedding Of
                     </p>
@@ -895,11 +936,11 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                         <canvas
                           ref={sigCanvasRef}
                           width={400}
-                          height={120}
+                          height={100}
                           onPointerDown={handlePointerDown}
                           onPointerMove={handlePointerMove}
                           onPointerUp={handlePointerUp}
-                          className="w-full h-24 sm:h-28 touch-none cursor-crosshair block bg-transparent"
+                          className="w-full h-20 sm:h-24 touch-none cursor-crosshair block bg-transparent"
                         />
                         {!drawnSignatureData && (
                           <div
@@ -907,12 +948,12 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                               isLightColor ? "text-white/40" : "text-[#7A7069]/50"
                             }`}
                           >
-                            Sign here with finger or mouse
+                            Sign here (auto-aligns to bottom right)
                           </div>
                         )}
                       </div>
                       <div className="flex items-center justify-between text-xs text-[#7A7069]">
-                        <span>Use finger on phone or mouse to sign</span>
+                        <span>Sign with finger or mouse (auto-formatted with - ... -)</span>
                         {drawnSignatureData && (
                           <button
                             type="button"
@@ -927,22 +968,34 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                     </div>
                   ) : (
                     <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-[#7A7069]">
+                        <span>Type your name (max {MAX_SIGNATURE_WORDS} words)</span>
+                        <span
+                          className={`font-mono text-[11px] tabular-nums transition-colors ${
+                            countWords(typedSignature) >= MAX_SIGNATURE_WORDS
+                              ? "text-[#9E3E3E] font-semibold"
+                              : "text-[#7A7069]"
+                          }`}
+                        >
+                          {countWords(typedSignature)}/{MAX_SIGNATURE_WORDS} words
+                        </span>
+                      </div>
                       <input
                         type="text"
                         value={typedSignature}
-                        onChange={(e) => setTypedSignature(e.target.value)}
-                        placeholder="Type your name to generate signature"
+                        onChange={handleTypedSignatureChange}
+                        placeholder="e.g. idris or your name"
                         disabled={isUploading}
                         className="w-full bg-[#F8F5F0]/60 border border-[#E7DED5] rounded-[2px] px-3 py-2 text-sm text-[#2F2926] placeholder:text-[#7A7069]/60 focus:outline-none focus:border-[#A67C6B] focus:bg-[#FFFCF8] transition-colors"
                       />
-                      {typedSignature && (
+                      {typedSignature.trim() && (
                         <div
                           style={{ color: signatureColor }}
                           className={`py-3.5 px-3 border border-[#E7DED5] rounded-[2px] text-center font-signature text-3xl sm:text-4xl shadow-xs select-none tracking-wide transition-colors ${
                             isLightColor ? "bg-[#2F2926]" : "bg-[#FFFCF8]"
                           }`}
                         >
-                          {typedSignature}
+                          {formatTypedSignature(typedSignature)}
                         </div>
                       )}
                     </div>

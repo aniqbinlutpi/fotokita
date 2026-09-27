@@ -1,5 +1,5 @@
 import type { Wedding } from "@/types/wedding";
-import { parseSignature } from "./signature";
+import { parseSignature, trimImageBoundingBox } from "./signature";
 
 export interface PhotoboothRenderOptions {
   width?: number; // Target total card width in px (default: 1600px for high-res print)
@@ -101,15 +101,19 @@ export async function createPhotoboothComposite(
   const dateStr =
     options?.weddingDate || formatPhotoboothDate(wedding?.date);
 
+  // Fixed signature bar height below photo (snug to photo, aligned to right)
+  const sigSlotHeight = Math.round(cardWidth * 0.038);
+  const sigSlotY = chinStartY + Math.round(cardWidth * 0.002);
+
   // Calculate typography layout positions to determine exact card height
-  const titleSpacing = Math.round(cardWidth * 0.058);
-  const eyebrowY = chinStartY + Math.round(cardWidth * 0.048);
+  const titleSpacing = Math.round(cardWidth * 0.052);
+  const eyebrowY = sigSlotY + sigSlotHeight + Math.round(cardWidth * 0.024);
   const nameY = eyebrowY + titleSpacing;
   let currentY = nameY;
 
   let dateY: number | null = null;
   if (dateStr) {
-    currentY = nameY + titleSpacing;
+    currentY = nameY + Math.round(cardWidth * 0.046);
     dateY = currentY;
   }
 
@@ -119,16 +123,16 @@ export async function createPhotoboothComposite(
 
   const hasExtraChin = Boolean(options?.wishes || options?.from);
   if (hasExtraChin) {
-    currentY += Math.round(cardWidth * 0.032);
+    currentY += Math.round(cardWidth * 0.024);
     dividerY = currentY;
 
     if (options?.wishes) {
-      currentY += Math.round(cardWidth * 0.036);
+      currentY += Math.round(cardWidth * 0.030);
       wishesY = currentY;
     }
 
     if (options?.from) {
-      currentY += Math.round(cardWidth * 0.032);
+      currentY += Math.round(cardWidth * 0.026);
       fromY = currentY;
     }
   }
@@ -189,50 +193,69 @@ export async function createPhotoboothComposite(
     photoSize
   );
 
-  // Draw Signature ON TOP of the photo (bottom-right corner)
-  if (options?.signature) {
-    const parsed = parseSignature(options.signature);
-    if (parsed) {
-      const padX = Math.round(photoSize * 0.025);
-      const padY = Math.round(photoSize * 0.015);
-      const sigRight = photoX + photoSize - padX;
-      const sigBottom = photoY + photoSize - padY;
-
-      if (parsed.type === "image") {
-        try {
-          const sigImg = await loadImage(parsed.data);
-          const sigHeight = Math.round(cardWidth * 0.045);
-          const sigWidth = (sigImg.naturalWidth / sigImg.naturalHeight) * sigHeight;
-          const sigX = sigRight - sigWidth;
-          const sigY = sigBottom - sigHeight;
-          ctx.drawImage(sigImg, sigX, sigY, sigWidth, sigHeight);
-        } catch {
-          // fallback if signature image fails to draw
-        }
-      } else {
-        ctx.textAlign = "right";
-        ctx.textBaseline = "bottom";
-        ctx.fillStyle = parsed.color || "#FFFFFF";
-        ctx.font = `normal ${Math.round(cardWidth * 0.045)}px "Alex Brush", "Great Vibes", "Brush Script MT", cursive`;
-        ctx.letterSpacing = "0px";
-        ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 1;
-        ctx.fillText(parsed.data, sigRight, sigBottom);
-        ctx.shadowColor = "transparent";
-        ctx.shadowBlur = 0;
-        ctx.textAlign = "center";
-      }
-    }
-  }
-
   // Inner photo border (#E7DED5 / thin frame)
   ctx.strokeStyle = "rgba(231, 222, 213, 0.9)";
   ctx.lineWidth = Math.max(1, Math.round(cardWidth * 0.0015));
   ctx.strokeRect(photoX, photoY, photoSize, photoSize);
 
-  // 4. Draw Photobooth Bottom Chin Typography
+  // 4. Draw Signature BELOW the photo (snug to bottom, right aligned)
+  if (options?.signature) {
+    const parsed = parseSignature(options.signature);
+    if (parsed) {
+      const sigRight = photoX + photoSize;
+
+      if (parsed.type === "image") {
+        try {
+          const sigImg = await loadImage(parsed.data);
+          const trimmed = trimImageBoundingBox(sigImg);
+          const source = trimmed ? trimmed.canvas : sigImg;
+          const imgW = trimmed ? trimmed.width : (sigImg.naturalWidth || sigImg.width);
+          const imgH = trimmed ? trimmed.height : (sigImg.naturalHeight || sigImg.height);
+          const sigHeight = sigSlotHeight;
+          const sigWidth = (imgW / imgH) * sigHeight;
+
+          const color =
+            parsed.color &&
+            !["#ffffff", "#fff", "#faf5ef"].includes(parsed.color.toLowerCase())
+              ? parsed.color
+              : "#2F2926";
+
+          // Draw signature with dashes: "- [sig] -"
+          ctx.fillStyle = color;
+          ctx.font = `normal ${Math.round(cardWidth * 0.036)}px "Alex Brush", "Great Vibes", "Brush Script MT", cursive`;
+          ctx.textBaseline = "middle";
+          const dashWidth = ctx.measureText("-").width;
+          const dashGap = Math.round(cardWidth * 0.005);
+          const totalWidth = dashWidth + dashGap + sigWidth + dashGap + dashWidth;
+          const startX = sigRight - totalWidth;
+          const centerY = sigSlotY + sigHeight / 2;
+
+          ctx.textAlign = "left";
+          ctx.fillText("-", startX, centerY);
+          ctx.drawImage(source, startX + dashWidth + dashGap, sigSlotY, sigWidth, sigHeight);
+          ctx.fillText("-", startX + dashWidth + dashGap + sigWidth + dashGap, centerY);
+          ctx.textAlign = "center";
+        } catch {
+          // fallback if signature image fails to draw
+        }
+      } else {
+        ctx.textAlign = "right";
+        ctx.textBaseline = "top";
+        const color =
+          parsed.color &&
+          !["#ffffff", "#fff", "#faf5ef"].includes(parsed.color.toLowerCase())
+            ? parsed.color
+            : "#2F2926";
+        ctx.fillStyle = color;
+        ctx.font = `normal ${Math.round(cardWidth * 0.036)}px "Alex Brush", "Great Vibes", "Brush Script MT", cursive`;
+        ctx.letterSpacing = "0px";
+        ctx.fillText(parsed.data, sigRight, sigSlotY);
+        ctx.textAlign = "center";
+      }
+    }
+  }
+
+  // 5. Draw Photobooth Bottom Chin Typography
   // Try to ensure custom fonts are loaded
   try {
     await document.fonts.ready;

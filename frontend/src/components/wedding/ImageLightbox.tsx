@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { downloadPhotoboothCard } from "@/lib/photoboothCanvas";
 import { parseSignature } from "@/lib/signature";
+import { TrimmedSignatureImage } from "./TrimmedSignatureImage";
 import { getMediaUrl } from "@/api/media";
 import type { MediaItem } from "@/types/media";
 import type { Wedding } from "@/types/wedding";
@@ -179,7 +180,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={true}
-        className="max-w-md sm:max-w-lg w-[92vw] p-4 sm:p-6 bg-[#FFFCF8] border border-[#E7DED5] rounded-[3px] shadow-2xl flex flex-col font-sans select-none overflow-hidden"
+        className="max-w-md sm:max-w-lg w-[92vw] p-4 sm:p-6 bg-[#FFFCF8] border border-[#E7DED5] rounded-[3px] shadow-2xl flex flex-col gap-0 font-sans select-none overflow-hidden"
       >
         <DialogTitle className="sr-only">
           {coupleName} — Photobooth Print
@@ -341,38 +342,50 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
               <ChevronRight className="size-4" />
             </Button>
           )}
+        </div>
 
-          {/* Signature overlay on photo at bottom-right */}
+        {/* Signature below right of picture (snug to photo, right-aligned) */}
+        <div className="w-full flex items-center justify-end px-0.5 mt-0.5 select-none min-h-[16px] sm:min-h-[20px]">
           {item && (() => {
             const parsedSignature = parseSignature(item.signature);
             if (!parsedSignature) return null;
-            return (
-              <div className="absolute bottom-1.5 right-2 sm:bottom-2 sm:right-3 z-10 pointer-events-none select-none max-w-[65%] flex justify-end">
-                {parsedSignature.type === "image" ? (
-                  <img
-                    src={parsedSignature.data}
-                    alt="Signature"
-                    className="h-5 sm:h-7 object-contain filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
-                  />
-                ) : (
-                  <p
-                    style={{ color: parsedSignature.color || "#FFFFFF" }}
-                    className="font-signature text-2xl sm:text-3xl leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]"
-                  >
-                    {parsedSignature.data}
-                  </p>
-                )}
+            return parsedSignature.type === "image" ? (
+              <div className="flex items-center gap-1 sm:gap-1.5 justify-end">
+                <span
+                  style={{ color: parsedSignature.color || "#2F2926" }}
+                  className="font-signature text-base sm:text-xl select-none leading-none shrink-0"
+                >
+                  -
+                </span>
+                <TrimmedSignatureImage
+                  src={parsedSignature.data}
+                  alt="Signature"
+                  className="h-3.5 sm:h-5 max-w-[60%] object-contain object-right block"
+                />
+                <span
+                  style={{ color: parsedSignature.color || "#2F2926" }}
+                  className="font-signature text-base sm:text-xl select-none leading-none shrink-0"
+                >
+                  -
+                </span>
               </div>
+            ) : (
+              <p
+                style={{ color: parsedSignature.color || "#2F2926" }}
+                className="font-signature text-xl sm:text-2xl leading-none truncate max-w-[65%]"
+              >
+                {parsedSignature.data}
+              </p>
             );
           })()}
         </div>
 
         {/* Photobooth Bottom Chin Typography (Matching Zoom Out) */}
-        <div className="pt-4 sm:pt-5 pb-1 text-center select-none font-sans">
+        <div className="pt-1.5 sm:pt-2 pb-1 text-center select-none font-sans">
           <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#7A7069] font-medium leading-none">
             The Wedding Of
           </p>
-          <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#2F2926] uppercase tracking-wider leading-none my-4 sm:my-5">
+          <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#2F2926] uppercase tracking-wider leading-none my-1.5 sm:my-2">
             {coupleName}
           </h3>
           {formattedWeddingDate && (
@@ -383,7 +396,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
 
           {/* Wishes & Sender if present */}
           {(item.wishes || item.fromName) && (
-            <div className="pt-3 mt-4 sm:mt-5 border-t border-[#E7DED5]/80 space-y-1.5">
+            <div className="pt-2 sm:pt-2.5 mt-2.5 sm:mt-3 border-t border-[#E7DED5]/80 space-y-1">
               {item.wishes && (
                 <p className="font-serif italic text-sm text-[#433B37] leading-relaxed line-clamp-3 px-2">
                   "{item.wishes}"
