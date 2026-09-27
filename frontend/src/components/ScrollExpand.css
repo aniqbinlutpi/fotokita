@@ -27,6 +27,13 @@
   height: 100vh;
   overflow: hidden;
   --se-title-size: 4rem;
+  --se-circle-d: min(52vw, 52vh);
+}
+
+@media (max-width: 767px) {
+  .scroll-expand__stage {
+    --se-circle-d: min(82vw, 82vh);
+  }
 }
 
 .scroll-expand__background {
@@ -39,12 +46,22 @@
   will-change: opacity;
 }
 
+.scroll-expand__behind-orb {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+  will-change: opacity, transform;
+}
+
 .scroll-expand__frame {
   position: absolute;
   inset: 0;
   will-change: clip-path;
-  background-color: #2F2926;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  background-color: transparent;
   z-index: 2;
 }
 
@@ -54,10 +71,48 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  will-change: transform;
+  will-change: transform, opacity;
   transform-origin: center;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.scroll-expand__orb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+  will-change: opacity, transform;
+}
+
+.scroll-expand__orb-inner {
+  position: relative;
+  width: var(--se-circle-d, min(52vw, 52vh));
+  height: var(--se-circle-d, min(52vw, 52vh));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.scroll-expand__orb-inner canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain;
+}
+
+@media (max-width: 767px) {
+  .scroll-expand__orb-inner {
+    width: var(--se-circle-d, min(82vw, 82vh));
+    height: var(--se-circle-d, min(82vw, 82vh));
+  }
 }
 
 .scroll-expand__scrim {

@@ -1,11 +1,19 @@
 import React, { useState, useEffect, useMemo } from "react";
 import ScrollExpand from "@/components/ScrollExpand";
+import { Shdr12 } from "@/components/ui/shdr-12";
 import { FireworksBackground } from "@/components/animate-ui/components/backgrounds/fireworks";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { UploadCloud, Calendar, Camera, ChevronDown } from "lucide-react";
+import { UploadCloud, ChevronDown } from "lucide-react";
 import type { Wedding } from "@/types/wedding";
 import imgExpand from "@/assets/images/img-expand.png";
+
+const monochromeBrickColors = {
+  brickA: "#18181B", // Deep Obsidian Black
+  brickB: "#71717A", // Neutral Mid Grey
+  brickC: "#3F3F46", // Dark Graphite Grey
+  brickD: "#A1A1AA", // Light Silver Grey
+  brickE: "#F4F4F5", // Crisp White
+};
 
 interface WeddingHeroProps {
   wedding: Wedding | null;
@@ -34,17 +42,30 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const [firstName, secondName] = useMemo(() => {
+    if (!wedding?.name) return ["Afiq", "Wieam"];
+    if (wedding.name.includes("&")) {
+      const parts = wedding.name.split("&").map((s) => s.trim());
+      return [parts[0] || "Afiq", parts[1] || "Wieam"];
+    }
+    if (wedding.name.includes("and")) {
+      const parts = wedding.name.split("and").map((s) => s.trim());
+      return [parts[0] || "Afiq", parts[1] || "Wieam"];
+    }
+    return [wedding.name, "Wieam"];
+  }, [wedding]);
+
   const formattedDate = useMemo(() => {
-    if (!wedding?.date) return "";
+    if (!wedding?.date) return "20 December 2026";
     try {
       const d = new Date(wedding.date);
       return d.toLocaleDateString("en-US", {
-        month: "long",
         day: "numeric",
+        month: "long",
         year: "numeric",
       });
     } catch {
-      return "";
+      return "20 December 2026";
     }
   }, [wedding]);
 
@@ -54,15 +75,95 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         src={imgExpand}
         alt={wedding?.name ? `${wedding.name} Wedding Archive` : "Wedding Archive"}
         useWindowScroll={true}
-        startWidth={isMobile ? 86 : 36}
-        startHeight={isMobile ? 44 : 50}
-        startRadius={20}
+        shape="circle"
+        circleSize={isMobile ? 0.20 : 0.16}
+        orbSize={isMobile ? 68 : 130}
+        orbOffset={isMobile ? { x: 54, y: -50 } : { x: 112, y: -98 }}
+        startRadius={9999}
         endRadius={0}
         mediaZoom={1.28}
         scrollDistance={1.1}
         holdDistance={0.35}
         smoothing={0.08}
         overlayScrim={0.45}
+        orb={
+          <Shdr12
+            size="100%"
+            className="size-full"
+            state="idle"
+            params={{
+              spin: 0.32,
+              tilt: 0.45,
+              studs: 24,
+              gloss: 2.0,
+              gap: 0.02,
+              patch: 0.4,
+              gain: 1.05,
+              radius: 0.94,
+              contrast: 1.05,
+            }}
+            colors={monochromeBrickColors}
+            stateColors={{
+              idle: monochromeBrickColors,
+              thinking: monochromeBrickColors,
+              speaking: monochromeBrickColors,
+            }}
+            statePresets={{
+              idle: { spin: 0.3, gloss: 2.0, gap: 0.02 },
+              thinking: { spin: 0.1, gloss: 1.5, gap: 0.15 },
+              speaking: { spin: 0.5, gloss: 2.4, gap: 0 },
+            }}
+            wrapper="none"
+            paused={false}
+            pauseOffscreen
+            maxDpr={1.5}
+            ariaLabel="Monochrome 3D Brick Orb"
+          />
+        }
+        behindOrb={
+          <div className="flex items-center justify-center pointer-events-none select-none">
+            <span className="font-serif not-italic font-normal text-[#2F2926] leading-none text-[280px] sm:text-[380px] md:text-[480px] lg:text-[560px] translate-y-[-2%] select-none">
+              &
+            </span>
+          </div>
+        }
+        title={
+          <div className="w-full h-full flex flex-col justify-between items-center py-12 sm:py-16 md:py-20 px-4 sm:px-8 md:px-16 pointer-events-none select-none max-w-7xl mx-auto">
+            {/* Top Eyebrow: - WEDDING ARCHIVE - */}
+            <div className="flex items-center justify-center text-xs sm:text-sm md:text-base uppercase tracking-[0.35em] text-[#2F2926]/85 font-sans font-medium pt-12 sm:pt-0">
+              <span className="translate-y-[140px] sm:translate-y-0">- WEDDING ARCHIVE -</span>
+            </div>
+
+            {/* Middle Row: Afiq on Left, Orb in Center, Wieam on Right */}
+            <div className="w-full flex items-center justify-between my-auto">
+              {/* Left Column: Afiq + Date */}
+              <div className="flex-1 flex flex-col items-center sm:items-end text-center sm:text-right pr-8 sm:pr-16 md:pr-28 lg:pr-36">
+                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] tracking-tight leading-none drop-shadow-sm">
+                  {firstName}
+                </h1>
+                <p className="font-sans text-[11px] sm:text-xs md:text-sm text-[#2F2926]/75 tracking-wider mt-2 sm:mt-3">
+                  {formattedDate}
+                </p>
+              </div>
+
+              {/* Center Spacer accommodating the 3D Orb */}
+              <div className="shrink-0 w-[75px] sm:w-[125px] md:w-[145px] lg:w-[165px] pointer-events-none" />
+
+              {/* Right Column: Wieam + Photo Count */}
+              <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left pl-10 sm:pl-16 md:pl-24 lg:pl-32">
+                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] tracking-tight leading-none drop-shadow-sm">
+                  {secondName}
+                </h1>
+                <p className="font-sans text-[11px] sm:text-xs md:text-sm text-[#2F2926]/75 tracking-wider mt-2 sm:mt-3">
+                  {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom spacer for vertical balance */}
+            <div className="h-6 sm:h-8" />
+          </div>
+        }
         background={
           <FireworksBackground
             className="absolute inset-0 size-full pointer-events-auto"
@@ -79,56 +180,6 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             particleSpeed={{ min: 1.5, max: 5 }}
             particleSize={{ min: 1.2, max: 3.5 }}
           />
-        }
-        title={
-          <div className="flex flex-col items-center justify-center text-center w-full max-w-xl mx-auto px-2 sm:px-4 pointer-events-auto">
-            {/* Frosted Editorial Card for maximum legibility */}
-            <div className="bg-[#2F2926]/35 backdrop-blur-md rounded-lg p-4 sm:p-6 border border-white/20 shadow-2xl text-white w-[88%] sm:w-auto max-w-[390px] mx-auto">
-              {/* Editorial eyebrow */}
-              <div className="flex items-center justify-center gap-3 text-[11px] sm:text-xs uppercase tracking-[0.25em] text-white/90 mb-2 sm:mb-2.5">
-                <span className="w-6 h-px bg-white/60" />
-                <span>Wedding Archive</span>
-                <span className="w-6 h-px bg-white/60" />
-              </div>
-
-              {/* Couple Name / Title in Cormorant Garamond */}
-              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-white tracking-tight leading-[1.1] mb-2.5 drop-shadow-md">
-                {wedding?.name ?? "Afiq & Wieam"}
-              </h1>
-
-              {/* Date & Meta Details */}
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-white/90 mb-4 sm:mb-5 font-sans">
-                {formattedDate && (
-                  <div className="inline-flex items-center gap-1.5">
-                    <Calendar className="size-3.5 text-[#E7DED5]" />
-                    <span>{formattedDate}</span>
-                  </div>
-                )}
-                <div className="inline-flex items-center gap-1.5">
-                  <Camera className="size-3.5 text-[#E7DED5]" />
-                  <span>
-                    {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center max-w-[200px] mx-auto mb-4 sm:mb-5">
-                <Separator className="bg-white/30" />
-              </div>
-
-              {/* Hero CTA Button */}
-              <div className="flex items-center justify-center">
-                <Button
-                  onClick={onOpenUpload}
-                  variant="outline"
-                  className="border-white/50 bg-white/10 hover:bg-white hover:text-[#2F2926] hover:border-white text-white transition-all duration-300 px-5 py-2 rounded-sm text-[11px] sm:text-xs uppercase tracking-widest font-medium shadow-md gap-2 h-auto cursor-pointer pointer-events-auto"
-                >
-                  <UploadCloud className="size-3.5 text-[#E7DED5]" />
-                  <span>Contribute Memories</span>
-                </Button>
-              </div>
-            </div>
-          </div>
         }
         scrollHint={
           <div className="inline-flex flex-col items-center gap-1 text-[11px] uppercase tracking-[0.25em] text-[#7A7069] drop-shadow-sm">

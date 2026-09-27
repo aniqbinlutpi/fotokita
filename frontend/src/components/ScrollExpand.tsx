@@ -14,8 +14,15 @@ export interface ScrollExpandProps extends React.HTMLAttributes<HTMLDivElement> 
   poster?: string;
   alt?: string;
   title?: React.ReactNode;
+  behindOrb?: React.ReactNode;
   scrollHint?: React.ReactNode;
   background?: React.ReactNode;
+  orb?: React.ReactNode;
+  orbSize?: number | string;
+  orbOffset?: { x?: number; y?: number };
+  orbBlendMode?: 'normal' | 'screen' | 'overlay';
+  shape?: 'rect' | 'circle';
+  circleSize?: number;
   startWidth?: number;
   startHeight?: number;
   startRadius?: number;
@@ -38,8 +45,15 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
   poster = '',
   alt = '',
   title = '',
+  behindOrb,
   scrollHint = '',
   background,
+  orb,
+  orbSize,
+  orbOffset,
+  orbBlendMode = 'normal',
+  shape = 'rect',
+  circleSize,
   startWidth = 42,
   startHeight = 58,
   startRadius = 24,
@@ -61,6 +75,8 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
   const stageRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLImageElement | HTMLVideoElement>(null);
+  const orbRef = useRef<HTMLDivElement>(null);
+  const behindOrbRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const scrimRef = useRef<HTMLDivElement>(null);
@@ -69,6 +85,10 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
   const backgroundRef = useRef<HTMLDivElement>(null);
 
   const propsRef = useRef({
+    shape,
+    circleSize,
+    orbSize,
+    orbOffset,
     startWidth,
     startHeight,
     startRadius,
@@ -80,6 +100,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     overlayScrim,
     useWindowScroll,
     enabled,
+    hasOrb: Boolean(orb),
   });
 
   const currentProgressRef = useRef(0);
@@ -93,22 +114,88 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
 
     const e = smoothstep(0, 1, p);
 
-    const w = c.startWidth + (100 - c.startWidth) * e;
-    const h = c.startHeight + (100 - c.startHeight) * e;
-    const ix = Math.max(0, (100 - w) / 2);
-    const iy = Math.max(0, (100 - h) / 2);
-    const r = c.startRadius + (c.endRadius - c.startRadius) * e;
-    frame.style.clipPath = `inset(${iy}% ${ix}% ${iy}% ${ix}% round ${r}px)`;
+    if (c.shape === 'circle') {
+      const stageW = rootRef.current?.clientWidth || window.innerWidth;
+      const stageH = c.useWindowScroll
+        ? window.innerHeight
+        : (rootRef.current?.clientHeight || window.innerHeight);
+      const isMobile = stageW < 768;
+
+      let D: number;
+      if (c.orbSize !== undefined) {
+        D = typeof c.orbSize === 'number' ? c.orbSize : parseFloat(c.orbSize);
+      } else {
+        const fraction = c.circleSize ?? (isMobile ? 0.82 : 0.52);
+        D = Math.min(stageW, stageH) * fraction;
+      }
+
+      const ox = c.orbOffset?.x ?? 0;
+      const oy = c.orbOffset?.y ?? 0;
+
+      const r0 = D / 2;
+      const originX = stageW / 2 + ox;
+      const originY = stageH / 2 + oy;
+
+      const d1 = Math.hypot(originX, originY);
+      const d2 = Math.hypot(stageW - originX, originY);
+      const d3 = Math.hypot(originX, stageH - originY);
+      const d4 = Math.hypot(stageW - originX, stageH - originY);
+      const rMax = Math.max(d1, d2, d3, d4);
+
+      const currentR = r0 + (rMax - r0) * e;
+      const curX = originX + (stageW / 2 - originX) * e;
+      const curY = originY + (stageH / 2 - originY) * e;
+
+      if (e >= 1) {
+        frame.style.clipPath = 'none';
+      } else {
+        frame.style.clipPath = `circle(${currentR.toFixed(1)}px at ${curX.toFixed(1)}px ${curY.toFixed(1)}px)`;
+      }
+    } else {
+      const w = c.startWidth + (100 - c.startWidth) * e;
+      const h = c.startHeight + (100 - c.startHeight) * e;
+      const ix = Math.max(0, (100 - w) / 2);
+      const iy = Math.max(0, (100 - h) / 2);
+      const r = c.startRadius + (c.endRadius - c.startRadius) * e;
+      frame.style.clipPath = `inset(${iy}% ${ix}% ${iy}% ${ix}% round ${r}px)`;
+    }
 
     media.style.transform = `scale(${c.mediaZoom + (1 - c.mediaZoom) * e})`;
 
+    if (c.hasOrb) {
+      // Photo fades in smoothly upon scroll
+      const mediaIn = smoothstep(0.04, 0.40, p);
+      media.style.opacity = `${mediaIn}`;
+
+      if (orbRef.current) {
+        const ox = c.orbOffset?.x ?? 0;
+        const oy = c.orbOffset?.y ?? 0;
+        // Orb expands big (1.0 -> 3.5) and dissolves into photo
+        const orbOut = smoothstep(0.04, 0.42, p);
+        const orbScale = 1 + 2.5 * smoothstep(0, 0.50, p);
+        orbRef.current.style.opacity = `${1 - orbOut}`;
+        orbRef.current.style.transform = `translate3d(${ox}px, ${oy}px, 0) scale(${orbScale})`;
+        orbRef.current.style.display = p >= 0.55 ? 'none' : 'flex';
+        orbRef.current.style.pointerEvents = orbOut > 0.5 ? 'none' : 'auto';
+      }
+    } else {
+      media.style.opacity = '1';
+    }
+
     if (scrimRef.current) scrimRef.current.style.opacity = `${c.overlayScrim * e}`;
 
+    if (behindOrbRef.current) {
+      const out = smoothstep(0.12, 0.65, p);
+      behindOrbRef.current.style.opacity = `${1 - out}`;
+      behindOrbRef.current.style.transform = `translate3d(0, ${-24 * out}px, 0) scale(${1 + 0.05 * out})`;
+      behindOrbRef.current.style.pointerEvents = 'none';
+    }
+
     if (titleRef.current) {
-      const out = smoothstep(0.4, 0.88, p);
+      const out = smoothstep(0.12, 0.65, p);
       titleRef.current.style.opacity = `${1 - out}`;
-      titleRef.current.style.transform = `translate3d(0, ${-28 * out}px, 0) scale(${1 + 0.06 * out})`;
-      titleRef.current.style.pointerEvents = out > 0.6 ? 'none' : 'auto';
+      titleRef.current.style.transform = `translate3d(0, ${-24 * out}px, 0) scale(${1 + 0.06 * out})`;
+      titleRef.current.style.pointerEvents = out > 0.4 ? 'none' : 'auto';
     }
 
     if (hintRef.current) {
@@ -138,6 +225,10 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
 
   useEffect(() => {
     propsRef.current = {
+      shape,
+      circleSize,
+      orbSize,
+      orbOffset,
       startWidth,
       startHeight,
       startRadius,
@@ -149,9 +240,14 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       overlayScrim,
       useWindowScroll,
       enabled,
+      hasOrb: Boolean(orb),
     };
     applyProgress(currentProgressRef.current);
   }, [
+    shape,
+    circleSize,
+    orbSize,
+    orbOffset,
     startWidth,
     startHeight,
     startRadius,
@@ -163,6 +259,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     overlayScrim,
     useWindowScroll,
     enabled,
+    orb,
     applyProgress,
   ]);
 
@@ -187,8 +284,13 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       stage.style.height = `${stageH}px`;
       track.style.height = `${stageH * (1 + Math.max(0, c.scrollDistance) + Math.max(0, c.holdDistance))}px`;
 
-      const w = root.clientWidth || stageH;
+      const w = root.clientWidth || window.innerWidth;
       stage.style.setProperty('--se-title-size', `${clamp(w * 0.075, 20, 84)}px`);
+
+      const isMobile = w < 768;
+      const fraction = c.circleSize ?? (isMobile ? 0.82 : 0.52);
+      const D = Math.min(w, stageH) * fraction;
+      stage.style.setProperty('--se-circle-d', `${Math.round(D)}px`);
     };
 
     const readProgress = () => {
@@ -267,6 +369,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
         muted
         loop
         playsInline
+        style={orb ? { opacity: 0 } : undefined}
       />
     ) : (
       <img
@@ -275,11 +378,33 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
         src={src}
         alt={alt}
         draggable={false}
+        style={orb ? { opacity: 0 } : undefined}
       />
     );
 
-  const initialIx = Math.max(0, (100 - startWidth) / 2);
-  const initialIy = Math.max(0, (100 - startHeight) / 2);
+  let initialClipPath = `inset(${Math.max(0, (100 - startHeight) / 2)}% ${Math.max(0, (100 - startWidth) / 2)}% ${Math.max(0, (100 - startHeight) / 2)}% ${Math.max(0, (100 - startWidth) / 2)}% round ${startRadius}px)`;
+
+  if (shape === 'circle') {
+    let D = 200;
+    if (orbSize !== undefined) {
+      D = typeof orbSize === 'number' ? orbSize : parseFloat(orbSize);
+    } else if (typeof window !== 'undefined') {
+      const stageW = window.innerWidth;
+      const stageH = window.innerHeight;
+      const isMobile = stageW < 768;
+      const fraction = circleSize ?? (isMobile ? 0.82 : 0.52);
+      D = Math.min(stageW, stageH) * fraction;
+    }
+    const ox = orbOffset?.x ?? 0;
+    const oy = orbOffset?.y ?? 0;
+    if (typeof window !== 'undefined') {
+      const stageW = window.innerWidth;
+      const stageH = window.innerHeight;
+      initialClipPath = `circle(${(D / 2).toFixed(1)}px at ${(stageW / 2 + ox).toFixed(1)}px ${(stageH / 2 + oy).toFixed(1)}px)`;
+    } else {
+      initialClipPath = `circle(${(D / 2).toFixed(1)}px at calc(50% + ${ox}px) calc(50% + ${oy}px))`;
+    }
+  }
 
   return (
     <div
@@ -295,11 +420,16 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
               {background}
             </div>
           ) : null}
+          {behindOrb ? (
+            <div ref={behindOrbRef} className="scroll-expand__behind-orb">
+              {behindOrb}
+            </div>
+          ) : null}
           <div
             ref={frameRef}
             className="scroll-expand__frame"
             style={{
-              clipPath: `inset(${initialIy}% ${initialIx}% ${initialIy}% ${initialIx}% round ${startRadius}px)`,
+              clipPath: initialClipPath,
             }}
           >
             {media}
@@ -310,6 +440,30 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
               </div>
             ) : null}
           </div>
+          {orb ? (
+            <div
+              ref={orbRef}
+              className="scroll-expand__orb"
+              style={{
+                mixBlendMode: orbBlendMode,
+                transform: `translate3d(${orbOffset?.x ?? 0}px, ${orbOffset?.y ?? 0}px, 0)`,
+              }}
+            >
+              <div
+                className="scroll-expand__orb-inner"
+                style={
+                  orbSize !== undefined
+                    ? {
+                        width: typeof orbSize === 'number' ? `${orbSize}px` : orbSize,
+                        height: typeof orbSize === 'number' ? `${orbSize}px` : orbSize,
+                      }
+                    : undefined
+                }
+              >
+                {orb}
+              </div>
+            </div>
+          ) : null}
           {title ? (
             <div ref={titleRef} className="scroll-expand__title">
               {title}
