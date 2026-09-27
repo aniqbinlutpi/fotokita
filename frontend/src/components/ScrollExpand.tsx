@@ -15,6 +15,7 @@ export interface ScrollExpandProps extends React.HTMLAttributes<HTMLDivElement> 
   alt?: string;
   title?: React.ReactNode;
   scrollHint?: React.ReactNode;
+  background?: React.ReactNode;
   startWidth?: number;
   startHeight?: number;
   startRadius?: number;
@@ -38,6 +39,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
   alt = '',
   title = '',
   scrollHint = '',
+  background,
   startWidth = 42,
   startHeight = 58,
   startRadius = 24,
@@ -64,6 +66,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
   const scrimRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
   const blendRef = useRef<HTMLDivElement>(null);
+  const backgroundRef = useRef<HTMLDivElement>(null);
 
   const propsRef = useRef({
     startWidth,
@@ -124,6 +127,12 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     if (blendRef.current) {
       const blendProgress = smoothstep(0.12, 0.82, p);
       blendRef.current.style.opacity = `${blendProgress}`;
+    }
+
+    if (backgroundRef.current) {
+      const bgOut = smoothstep(0, 0.45, p);
+      backgroundRef.current.style.opacity = `${1 - bgOut}`;
+      backgroundRef.current.style.pointerEvents = bgOut > 0.5 ? 'none' : 'auto';
     }
   }, []);
 
@@ -281,6 +290,11 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     >
       <div ref={trackRef} className="scroll-expand__track">
         <div ref={stageRef} className="scroll-expand__stage">
+          {background ? (
+            <div ref={backgroundRef} className="scroll-expand__background">
+              {background}
+            </div>
+          ) : null}
           <div
             ref={frameRef}
             className="scroll-expand__frame"

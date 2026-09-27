@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import ScrollExpand from "@/components/ScrollExpand";
+import { FireworksBackground } from "@/components/animate-ui/components/backgrounds/fireworks";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { UploadCloud, Calendar, Camera, ChevronDown } from "lucide-react";
@@ -62,6 +63,23 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         holdDistance={0.35}
         smoothing={0.08}
         overlayScrim={0.45}
+        background={
+          <FireworksBackground
+            className="absolute inset-0 size-full pointer-events-auto"
+            population={1.2}
+            color={[
+              "#D4AF37",
+              "#C5A880",
+              "#A67C6B",
+              "#E5A988",
+              "#8C624D",
+              "#DFBA89",
+            ]}
+            fireworkSpeed={{ min: 3.5, max: 6.5 }}
+            particleSpeed={{ min: 1.5, max: 5 }}
+            particleSize={{ min: 1.2, max: 3.5 }}
+          />
+        }
         title={
           <div className="flex flex-col items-center justify-center text-center w-full max-w-xl mx-auto px-2 sm:px-4 pointer-events-auto">
             {/* Frosted Editorial Card for maximum legibility */}
