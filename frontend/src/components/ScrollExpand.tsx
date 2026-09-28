@@ -163,19 +163,20 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     media.style.transform = `scale(${c.mediaZoom + (1 - c.mediaZoom) * e})`;
 
     if (c.hasOrb) {
-      // Photo fades in smoothly upon scroll
-      const mediaIn = smoothstep(0.04, 0.40, p);
+      // Photo stays hidden until the orb has expanded big first
+      const mediaIn = smoothstep(0.16, 0.44, p);
       media.style.opacity = `${mediaIn}`;
 
       if (orbRef.current) {
         const ox = c.orbOffset?.x ?? 0;
         const oy = c.orbOffset?.y ?? 0;
-        // Orb expands big (1.0 -> 3.5) and dissolves into photo
-        const orbOut = smoothstep(0.04, 0.42, p);
-        const orbScale = 1 + 2.5 * smoothstep(0, 0.50, p);
+        // Orb expands big (1.0 -> 6.5) first before fading out
+        const orbOut = smoothstep(0.18, 0.48, p);
+        const growProgress = smoothstep(0, 0.52, p);
+        const orbScale = 1 + 5.5 * Math.pow(growProgress, 1.2);
         orbRef.current.style.opacity = `${1 - orbOut}`;
-        orbRef.current.style.transform = `translate3d(${ox}px, ${oy}px, 0) scale(${orbScale})`;
-        orbRef.current.style.display = p >= 0.55 ? 'none' : 'flex';
+        orbRef.current.style.transform = `translate3d(${ox}px, ${oy}px, 0) scale(${orbScale.toFixed(3)})`;
+        orbRef.current.style.display = p >= 0.52 ? 'none' : 'flex';
         orbRef.current.style.pointerEvents = orbOut > 0.5 ? 'none' : 'auto';
       }
     } else {
