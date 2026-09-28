@@ -387,16 +387,15 @@ export async function downloadPhotoboothCard(
   const baseName = filename ? filename.replace(/\.[^/.]+$/, "") : "print";
   const fullFilename = `${cleanName}-${baseName}-photobooth.jpg`;
 
-  // On mobile devices (both Android and iOS), standard <a download> typically routes to
-  // the "Files" / "Downloads" folder rather than the native Gallery/Photos app.
-  // Using Web Share API opens the native system share sheet, allowing users on Android & iOS
-  // to tap "Save Image", "Gallery", or "Google Photos" to save directly to camera roll.
-  const isMobile =
+  // On iOS devices, standard <a download> always saves to the "Files" app (iCloud / Downloads).
+  // Using Web Share API triggers the native iOS Share Sheet, presenting the "Save Image"
+  // button which saves directly into the Apple "Photos" app camera roll.
+  const isIOS =
     typeof navigator !== "undefined" &&
-    (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    (/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
-  if (isMobile && typeof File !== "undefined") {
+  if (isIOS && typeof File !== "undefined") {
     try {
       const file = new File([blob], fullFilename, { type: "image/jpeg" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
