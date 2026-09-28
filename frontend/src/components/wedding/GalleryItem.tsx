@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,7 +110,18 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
         signature: media.signature,
       });
     } catch (err) {
-      console.error("Failed to download framed photo:", err);
+      console.error("Failed to download framed photo, falling back to original photo:", err);
+      toast.info("Gagal jana bingkai foto, memuat turun foto asal...", {
+        duration: 3000,
+      });
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = media.filename || "photograph.jpg";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } finally {
       setIsDownloading(false);
     }

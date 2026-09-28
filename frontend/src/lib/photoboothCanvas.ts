@@ -1,4 +1,5 @@
 import type { Wedding } from "@/types/wedding";
+import { getMediaProxyUrl } from "@/api/media";
 import { parseSignature, trimImageBoundingBox } from "./signature";
 
 export interface PhotoboothRenderOptions {
@@ -13,10 +14,11 @@ export interface PhotoboothRenderOptions {
 
 /**
  * Loads an image from a URL or object URL.
- * Routes remote URLs through proxy as a local blob to guarantee clean canvas exports without CORS taint.
+ * Routes remote URLs through direct CORS fetch or backend media proxy
+ * as a local blob to guarantee clean canvas exports without CORS taint.
  */
 async function loadImage(src: string): Promise<HTMLImageElement> {
-  // If already a local blob or data URL, load directly
+  // 1. If already a local blob or data URL, load directly
   if (src.startsWith("blob:") || src.startsWith("data:")) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -26,34 +28,72 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
     });
   }
 
-  // For remote URLs (e.g. S3 presigned URLs), route through our proxy to avoid S3 CORS blocks
+  // 2. Try direct CORS fetch first (fastest, zero server load if S3 bucket has CORS enabled)
   try {
-    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(src)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) {
-      throw new Error(`Proxy returned status ${response.status}`);
+    const directRes = await fetch(src, { mode: "cors" });
+    const contentType = directRes.headers.get("content-type") || "";
+    if (directRes.ok && contentType.startsWith("image/")) {
+      const blob = await directRes.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      return await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = (err) => {
+          URL.revokeObjectURL(blobUrl);
+          reject(err);
+        };
+        img.src = blobUrl;
+      });
     }
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = (err) => {
-        URL.revokeObjectURL(blobUrl);
-        reject(err);
-      };
-      img.src = blobUrl;
-    });
-  } catch (proxyError) {
-    console.warn("Proxy load failed, falling back to direct image loading:", proxyError);
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = (err) => reject(err);
-      img.src = src;
-    });
+  } catch {
+    // Direct CORS fetch failed (e.g. S3 CORS headers not configured), fall through to backend proxy
   }
+
+  // 3. For remote URLs, route through backend media proxy to bypass S3 CORS restrictions
+  const proxyCandidates = [
+    getMediaProxyUrl(src),
+    `/api/proxy-image?url=${encodeURIComponent(src)}`,
+  ];
+
+  for (const proxyUrl of proxyCandidates) {
+    try {
+      const response = await fetch(proxyUrl);
+      const contentType = response.headers.get("content-type") || "";
+
+      // Strictly verify it's an image, not an SPA HTML fallback (text/html)
+      if (response.ok && contentType.startsWith("image/")) {
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        return await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = (err) => {
+            URL.revokeObjectURL(blobUrl);
+            reject(err);
+          };
+          img.src = blobUrl;
+        });
+      }
+    } catch {
+      // Continue to next candidate
+    }
+  }
+
+  // 4. Fallback: try image loading with crossOrigin
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      // If anonymous fails, try loading directly
+      const fallbackImg = new Image();
+      fallbackImg.onload = () => resolve(fallbackImg);
+      fallbackImg.onerror = (err) => reject(err);
+      fallbackImg.src = src;
+    };
+    img.src = src;
+  });
 }
 
 /**

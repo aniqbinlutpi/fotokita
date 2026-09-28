@@ -40,6 +40,50 @@ mediaRoutes.get("/", async (c) => {
 });
 
 
+mediaRoutes.get("/proxy-image", async (c) => {
+  const targetUrl = c.req.query("url");
+  if (!targetUrl) {
+    return c.json(
+      error("VALIDATION_ERROR", "Missing url query parameter"),
+      400,
+    );
+  }
+
+  try {
+    const parsed = new URL(targetUrl);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return c.json(
+        error("VALIDATION_ERROR", "Invalid URL protocol"),
+        400,
+      );
+    }
+
+    const response = await fetch(targetUrl);
+    if (!response.ok) {
+      return c.json(
+        error(
+          "UPSTREAM_ERROR",
+          `Failed to fetch image upstream: status ${response.status}`,
+        ),
+        response.status as any,
+      );
+    }
+
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const arrayBuffer = await response.arrayBuffer();
+
+    return c.body(arrayBuffer, 200, {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=86400",
+    });
+  } catch (err: any) {
+    return c.json(
+      error("PROXY_ERROR", err?.message || "Failed to proxy image"),
+      500,
+    );
+  }
+});
+
 mediaRoutes.get("/:id/url", async (c) => {
   const id = c.req.param("id");
 

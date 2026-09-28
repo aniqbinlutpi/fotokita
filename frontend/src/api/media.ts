@@ -18,6 +18,10 @@ export async function getMediaUrl(id: string): Promise<MediaUrlData> {
   return handleApiResponse<MediaUrlData>(response);
 }
 
+export function getMediaProxyUrl(url: string): string {
+  return `${MEDIA_BASE_URL}/proxy-image?url=${encodeURIComponent(url)}`;
+}
+
 export interface UploadOptions {
   weddingId: string;
   file: File;

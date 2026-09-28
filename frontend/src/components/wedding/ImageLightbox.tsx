@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback, useState } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -115,7 +116,18 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         signature: item.signature,
       });
     } catch (err) {
-      console.error("Failed to download framed photo:", err);
+      console.error("Failed to download framed photo, falling back to original photo:", err);
+      toast.info("Gagal jana bingkai foto, memuat turun foto asal...", {
+        duration: 3000,
+      });
+      const link = document.createElement("a");
+      link.href = activeUrl;
+      link.download = item.filename || "photograph.jpg";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } finally {
       setIsDownloading(false);
     }
