@@ -13,14 +13,10 @@ export const TrimmedSignatureImage: React.FC<TrimmedSignatureImageProps> = ({
   className,
   ...props
 }) => {
-  const [trimmedSrc, setTrimmedSrc] = useState<string>(() => trimmedCache.get(src) || src);
+  const [loadedSrc, setLoadedSrc] = useState<{ src: string; trimmed: string } | null>(null);
 
   useEffect(() => {
-    if (!src) return;
-    if (trimmedCache.has(src)) {
-      setTrimmedSrc(trimmedCache.get(src)!);
-      return;
-    }
+    if (!src || trimmedCache.has(src)) return;
 
     let isMounted = true;
     const img = new Image();
@@ -31,23 +27,18 @@ export const TrimmedSignatureImage: React.FC<TrimmedSignatureImageProps> = ({
       if (!isMounted) return;
       try {
         const trimmed = trimImageBoundingBox(img);
-        if (trimmed) {
-          const dataUrl = trimmed.canvas.toDataURL("image/png");
-          trimmedCache.set(src, dataUrl);
-          setTrimmedSrc(dataUrl);
-        } else {
-          trimmedCache.set(src, src);
-          setTrimmedSrc(src);
-        }
+        const result = trimmed ? trimmed.canvas.toDataURL("image/png") : src;
+        trimmedCache.set(src, result);
+        setLoadedSrc({ src, trimmed: result });
       } catch {
         trimmedCache.set(src, src);
-        setTrimmedSrc(src);
+        setLoadedSrc({ src, trimmed: src });
       }
     };
     img.onerror = () => {
       if (isMounted) {
         trimmedCache.set(src, src);
-        setTrimmedSrc(src);
+        setLoadedSrc({ src, trimmed: src });
       }
     };
     img.src = src;
@@ -57,5 +48,8 @@ export const TrimmedSignatureImage: React.FC<TrimmedSignatureImageProps> = ({
     };
   }, [src]);
 
-  return <img src={trimmedSrc} alt={alt} className={className} {...props} />;
+  const currentTrimmed =
+    trimmedCache.get(src) ?? (loadedSrc?.src === src ? loadedSrc.trimmed : src);
+
+  return <img src={currentTrimmed} alt={alt} className={className} {...props} />;
 };

@@ -19,8 +19,6 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 
 export type OrbState = "idle" | "thinking" | "speaking";
 
-export const ORB_STATES = ["idle", "thinking", "speaking"] as const;
-
 function clamp01(n: number) {
   return Math.min(1, Math.max(0, n));
 }
@@ -133,18 +131,7 @@ export interface OrbVariant {
 export type OrbParamValues = Partial<Record<string, number>>;
 export type OrbColorValues = Partial<Record<string, string>>;
 
-/** Every param and color at its schema default. */
-export function defaultValuesFor(variant: OrbVariant): {
-  params: Record<string, number>;
-  colors: Record<string, string>;
-} {
-  return {
-    params: Object.fromEntries(variant.params.map((p) => [p.key, p.default])),
-    colors: Object.fromEntries(variant.colors.map((c) => [c.key, c.default]))
-  };
-}
-
-export function hexToRgb(hex: string): [number, number, number] {
+function hexToRgb(hex: string): [number, number, number] {
   let h = hex.replace("#", "").trim();
   if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
   const n = parseInt(h, 16);
@@ -163,7 +150,7 @@ void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
  * Prelude prepended to every orb fragment shader: uniforms, value noise, fbm,
  * and the centered aspect-corrected UV helper.
  */
-export const ORB_GLSL_HELPERS = `
+const ORB_GLSL_HELPERS = `
 precision highp float;
 uniform vec2 uRes;
 uniform float uTime;   // slow ambient clock (half real-time)
@@ -267,7 +254,7 @@ function compile(gl: WebGLRenderingContext, type: number, src: string): WebGLSha
    sets that colour when you want something other than the inherited one.
 ---------------------------------------------------------------------------- */
 
-export const ORB_WRAPPERS = [
+const ORB_WRAPPERS = [
   "none",
   "glass",
   "ring",

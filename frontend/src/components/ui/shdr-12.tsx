@@ -283,7 +283,7 @@ void main() {
 }
 `;
 
-export const shdr12Orb: OrbVariant = {
+const shdr12Orb: OrbVariant = {
   key: "shdr-12",
   label: "SHDR-12",
   note: "a ball of glossy toy bricks, studs up — it rebuilds itself while it thinks",

@@ -108,12 +108,14 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
   }, []);
 
   // Guarantee secret code field is always blank whenever upload modal is opened
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setSecretCode("");
       setShowSecretCode(false);
     }
-  }, [isOpen]);
+  }
 
   // Signature state
   const [signatureMode, setSignatureMode] = useState<"draw" | "type">("type");
