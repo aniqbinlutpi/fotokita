@@ -115,25 +115,6 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
     }
   };
 
-  const coupleName = wedding?.name ?? "The Wedding";
-
-  const formattedDate = React.useMemo(() => {
-    const rawDate = wedding?.date || media.createdAt;
-    if (!rawDate) return "";
-    try {
-      const d = new Date(rawDate);
-      return d
-        .toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
-        .toUpperCase();
-    } catch {
-      return "";
-    }
-  }, [wedding?.date, media.createdAt]);
-
   const isVideo = media.mimeType?.startsWith("video/");
 
   return (

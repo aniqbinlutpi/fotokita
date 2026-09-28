@@ -88,7 +88,6 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         overlayScrim={0.45}
         orb={
           <Shdr12
-            size="100%"
             className="size-full"
             state="idle"
             params={{

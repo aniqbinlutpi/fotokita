@@ -8,7 +8,7 @@ const smoothstep = (edge0: number, edge1: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-export interface ScrollExpandProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ScrollExpandProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   src?: string;
   mediaType?: 'image' | 'video';
   poster?: string;
