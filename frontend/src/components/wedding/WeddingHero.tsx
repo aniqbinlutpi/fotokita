@@ -77,8 +77,8 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         useWindowScroll={true}
         shape="circle"
         circleSize={isMobile ? 0.20 : 0.16}
-        orbSize={isMobile ? 68 : 130}
-        orbOffset={isMobile ? { x: 54, y: -50 } : { x: 112, y: -98 }}
+        orbSize={isMobile ? 58 : 130}
+        orbOffset={isMobile ? { x: 44, y: -42 } : { x: 112, y: -98 }}
         startRadius={9999}
         endRadius={0}
         mediaZoom={1.28}
@@ -121,23 +121,25 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         }
         behindOrb={
           <div className="flex items-center justify-center pointer-events-none select-none">
-            <span className="font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none text-[280px] sm:text-[380px] md:text-[480px] lg:text-[560px] translate-y-[-2%] select-none">
+            <span className="font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none text-[220px] sm:text-[380px] md:text-[480px] lg:text-[560px] translate-y-[-2%] select-none">
               &
             </span>
           </div>
         }
         title={
-          <div className="w-full h-full flex flex-col justify-between items-center py-12 sm:py-16 md:py-20 px-4 sm:px-8 md:px-16 pointer-events-none select-none max-w-7xl mx-auto">
-            {/* Top Eyebrow: - WEDDING ARCHIVE - */}
-            <div className="flex items-center justify-center text-xs sm:text-sm md:text-base uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-sans font-medium pt-12 sm:pt-0">
-              <span className="translate-y-[140px] sm:translate-y-0">- WEDDING ARCHIVE -</span>
+          <div className="w-full flex flex-col items-center justify-center pointer-events-none select-none max-w-7xl mx-auto relative px-3 sm:px-8 md:px-16">
+            {/* Top Eyebrow: - WEDDING ARCHIVE - anchored gracefully above the ampersand & couple names */}
+            <div className="absolute -top-20 sm:-top-32 md:-top-40 lg:-top-44 left-0 right-0 flex items-center justify-center">
+              <span className="text-[11px] sm:text-xs md:text-base uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-sans font-medium">
+                - WEDDING ARCHIVE -
+              </span>
             </div>
 
             {/* Middle Row: Afiq on Left, Orb in Center, Wieam on Right */}
-            <div className="w-full flex items-center justify-between my-auto">
+            <div className="w-full flex items-center justify-between">
               {/* Left Column: Afiq + Date */}
-              <div className="flex-1 flex flex-col items-center sm:items-end text-center sm:text-right pr-8 sm:pr-16 md:pr-28 lg:pr-36">
-                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm">
+              <div className="flex-1 flex flex-col items-end text-right pr-4 sm:pr-16 md:pr-28 lg:pr-36">
+                <h1 className="font-serif text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm">
                   {firstName}
                 </h1>
                 <p className="font-sans text-[11px] sm:text-xs md:text-sm text-[#2F2926]/75 dark:text-[#F5EFEB]/75 tracking-wider mt-2 sm:mt-3">
@@ -145,12 +147,12 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 </p>
               </div>
 
-              {/* Center Spacer accommodating the 3D Orb */}
-              <div className="shrink-0 w-[75px] sm:w-[125px] md:w-[145px] lg:w-[165px] pointer-events-none" />
+              {/* Center Spacer accommodating the 3D Orb and & */}
+              <div className="shrink-0 w-[84px] sm:w-[125px] md:w-[145px] lg:w-[165px] pointer-events-none" />
 
               {/* Right Column: Wieam + Photo Count */}
-              <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left pl-10 sm:pl-16 md:pl-24 lg:pl-32">
-                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm">
+              <div className="flex-1 flex flex-col items-start text-left pl-8 sm:pl-16 md:pl-24 lg:pl-32">
+                <h1 className="font-serif text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm">
                   {secondName}
                 </h1>
                 <p className="font-sans text-[11px] sm:text-xs md:text-sm text-[#2F2926]/75 dark:text-[#F5EFEB]/75 tracking-wider mt-2 sm:mt-3">
@@ -158,9 +160,6 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 </p>
               </div>
             </div>
-
-            {/* Bottom spacer for vertical balance */}
-            <div className="h-6 sm:h-8" />
           </div>
         }
         background={
