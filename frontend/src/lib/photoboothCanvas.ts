@@ -371,6 +371,8 @@ export async function createPhotoboothComposite(
 
 /**
  * Downloads a photobooth composite print directly to the user's device.
+ * On iOS devices, utilizes the Web Share API so users can tap "Save Image"
+ * directly into the Apple Photos app (instead of defaulting to the Files app).
  */
 export async function downloadPhotoboothCard(
   imageUrl: string,
@@ -379,13 +381,42 @@ export async function downloadPhotoboothCard(
   options?: PhotoboothRenderOptions
 ): Promise<void> {
   const blob = await createPhotoboothComposite(imageUrl, wedding, options);
-  const downloadUrl = URL.createObjectURL(blob);
-  const link = document.createElement("a");
   const cleanName = (wedding?.name || "wedding")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-");
   const baseName = filename ? filename.replace(/\.[^/.]+$/, "") : "print";
-  link.download = `${cleanName}-${baseName}-photobooth.jpg`;
+  const fullFilename = `${cleanName}-${baseName}-photobooth.jpg`;
+
+  // On iOS devices, standard <a download> always saves to the "Files" app (iCloud / Downloads).
+  // Using Web Share API triggers the native iOS Share Sheet, presenting the "Save Image"
+  // button which saves directly into the Apple "Photos" app camera roll.
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    (/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+  if (isIOS && typeof File !== "undefined") {
+    try {
+      const file = new File([blob], fullFilename, { type: "image/jpeg" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `${wedding?.name || "Fotokita"} Photobooth`,
+        });
+        return;
+      }
+    } catch (err: any) {
+      // User tapped cancel/close on the share sheet
+      if (err?.name === "AbortError") {
+        return;
+      }
+      // If error occurs, fall through to browser link download
+    }
+  }
+
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.download = fullFilename;
   link.href = downloadUrl;
   document.body.appendChild(link);
   link.click();
