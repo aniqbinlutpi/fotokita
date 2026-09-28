@@ -197,7 +197,7 @@ export const WeddingGalleryPage: React.FC = () => {
             <AnimatedThemeToggler
               variant="circle"
               duration={450}
-              className="size-7 sm:size-8 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:border-[#2F2926] dark:hover:border-[#F5EFEB] hover:bg-[#EFE9DF]/50 dark:hover:bg-[#25211E] flex items-center justify-center transition-all duration-150 cursor-pointer shadow-2xs select-none"
+              className="text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors duration-200 cursor-pointer p-1 flex items-center justify-center select-none [&_svg]:size-4 sm:[&_svg]:size-[18px]"
               title="Tukar tema mod gelap / cerah"
               aria-label="Tukar tema mod gelap / cerah"
             />
