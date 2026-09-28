@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -76,6 +78,37 @@
   --radius: 0.25rem;
 }
 
+.dark {
+  --background: #12100E;
+  --surface: #1A1715;
+  --foreground: #F5EFEB;
+
+  --card: #1A1715;
+  --card-foreground: #F5EFEB;
+
+  --popover: #1A1715;
+  --popover-foreground: #F5EFEB;
+
+  --primary: #F5EFEB;
+  --primary-foreground: #12100E;
+
+  --secondary: #26211D;
+  --secondary-foreground: #F5EFEB;
+
+  --muted: #2C2622;
+  --muted-foreground: #A89F97;
+
+  --accent: #C49785;
+  --accent-foreground: #12100E;
+
+  --destructive: #D9534F;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #332B25;
+  --input: #332B25;
+  --ring: #C49785;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -95,4 +128,18 @@
 
 .font-signature {
   font-family: 'Alex Brush', 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-group(root) {
+  animation-duration: var(--magicui-theme-toggle-vt-duration, 400ms);
+}
+
+html[data-magicui-theme-vt="active"]::view-transition-new(root) {
+  clip-path: var(--magicui-theme-vt-clip-from);
 }

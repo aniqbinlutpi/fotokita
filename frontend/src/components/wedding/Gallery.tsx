@@ -142,25 +142,25 @@ export const Gallery: React.FC<GalleryProps> = ({
   return (
     <section className="relative z-20 max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pb-24 -mt-16 sm:-mt-24 md:-mt-28">
       {/* Editorial Section Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#E7DED5]/80 pb-6 mb-8 gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#E7DED5]/80 dark:border-[#332B25]/80 pb-6 mb-8 gap-4">
         <div>
           <div className="inline-flex items-center gap-2.5 mb-2">
             <span className="w-5 h-px bg-[#A67C6B]" />
-            <span className="text-[11px] uppercase tracking-[0.25em] text-[#7A7069] font-sans font-medium">
+            <span className="text-[11px] uppercase tracking-[0.25em] text-[#7A7069] dark:text-[#A89F97] font-sans font-medium">
               Visual Archive
             </span>
             <span className="w-5 h-px bg-[#A67C6B]/50" />
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#2F2926] font-normal tracking-tight leading-tight">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#2F2926] dark:text-[#F5EFEB] font-normal tracking-tight leading-tight">
             The Photo Collection
           </h2>
-          <p className="font-serif italic text-sm text-[#7A7069] mt-1.5 font-normal">
+          <p className="font-serif italic text-sm text-[#7A7069] dark:text-[#A89F97] mt-1.5 font-normal">
             A curated chronicle of celebration, emotion, and cherished memories
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#7A7069] font-sans tabular-nums tracking-wide">
+          <span className="text-xs text-[#7A7069] dark:text-[#A89F97] font-sans tabular-nums tracking-wide">
             {mediaList.length} {mediaList.length === 1 ? "moment" : "moments"}
           </span>
           <Button
@@ -168,7 +168,7 @@ export const Gallery: React.FC<GalleryProps> = ({
             size="sm"
             onClick={onRefresh}
             disabled={isLoading}
-            className="text-[#7A7069] hover:text-[#2F2926] hover:bg-[#FFFCF8] rounded-xs h-8 px-2.5 text-xs transition-colors"
+            className="text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:bg-[#FFFCF8] dark:hover:bg-[#1A1715] rounded-xs h-8 px-2.5 text-xs transition-colors"
             title="Refresh gallery"
           >
             <RefreshCw
@@ -184,15 +184,15 @@ export const Gallery: React.FC<GalleryProps> = ({
           {Array.from({ length: 9 }).map((_, i) => (
             <div
               key={i}
-              className="bg-[#FFFCF8] border border-[#E7DED5] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-xs flex flex-col justify-start"
+              className="bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-xs flex flex-col justify-start"
             >
               <div className="text-center pb-1 sm:pb-2 shrink-0 h-4 sm:h-6 flex items-center justify-center">
-                <Skeleton className="h-1.5 sm:h-2 w-10 sm:w-24 bg-[#EDE6DC]/40" />
+                <Skeleton className="h-1.5 sm:h-2 w-10 sm:w-24 bg-[#EDE6DC]/40 dark:bg-[#2C2622]/60" />
               </div>
-              <Skeleton className="aspect-square w-full bg-[#EDE6DC]/60 animate-pulse rounded-[1px] shrink-0" />
+              <Skeleton className="aspect-square w-full bg-[#EDE6DC]/60 dark:bg-[#2C2622]/80 animate-pulse rounded-[1px] shrink-0" />
               <div className="h-[54px] sm:h-[84px] shrink-0 space-y-1.5 text-center flex flex-col items-center justify-center">
-                <Skeleton className="h-2 sm:h-3 w-20 sm:w-36 bg-[#EDE6DC]/60" />
-                <Skeleton className="h-1.5 sm:h-2 w-12 sm:w-24 bg-[#EDE6DC]/40" />
+                <Skeleton className="h-2 sm:h-3 w-20 sm:w-36 bg-[#EDE6DC]/60 dark:bg-[#2C2622]/80" />
+                <Skeleton className="h-1.5 sm:h-2 w-12 sm:w-24 bg-[#EDE6DC]/40 dark:bg-[#2C2622]/60" />
               </div>
             </div>
           ))}
@@ -201,20 +201,20 @@ export const Gallery: React.FC<GalleryProps> = ({
 
       {/* Error State */}
       {!isLoading && error && (
-        <div className="max-w-md mx-auto my-16 p-8 bg-[#FFFCF8] border border-[#E7DED5] rounded-xs text-center font-sans space-y-4 shadow-none">
+        <div className="max-w-md mx-auto my-16 p-8 bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] rounded-xs text-center font-sans space-y-4 shadow-none">
           <div className="size-10 rounded-full bg-[#9E3E3E]/10 text-[#9E3E3E] mx-auto flex items-center justify-center">
             <AlertCircle className="size-5" />
           </div>
           <div>
-            <h3 className="font-serif text-lg text-[#2F2926]">
+            <h3 className="font-serif text-lg text-[#2F2926] dark:text-[#F5EFEB]">
               Failed to load gallery
             </h3>
-            <p className="text-xs text-[#7A7069] mt-1">{error}</p>
+            <p className="text-xs text-[#7A7069] dark:text-[#A89F97] mt-1">{error}</p>
           </div>
           <Button
             onClick={onRefresh}
             variant="outline"
-            className="border-[#E7DED5] bg-[#FFFCF8] hover:bg-[#F8F5F0] text-[#2F2926] text-xs uppercase tracking-wider rounded-xs"
+            className="border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8] dark:bg-[#1A1715] hover:bg-[#F8F5F0] dark:hover:bg-[#25211E] text-[#2F2926] dark:text-[#F5EFEB] text-xs uppercase tracking-wider rounded-xs"
           >
             Retry Connection
           </Button>
@@ -223,22 +223,22 @@ export const Gallery: React.FC<GalleryProps> = ({
 
       {/* Empty State */}
       {!isLoading && !error && mediaList.length === 0 && (
-        <div className="max-w-lg mx-auto my-20 p-12 bg-[#FFFCF8] border border-[#E7DED5] rounded-xs text-center font-sans space-y-5">
-          <div className="size-14 rounded-full bg-[#F8F5F0] border border-[#E7DED5] text-[#A67C6B] mx-auto flex items-center justify-center">
+        <div className="max-w-lg mx-auto my-20 p-12 bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] rounded-xs text-center font-sans space-y-5">
+          <div className="size-14 rounded-full bg-[#F8F5F0] dark:bg-[#25211E] border border-[#E7DED5] dark:border-[#332B25] text-[#A67C6B] mx-auto flex items-center justify-center">
             <Camera className="size-6 stroke-[1.5]" />
           </div>
           <div className="space-y-1.5">
-            <h3 className="font-serif text-2xl text-[#2F2926] font-normal">
+            <h3 className="font-serif text-2xl text-[#2F2926] dark:text-[#F5EFEB] font-normal">
               No Photographs Yet
             </h3>
-            <p className="text-xs text-[#7A7069] max-w-sm mx-auto leading-relaxed">
+            <p className="text-xs text-[#7A7069] dark:text-[#A89F97] max-w-sm mx-auto leading-relaxed">
               Every story begins with a single frame. Be the first to share cherished memories of this celebration.
             </p>
           </div>
           <Button
             onClick={onOpenUpload}
             variant="outline"
-            className="border-[#E7DED5] bg-[#FFFCF8] hover:bg-[#F8F5F0] hover:border-[#A67C6B] text-[#2F2926] text-xs uppercase tracking-widest px-6 py-2.5 rounded-xs h-auto gap-2"
+            className="border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8] dark:bg-[#1A1715] hover:bg-[#F8F5F0] dark:hover:bg-[#25211E] hover:border-[#A67C6B] text-[#2F2926] dark:text-[#F5EFEB] text-xs uppercase tracking-widest px-6 py-2.5 rounded-xs h-auto gap-2"
           >
             <UploadCloud className="size-3.5 text-[#A67C6B]" />
             <span>Add First Photograph</span>

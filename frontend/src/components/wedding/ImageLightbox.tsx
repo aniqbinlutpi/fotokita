@@ -180,7 +180,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={true}
-        className="max-w-md sm:max-w-lg w-[92vw] p-4 sm:p-6 bg-[#FFFCF8] border border-[#E7DED5] rounded-[3px] shadow-2xl flex flex-col gap-0 font-sans select-none overflow-hidden"
+        className="max-w-md sm:max-w-lg w-[92vw] p-4 sm:p-6 bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] rounded-[3px] shadow-2xl flex flex-col gap-0 font-sans select-none overflow-hidden"
       >
         <DialogTitle className="sr-only">
           {coupleName} — Photobooth Print
@@ -188,13 +188,13 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
 
         {/* Top embossed branding matching zoom-out card */}
         <div className="text-center pb-2.5 pt-0.5 select-none">
-          <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#7A7069]/60 font-sans font-medium">
+          <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#7A7069]/60 dark:text-[#A89F97]/60 font-sans font-medium">
             Fotobooth Kita
           </span>
         </div>
 
         {/* Fixed 1:1 Square Photo Area */}
-        <div className="relative aspect-square w-full bg-[#F8F5F0] overflow-hidden border border-[#E7DED5]/90 rounded-[1px]">
+        <div className="relative aspect-square w-full bg-[#F8F5F0] dark:bg-[#12100E] overflow-hidden border border-[#E7DED5]/90 dark:border-[#332B25]/90 rounded-[1px]">
           {activeUrl ? (
             isVideo ? (
               <video
@@ -211,7 +211,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
               />
             )
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#7A7069] text-xs font-sans">
+            <div className="w-full h-full flex items-center justify-center text-[#7A7069] dark:text-[#A89F97] text-xs font-sans">
               <span className="animate-pulse">Loading photograph...</span>
             </div>
           )}
@@ -226,7 +226,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                 disabled={isDownloading}
                 onClick={handleDownload}
                 aria-label="Download photobooth print"
-                className="size-8 bg-[#FFFCF8]/90 hover:bg-[#FFFCF8] text-[#7A7069] hover:text-[#2F2926] rounded-xs shadow-xs"
+                className="size-8 bg-[#FFFCF8]/90 dark:bg-[#1A1715]/90 hover:bg-[#FFFCF8] dark:hover:bg-[#25211E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] rounded-xs shadow-xs"
                 title="Download Photobooth Print"
               >
                 <Download className="size-3.5" />
@@ -244,26 +244,26 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                       disabled={isDeleting}
                       onClick={handleOpenDelete}
                       aria-label="Delete photograph"
-                      className="size-8 bg-[#FFFCF8]/90 hover:bg-[#FFFCF8] text-[#7A7069] hover:text-[#9E3E3E] rounded-xs shadow-xs"
+                      className="size-8 bg-[#FFFCF8]/90 dark:bg-[#1A1715]/90 hover:bg-[#FFFCF8] dark:hover:bg-[#25211E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#9E3E3E] rounded-xs shadow-xs"
                       title="Delete Photograph"
                     >
                       <Trash2 className="size-3.5" />
                     </Button>
                   }
                 />
-                <AlertDialogContent className="bg-[#FFFCF8] border-[#E7DED5] rounded-sm max-w-md font-sans">
+                <AlertDialogContent className="bg-[#FFFCF8] dark:bg-[#1A1715] border-[#E7DED5] dark:border-[#332B25] rounded-sm max-w-md font-sans">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="font-serif text-xl font-normal text-[#2F2926]">
+                    <AlertDialogTitle className="font-serif text-xl font-normal text-[#2F2926] dark:text-[#F5EFEB]">
                       Remove Photograph
                     </AlertDialogTitle>
-                    <AlertDialogDescription className="text-xs text-[#7A7069] leading-relaxed">
+                    <AlertDialogDescription className="text-xs text-[#7A7069] dark:text-[#A89F97] leading-relaxed">
                       Enter the secret code you created when uploading this photo to confirm removal.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
 
                   {/* Secret Code Input */}
                   <div className="space-y-1.5 my-2">
-                    <div className="flex items-center justify-between text-[11px] uppercase tracking-wider font-medium text-[#2F2926]">
+                    <div className="flex items-center justify-between text-[11px] uppercase tracking-wider font-medium text-[#2F2926] dark:text-[#F5EFEB]">
                       <span>Secret Code</span>
                     </div>
                     <input
@@ -280,7 +280,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                         }
                       }}
                       placeholder="Enter secret code"
-                      className="w-full bg-[#F8F5F0]/80 border border-[#E7DED5] rounded-[2px] px-3 py-1.5 text-xs text-[#2F2926] font-mono focus:outline-none focus:border-[#A67C6B]"
+                      className="w-full bg-[#F8F5F0]/80 dark:bg-[#12100E]/80 border border-[#E7DED5] dark:border-[#332B25] rounded-[2px] px-3 py-1.5 text-xs text-[#2F2926] dark:text-[#F5EFEB] font-mono focus:outline-none focus:border-[#A67C6B]"
                     />
                     {deleteError && (
                       <p className="text-[11px] text-[#9E3E3E] flex items-center gap-1 mt-1">
@@ -293,7 +293,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
                   <AlertDialogFooter className="mt-3 gap-2">
                     <AlertDialogCancel
                       onClick={() => setIsAlertOpen(false)}
-                      className="border-[#E7DED5] bg-[#FFFCF8] hover:bg-[#F8F5F0] text-[#2F2926] text-xs uppercase tracking-wider rounded-xs h-8"
+                      className="border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8] dark:bg-[#1A1715] hover:bg-[#F8F5F0] dark:hover:bg-[#25211E] text-[#2F2926] dark:text-[#F5EFEB] text-xs uppercase tracking-wider rounded-xs h-8"
                     >
                       Cancel
                     </AlertDialogCancel>
@@ -382,28 +382,28 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
 
         {/* Photobooth Bottom Chin Typography (Matching Zoom Out) */}
         <div className="pt-1.5 sm:pt-2 pb-1 text-center select-none font-sans">
-          <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#7A7069] font-medium leading-none">
+          <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#7A7069] dark:text-[#A89F97] font-medium leading-none">
             The Wedding Of
           </p>
-          <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#2F2926] uppercase tracking-wider leading-none my-1.5 sm:my-2">
+          <h3 className="font-serif text-2xl sm:text-3xl font-normal text-[#2F2926] dark:text-[#F5EFEB] uppercase tracking-wider leading-none my-1.5 sm:my-2">
             {coupleName}
           </h3>
           {formattedWeddingDate && (
-            <p className="text-[8.5px] sm:text-[9.5px] uppercase tracking-[0.2em] text-[#7A7069] tabular-nums leading-none">
+            <p className="text-[8.5px] sm:text-[9.5px] uppercase tracking-[0.2em] text-[#7A7069] dark:text-[#A89F97] tabular-nums leading-none">
               {formattedWeddingDate}
             </p>
           )}
 
           {/* Wishes & Sender if present */}
           {(item.wishes || item.fromName) && (
-            <div className="pt-2 sm:pt-2.5 mt-2.5 sm:mt-3 border-t border-[#E7DED5]/80 space-y-1">
+            <div className="pt-2 sm:pt-2.5 mt-2.5 sm:mt-3 border-t border-[#E7DED5]/80 dark:border-[#332B25]/80 space-y-1">
               {item.wishes && (
-                <p className="font-serif italic text-sm text-[#433B37] leading-relaxed line-clamp-3 px-2">
+                <p className="font-serif italic text-sm text-[#433B37] dark:text-[#E2D8D0] leading-relaxed line-clamp-3 px-2">
                   "{item.wishes}"
                 </p>
               )}
               {item.fromName && (
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#7A7069] font-medium">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#7A7069] dark:text-[#A89F97] font-medium">
                   — With Love, {item.fromName}
                 </p>
               )}

@@ -186,7 +186,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md bg-[#FFFCF8] text-[#2F2926] border border-[#E7DED5] shadow-2xl p-6 sm:p-8">
+      <DialogContent className="max-w-md bg-[#FFFCF8] dark:bg-[#1A1715] text-[#2F2926] dark:text-[#F5EFEB] border border-[#E7DED5] dark:border-[#332B25] shadow-2xl p-6 sm:p-8">
         <DialogHeader className="text-left space-y-2">
           <div className="flex items-center gap-2 text-[#A67C6B] text-xs uppercase tracking-widest font-medium">
             {isAuthenticated ? (
@@ -201,10 +201,10 @@ export const AdminModal: React.FC<AdminModalProps> = ({
               </>
             )}
           </div>
-          <DialogTitle className="font-serif text-2xl sm:text-3xl text-[#2F2926] font-normal tracking-tight">
+          <DialogTitle className="font-serif text-2xl sm:text-3xl text-[#2F2926] dark:text-[#F5EFEB] font-normal tracking-tight">
             {isAuthenticated ? "Edit Wedding Archive" : "Admin Access"}
           </DialogTitle>
-          <DialogDescription className="text-xs text-[#7A7069] leading-relaxed">
+          <DialogDescription className="text-xs text-[#7A7069] dark:text-[#A89F97] leading-relaxed">
             {isAuthenticated
               ? "Update the couple's names and wedding date. All changes will be reflected immediately across the entire gallery."
               : "Please enter the master passcode to modify the wedding archive details."}
@@ -215,7 +215,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
           /* Step 1: Passcode Verification */
           <form onSubmit={handleVerifyPasscode} className="space-y-5 mt-4">
             <div className="space-y-2">
-              <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block">
+              <label className="text-xs uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] font-medium block">
                 Master Passcode
               </label>
               <div className="relative">
@@ -228,12 +228,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                   }}
                   placeholder="Enter admin passcode..."
                   autoFocus
-                  className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-4 py-2.5 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors pr-10 font-mono"
+                  className="w-full bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] rounded-none px-4 py-2.5 text-sm text-[#2F2926] dark:text-[#F5EFEB] placeholder-[#B5AAA2] dark:placeholder-[#6E635B] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors pr-10 font-mono"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPasscode(!showPasscode)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A7069] hover:text-[#2F2926] transition-colors p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors p-1"
                 >
                   {showPasscode ? (
                     <EyeOff className="w-4 h-4" />
@@ -256,13 +256,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                 type="button"
                 variant="ghost"
                 onClick={() => handleOpenChange(false)}
-                className="text-xs uppercase tracking-wider text-[#7A7069] hover:text-[#2F2926] hover:bg-[#F8F5F0] rounded-none"
+                className="text-xs uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:bg-[#F8F5F0] dark:hover:bg-[#25211E] rounded-none"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="bg-[#2F2926] text-[#FFFCF8] hover:bg-[#433B37] text-xs uppercase tracking-widest px-6 py-2.5 rounded-none font-medium transition-colors"
+                className="bg-[#2F2926] dark:bg-[#F5EFEB] text-[#FFFCF8] dark:text-[#12100E] hover:bg-[#433B37] dark:hover:bg-[#E0D7CF] text-xs uppercase tracking-widest px-6 py-2.5 rounded-none font-medium transition-colors"
               >
                 Authorize
               </Button>
@@ -273,37 +273,37 @@ export const AdminModal: React.FC<AdminModalProps> = ({
           <form onSubmit={handleSaveWedding} className="space-y-5 mt-4">
             <div className="space-y-4">
               <div>
-                <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block mb-1.5 flex items-center gap-1.5">
+                <label className="text-xs uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] font-medium block mb-1.5 flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-[#A67C6B]" />
                   <span>Couple & Archive Names</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <span className="text-[11px] text-[#7A7069] block mb-1">Partner 1 (Left)</span>
+                    <span className="text-[11px] text-[#7A7069] dark:text-[#A89F97] block mb-1">Partner 1 (Left)</span>
                     <input
                       type="text"
                       value={partner1}
                       onChange={(e) => setPartner1(e.target.value)}
                       placeholder="e.g. Afiq"
                       required
-                      className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-3.5 py-2 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
+                      className="w-full bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] rounded-none px-3.5 py-2 text-sm text-[#2F2926] dark:text-[#F5EFEB] placeholder-[#B5AAA2] dark:placeholder-[#6E635B] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
                     />
                   </div>
                   <div>
-                    <span className="text-[11px] text-[#7A7069] block mb-1">Partner 2 (Right)</span>
+                    <span className="text-[11px] text-[#7A7069] dark:text-[#A89F97] block mb-1">Partner 2 (Right)</span>
                     <input
                       type="text"
                       value={partner2}
                       onChange={(e) => setPartner2(e.target.value)}
                       placeholder="e.g. Wieam"
-                      className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-3.5 py-2 text-sm text-[#2F2926] placeholder-[#B5AAA2] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
+                      className="w-full bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] rounded-none px-3.5 py-2 text-sm text-[#2F2926] dark:text-[#F5EFEB] placeholder-[#B5AAA2] dark:placeholder-[#6E635B] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs uppercase tracking-wider text-[#7A7069] font-medium block mb-1.5 flex items-center gap-1.5">
+                <label className="text-xs uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] font-medium block mb-1.5 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-[#A67C6B]" />
                   <span>Wedding Date</span>
                 </label>
@@ -312,20 +312,20 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                   value={weddingDate}
                   onChange={(e) => setWeddingDate(e.target.value)}
                   required
-                  className="w-full bg-[#F8F5F0] border border-[#E7DED5] rounded-none px-3.5 py-2 text-sm text-[#2F2926] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
+                  className="w-full bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] rounded-none px-3.5 py-2 text-sm text-[#2F2926] dark:text-[#F5EFEB] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
                 />
               </div>
 
               {/* Live Preview Box */}
-              <div className="bg-[#F8F5F0] border border-[#E7DED5] p-3 text-xs space-y-1">
+              <div className="bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] p-3 text-xs space-y-1">
                 <span className="uppercase tracking-widest text-[10px] text-[#A67C6B] font-medium flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   Gallery Live Preview
                 </span>
-                <p className="font-serif text-base text-[#2F2926] font-medium">
+                <p className="font-serif text-base text-[#2F2926] dark:text-[#F5EFEB] font-medium">
                   {partner1 ? partner1 : "Partner 1"} {partner2 ? `& ${partner2}` : ""}
                 </p>
-                <p className="text-[11px] text-[#7A7069]">
+                <p className="text-[11px] text-[#7A7069] dark:text-[#A89F97]">
                   {weddingDate
                     ? new Date(`${weddingDate}T00:00:00`).toLocaleDateString("en-US", {
                         day: "numeric",
@@ -337,20 +337,20 @@ export const AdminModal: React.FC<AdminModalProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E7DED5]">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E7DED5] dark:border-[#332B25]">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => handleOpenChange(false)}
                 disabled={isSubmitting}
-                className="text-xs uppercase tracking-wider text-[#7A7069] hover:text-[#2F2926] hover:bg-[#F8F5F0] rounded-none"
+                className="text-xs uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:bg-[#F8F5F0] dark:hover:bg-[#25211E] rounded-none"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-[#2F2926] text-[#FFFCF8] hover:bg-[#433B37] text-xs uppercase tracking-widest px-6 py-2.5 rounded-none font-medium transition-colors flex items-center gap-2"
+                className="bg-[#2F2926] dark:bg-[#F5EFEB] text-[#FFFCF8] dark:text-[#12100E] hover:bg-[#433B37] dark:hover:bg-[#E0D7CF] text-xs uppercase tracking-widest px-6 py-2.5 rounded-none font-medium transition-colors flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <span>Saving...</span>

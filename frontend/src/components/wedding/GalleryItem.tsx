@@ -120,25 +120,25 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
   return (
     <div
       onClick={() => url && onSelect(media, url)}
-      className="group relative bg-[#FFFCF8] border border-[#E7DED5] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-[0_2px_8px_-2px_rgba(47,41,38,0.06)] hover:shadow-[0_12px_28px_-6px_rgba(47,41,38,0.12)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-300 flex flex-col justify-start cursor-pointer"
+      className="group relative bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-[0_2px_8px_-2px_rgba(47,41,38,0.06)] dark:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_12px_28px_-6px_rgba(47,41,38,0.12)] dark:hover:shadow-[0_14px_32px_-6px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-300 flex flex-col justify-start cursor-pointer"
     >
       {/* Top tiny embossed branding like the photobooth print */}
       <div className="text-center pb-1 sm:pb-2 select-none shrink-0 h-4 sm:h-6 flex items-center justify-center">
-        <span className="text-[6.5px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.25em] text-[#7A7069]/60 font-sans font-medium line-clamp-1 block">
+        <span className="text-[6.5px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.25em] text-[#7A7069]/60 dark:text-[#A89F97]/60 font-sans font-medium line-clamp-1 block">
           Fotobooth Kita
         </span>
       </div>
 
       {/* Fixed 1:1 Square Photo Frame */}
       <div
-        className="relative aspect-square w-full bg-[#F8F5F0] overflow-hidden border border-[#E7DED5]/90 rounded-[1px] shrink-0"
+        className="relative aspect-square w-full bg-[#F8F5F0] dark:bg-[#12100E] overflow-hidden border border-[#E7DED5]/90 dark:border-[#332B25]/90 rounded-[1px] shrink-0"
       >
         {isLoading && (
-          <Skeleton className="absolute inset-0 bg-[#EDE6DC]/60 animate-pulse rounded-none" />
+          <Skeleton className="absolute inset-0 bg-[#EDE6DC]/60 dark:bg-[#2C2622]/60 animate-pulse rounded-none" />
         )}
 
         {error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-[#7A7069] text-xs font-sans text-center gap-1.5">
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-[#7A7069] dark:text-[#A89F97] text-xs font-sans text-center gap-1.5">
             <AlertCircle className="size-4 text-[#9E3E3E]" />
             <span>Unable to load image</span>
           </div>
@@ -190,7 +190,7 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
               onPointerDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
               aria-label={`Download ${media.filename} with border`}
-              className="size-5 sm:size-7 bg-[#FFFCF8]/90 hover:bg-[#FFFCF8] text-[#7A7069] hover:text-[#2F2926] rounded-xs shadow-xs"
+              className="size-5 sm:size-7 bg-[#FFFCF8]/90 dark:bg-[#1A1715]/90 hover:bg-[#FFFCF8] dark:hover:bg-[#25211E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] rounded-xs shadow-xs"
               title="Download Photobooth Print"
             >
               <Download className="size-2.5 sm:size-3.5" />
@@ -215,25 +215,25 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
                   onPointerDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
                   aria-label={`Delete ${media.filename}`}
-                  className="size-5 sm:size-7 bg-[#FFFCF8]/90 hover:bg-[#FFFCF8] text-[#7A7069] hover:text-[#9E3E3E] rounded-xs shadow-xs"
+                  className="size-5 sm:size-7 bg-[#FFFCF8]/90 dark:bg-[#1A1715]/90 hover:bg-[#FFFCF8] dark:hover:bg-[#25211E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#9E3E3E] rounded-xs shadow-xs"
                 >
                   <Trash2 className="size-2.5 sm:size-3.5" />
                 </Button>
               }
             />
-            <AlertDialogContent className="bg-[#FFFCF8] border-[#E7DED5] rounded-sm max-w-md font-sans">
+            <AlertDialogContent className="bg-[#FFFCF8] dark:bg-[#1A1715] border-[#E7DED5] dark:border-[#332B25] rounded-sm max-w-md font-sans">
               <AlertDialogHeader>
-                <AlertDialogTitle className="font-serif text-xl font-normal text-[#2F2926]">
+                <AlertDialogTitle className="font-serif text-xl font-normal text-[#2F2926] dark:text-[#F5EFEB]">
                   Remove Photograph
                 </AlertDialogTitle>
-                <AlertDialogDescription className="text-xs text-[#7A7069] leading-relaxed">
+                <AlertDialogDescription className="text-xs text-[#7A7069] dark:text-[#A89F97] leading-relaxed">
                   Enter the secret code you created when uploading this photo to confirm removal.
                 </AlertDialogDescription>
               </AlertDialogHeader>
 
               {/* Secret Code Input */}
               <div className="space-y-1.5 my-2">
-                <div className="flex items-center justify-between text-[11px] uppercase tracking-wider font-medium text-[#2F2926]">
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-wider font-medium text-[#2F2926] dark:text-[#F5EFEB]">
                   <span>Secret Code</span>
                 </div>
                 <input
@@ -250,7 +250,7 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
                     }
                   }}
                   placeholder="Enter secret code"
-                  className="w-full bg-[#F8F5F0]/80 border border-[#E7DED5] rounded-[2px] px-3 py-1.5 text-xs text-[#2F2926] font-mono focus:outline-none focus:border-[#A67C6B]"
+                  className="w-full bg-[#F8F5F0]/80 dark:bg-[#12100E]/80 border border-[#E7DED5] dark:border-[#332B25] rounded-[2px] px-3 py-1.5 text-xs text-[#2F2926] dark:text-[#F5EFEB] font-mono focus:outline-none focus:border-[#A67C6B]"
                 />
                 {deleteError && (
                   <p className="text-[11px] text-[#9E3E3E] flex items-center gap-1 mt-1">
@@ -263,7 +263,7 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
               <AlertDialogFooter className="mt-3 gap-2">
                 <AlertDialogCancel
                   onClick={() => setIsAlertOpen(false)}
-                  className="border-[#E7DED5] bg-[#FFFCF8] hover:bg-[#F8F5F0] text-[#2F2926] text-xs uppercase tracking-wider rounded-xs h-8"
+                  className="border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8] dark:bg-[#1A1715] hover:bg-[#F8F5F0] dark:hover:bg-[#25211E] text-[#2F2926] dark:text-[#F5EFEB] text-xs uppercase tracking-wider rounded-xs h-8"
                 >
                   Cancel
                 </AlertDialogCancel>
@@ -343,12 +343,12 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
         {media.wishes || media.fromName ? (
           <div className="w-full space-y-0.5 sm:space-y-1 px-1">
             {media.wishes && (
-              <p className="font-serif italic text-[7.5px] sm:text-xs md:text-[13px] text-[#433B37] leading-tight line-clamp-2 px-0.5">
+              <p className="font-serif italic text-[7.5px] sm:text-xs md:text-[13px] text-[#433B37] dark:text-[#E2D8D0] leading-tight line-clamp-2 px-0.5">
                 "{media.wishes}"
               </p>
             )}
             {media.fromName && (
-              <p className="text-[6px] sm:text-[9.5px] uppercase tracking-[0.08em] sm:tracking-[0.18em] text-[#7A7069] font-medium truncate">
+              <p className="text-[6px] sm:text-[9.5px] uppercase tracking-[0.08em] sm:tracking-[0.18em] text-[#7A7069] dark:text-[#A89F97] font-medium truncate">
                 — With Love, {media.fromName}
               </p>
             )}

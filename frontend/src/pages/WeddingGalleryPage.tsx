@@ -5,6 +5,7 @@ import { UploadPhotos } from "@/components/wedding/UploadPhotos";
 import { AdminModal } from "@/components/wedding/AdminModal";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { getWeddings, createWedding, getWeddingById } from "@/api/wedding";
 import { getMediaByWeddingId, deleteMedia } from "@/api/media";
 import type { Wedding } from "@/types/wedding";
@@ -158,18 +159,18 @@ export const WeddingGalleryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F5F0] text-[#2F2926] selection:bg-[#A67C6B]/20 selection:text-[#2F2926] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8F5F0] dark:bg-[#12100E] text-[#2F2926] dark:text-[#F5EFEB] selection:bg-[#A67C6B]/20 selection:text-[#2F2926] dark:selection:text-[#F5EFEB] flex flex-col font-sans transition-colors duration-300">
       <Toaster />
 
       {/* Editorial Navigation Bar */}
-      <nav className="border-b border-[#E7DED5] bg-[#FFFCF8]/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4">
+      <nav className="border-b border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8]/80 dark:bg-[#1A1715]/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="font-serif tracking-widest text-lg font-medium text-[#2F2926] uppercase">
+            <span className="font-serif tracking-widest text-lg font-medium text-[#2F2926] dark:text-[#F5EFEB] uppercase">
               Fotokita
             </span>
-            <span className="hidden sm:inline-block w-px h-3.5 bg-[#E7DED5]" />
-            <span className="hidden sm:inline-block text-[11px] uppercase tracking-widest text-[#7A7069]">
+            <span className="hidden sm:inline-block w-px h-3.5 bg-[#E7DED5] dark:bg-[#332B25]" />
+            <span className="hidden sm:inline-block text-[11px] uppercase tracking-widest text-[#7A7069] dark:text-[#A89F97]">
               Editorial Wedding Gallery
             </span>
           </div>
@@ -177,23 +178,33 @@ export const WeddingGalleryPage: React.FC = () => {
           <div className="flex items-center gap-3 sm:gap-4">
             {wedding && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-[#7A7069] hidden md:inline-block">
-                  Archive: <span className="text-[#2F2926] font-medium">{wedding.name}</span>
+                <span className="text-xs text-[#7A7069] dark:text-[#A89F97] hidden md:inline-block">
+                  Archive: <span className="text-[#2F2926] dark:text-[#F5EFEB] font-medium">{wedding.name}</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsAdminOpen(true)}
                   title="Admin Access (Edit Names & Date)"
-                  className="w-5 h-5 rounded-full border border-[#D5CCC2] text-[#8C7E74] hover:text-[#2F2926] hover:border-[#2F2926] hover:bg-[#EFE9DF]/50 flex items-center justify-center text-xs font-serif italic transition-all duration-150 cursor-pointer shadow-2xs select-none"
+                  className="w-5 h-5 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] text-[#8C7E74] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:border-[#2F2926] dark:hover:border-[#F5EFEB] hover:bg-[#EFE9DF]/50 dark:hover:bg-[#25211E] flex items-center justify-center text-xs font-serif italic transition-all duration-150 cursor-pointer shadow-2xs select-none"
                   aria-label="Admin Access"
                 >
                   ?
                 </button>
               </div>
             )}
+
+            {/* Dark / Light Mode Switcher */}
+            <AnimatedThemeToggler
+              variant="circle"
+              duration={450}
+              className="size-7 sm:size-8 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:border-[#2F2926] dark:hover:border-[#F5EFEB] hover:bg-[#EFE9DF]/50 dark:hover:bg-[#25211E] flex items-center justify-center transition-all duration-150 cursor-pointer shadow-2xs select-none"
+              title="Tukar tema mod gelap / cerah"
+              aria-label="Tukar tema mod gelap / cerah"
+            />
+
             <button
               onClick={() => setIsUploadOpen(true)}
-              className="text-xs uppercase tracking-widest text-[#A67C6B] hover:text-[#2F2926] transition-colors duration-200 font-medium cursor-pointer"
+              className="text-xs uppercase tracking-widest text-[#A67C6B] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors duration-200 font-medium cursor-pointer"
             >
               + Upload
             </button>
@@ -205,7 +216,7 @@ export const WeddingGalleryPage: React.FC = () => {
       <main className="flex-1">
         {isLoadingWedding ? (
           <div className="pt-20 pb-16 text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#7A7069] animate-pulse">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7A7069] dark:text-[#A89F97] animate-pulse">
               Loading Wedding Archive...
             </p>
           </div>
@@ -255,12 +266,12 @@ export const WeddingGalleryPage: React.FC = () => {
       )}
 
       {/* Minimal Editorial Footer */}
-      <footer className="border-t border-[#E7DED5] bg-[#FFFCF8] py-8 px-6 text-center text-xs text-[#7A7069]">
+      <footer className="border-t border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8] dark:bg-[#1A1715] py-8 px-6 text-center text-xs text-[#7A7069] dark:text-[#A89F97] transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="font-serif italic text-sm text-[#2F2926]">
+          <p className="font-serif italic text-sm text-[#2F2926] dark:text-[#F5EFEB]">
             Fotokita — Preserving timeless wedding memories
           </p>
-          <p className="text-[11px] text-[#7A7069] uppercase tracking-widest">
+          <p className="text-[11px] text-[#7A7069] dark:text-[#A89F97] uppercase tracking-widest">
             Photography & Art Direction
           </p>
         </div>

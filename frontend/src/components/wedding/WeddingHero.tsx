@@ -121,7 +121,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         }
         behindOrb={
           <div className="flex items-center justify-center pointer-events-none select-none">
-            <span className="font-serif not-italic font-normal text-[#2F2926] leading-none text-[280px] sm:text-[380px] md:text-[480px] lg:text-[560px] translate-y-[-2%] select-none">
+            <span className="font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none text-[280px] sm:text-[380px] md:text-[480px] lg:text-[560px] translate-y-[-2%] select-none">
               &
             </span>
           </div>
@@ -129,7 +129,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         title={
           <div className="w-full h-full flex flex-col justify-between items-center py-12 sm:py-16 md:py-20 px-4 sm:px-8 md:px-16 pointer-events-none select-none max-w-7xl mx-auto">
             {/* Top Eyebrow: - WEDDING ARCHIVE - */}
-            <div className="flex items-center justify-center text-xs sm:text-sm md:text-base uppercase tracking-[0.35em] text-[#2F2926]/85 font-sans font-medium pt-12 sm:pt-0">
+            <div className="flex items-center justify-center text-xs sm:text-sm md:text-base uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-sans font-medium pt-12 sm:pt-0">
               <span className="translate-y-[140px] sm:translate-y-0">- WEDDING ARCHIVE -</span>
             </div>
 
@@ -137,10 +137,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             <div className="w-full flex items-center justify-between my-auto">
               {/* Left Column: Afiq + Date */}
               <div className="flex-1 flex flex-col items-center sm:items-end text-center sm:text-right pr-8 sm:pr-16 md:pr-28 lg:pr-36">
-                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] tracking-tight leading-none drop-shadow-sm">
+                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm">
                   {firstName}
                 </h1>
-                <p className="font-sans text-[11px] sm:text-xs md:text-sm text-[#2F2926]/75 tracking-wider mt-2 sm:mt-3">
+                <p className="font-sans text-[11px] sm:text-xs md:text-sm text-[#2F2926]/75 dark:text-[#F5EFEB]/75 tracking-wider mt-2 sm:mt-3">
                   {formattedDate}
                 </p>
               </div>
@@ -150,10 +150,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
 
               {/* Right Column: Wieam + Photo Count */}
               <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left pl-10 sm:pl-16 md:pl-24 lg:pl-32">
-                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] tracking-tight leading-none drop-shadow-sm">
+                <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm">
                   {secondName}
                 </h1>
-                <p className="font-sans text-[11px] sm:text-xs md:text-sm text-[#2F2926]/75 tracking-wider mt-2 sm:mt-3">
+                <p className="font-sans text-[11px] sm:text-xs md:text-sm text-[#2F2926]/75 dark:text-[#F5EFEB]/75 tracking-wider mt-2 sm:mt-3">
                   {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
                 </p>
               </div>
@@ -181,7 +181,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
           />
         }
         scrollHint={
-          <div className="inline-flex flex-col items-center gap-1 text-[11px] uppercase tracking-[0.25em] text-[#7A7069] drop-shadow-sm">
+          <div className="inline-flex flex-col items-center gap-1 text-[11px] uppercase tracking-[0.25em] text-[#7A7069] dark:text-[#A89F97] drop-shadow-sm">
             <span>Scroll to expand</span>
             <ChevronDown className="size-4 animate-bounce text-[#A67C6B]" />
           </div>
@@ -206,7 +206,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
           <div className="flex items-center justify-center gap-4">
             <Button
               onClick={onOpenUpload}
-              className="bg-[#FFFCF8] text-[#2F2926] hover:bg-[#F8F5F0] hover:text-[#2F2926] border border-[#E7DED5] transition-all duration-200 px-7 py-3 rounded-sm text-xs uppercase tracking-widest font-medium shadow-2xl gap-2 h-auto cursor-pointer pointer-events-auto"
+              className="bg-[#FFFCF8] dark:bg-[#1A1715] text-[#2F2926] dark:text-[#F5EFEB] hover:bg-[#F8F5F0] dark:hover:bg-[#25211E] border border-[#E7DED5] dark:border-[#332B25] transition-all duration-200 px-7 py-3 rounded-sm text-xs uppercase tracking-widest font-medium shadow-2xl gap-2 h-auto cursor-pointer pointer-events-auto"
             >
               <UploadCloud className="size-4 text-[#A67C6B]" />
               <span>Contribute Memories</span>

@@ -179,6 +179,21 @@
   pointer-events: none;
   opacity: 0;
   will-change: opacity;
+  transition: background 0.3s ease;
   z-index: 10;
 }
+
+.dark .scroll-expand__bottom-blend,
+[data-theme="dark"] .scroll-expand__bottom-blend,
+.dark-theme .scroll-expand__bottom-blend {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(18, 16, 14, 0.2) 20%,
+    rgba(18, 16, 14, 0.7) 50%,
+    rgba(18, 16, 14, 0.96) 78%,
+    #12100E 100%
+  );
+}
+
 
