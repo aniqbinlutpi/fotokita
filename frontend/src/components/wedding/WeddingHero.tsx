@@ -7,12 +7,12 @@ import { UploadCloud, ChevronDown } from "lucide-react";
 import type { Wedding } from "@/types/wedding";
 import imgExpand from "@/assets/images/img-expand.png";
 
-const monochromeBrickColors = {
-  brickA: "#18181B", // Deep Obsidian Black
-  brickB: "#71717A", // Neutral Mid Grey
-  brickC: "#3F3F46", // Dark Graphite Grey
-  brickD: "#A1A1AA", // Light Silver Grey
-  brickE: "#F4F4F5", // Crisp White
+const warmGoldChocolateBrickColors = {
+  brickA: "#1F1712", // Deep Dark Chocolate (sepadan dengan teks gelap & ampersand)
+  brickB: "#4A3728", // Rich Mocha Bronze
+  brickC: "#8C6D48", // Warm Antique Gold
+  brickD: "#C9AA7C", // Soft Champagne Gold
+  brickE: "#F5EADB", // Lustrous Silk Cream (highlight berkilau)
 };
 
 interface WeddingHeroProps {
@@ -95,21 +95,21 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
               spin: 0.32,
               tilt: 0.45,
               studs: 24,
-              gloss: 2.0,
+              gloss: 2.2,
               gap: 0.02,
-              patch: 0.4,
+              patch: 0.65,
               gain: 1.05,
               radius: 0.94,
               contrast: 1.05,
             }}
-            colors={monochromeBrickColors}
+            colors={warmGoldChocolateBrickColors}
             stateColors={{
-              idle: monochromeBrickColors,
-              thinking: monochromeBrickColors,
-              speaking: monochromeBrickColors,
+              idle: warmGoldChocolateBrickColors,
+              thinking: warmGoldChocolateBrickColors,
+              speaking: warmGoldChocolateBrickColors,
             }}
             statePresets={{
-              idle: { spin: 0.3, gloss: 2.0, gap: 0.02 },
+              idle: { spin: 0.3, gloss: 2.2, gap: 0.02 },
               thinking: { spin: 0.1, gloss: 1.5, gap: 0.15 },
               speaking: { spin: 0.5, gloss: 2.4, gap: 0 },
             }}
@@ -117,7 +117,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             paused={false}
             pauseOffscreen
             maxDpr={1.5}
-            ariaLabel="Monochrome 3D Brick Orb"
+            ariaLabel="Warm Gold and Chocolate 3D Brick Orb"
           />
         }
         behindOrb={
