@@ -6,12 +6,20 @@ import { AdminModal } from "@/components/wedding/AdminModal";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import { getWeddings, createWedding, getWeddingById } from "@/api/wedding";
+import { getWeddings, createWedding, getWeddingById, getWeddingBySlug } from "@/api/wedding";
 import { getMediaByWeddingId, deleteMedia } from "@/api/media";
 import type { Wedding } from "@/types/wedding";
 import type { MediaItem } from "@/types/media";
 
-export const WeddingGalleryPage: React.FC = () => {
+interface WeddingGalleryPageProps {
+  onOpenRegister?: () => void;
+  onNavigateToLanding?: () => void;
+}
+
+export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
+  onOpenRegister,
+  onNavigateToLanding,
+}) => {
   const [wedding, setWedding] = useState<Wedding | null>(null);
   const [mediaList, setMediaList] = useState<MediaItem[]>([]);
   const [isLoadingWedding, setIsLoadingWedding] = useState<boolean>(true);
@@ -23,8 +31,22 @@ export const WeddingGalleryPage: React.FC = () => {
   // Fetch active wedding
   const fetchWeddingData = useCallback(async (): Promise<Wedding> => {
     const urlParams = new URLSearchParams(window.location.search);
+    const urlSlug = urlParams.get("slug");
     const urlWeddingId = urlParams.get("weddingId");
 
+    // 1. If slug is in query (?slug=ali-dan-siti), fetch by slug
+    if (urlSlug) {
+      try {
+        const weddingBySlug = await getWeddingBySlug(urlSlug);
+        if (weddingBySlug) {
+          return weddingBySlug;
+        }
+      } catch (e) {
+        console.warn("Could not find wedding from slug param, falling back", e);
+      }
+    }
+
+    // 2. If weddingId is in query, fetch by id
     if (urlWeddingId) {
       try {
         const specificWedding = await getWeddingById(urlWeddingId);
@@ -166,9 +188,13 @@ export const WeddingGalleryPage: React.FC = () => {
       <nav className="border-b border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8]/80 dark:bg-[#1A1715]/80 backdrop-blur-md fixed top-0 left-0 right-0 z-40 px-6 py-4 transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="font-serif tracking-widest text-lg font-medium text-[#2F2926] dark:text-[#F5EFEB] uppercase">
+            <button
+              type="button"
+              onClick={onNavigateToLanding}
+              className="font-serif tracking-widest text-lg font-medium text-[#2F2926] dark:text-[#F5EFEB] uppercase hover:text-[#A67C6B] transition-colors cursor-pointer text-left"
+            >
               Fotokita
-            </span>
+            </button>
             <span className="hidden sm:inline-block w-px h-3.5 bg-[#E7DED5] dark:bg-[#332B25]" />
             <span className="hidden sm:inline-block text-[11px] uppercase tracking-widest text-[#7A7069] dark:text-[#A89F97]">
               Editorial Wedding Gallery
@@ -176,6 +202,16 @@ export const WeddingGalleryPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
+            {onNavigateToLanding && (
+              <button
+                type="button"
+                onClick={onNavigateToLanding}
+                className="hidden md:inline-flex text-xs uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors cursor-pointer"
+              >
+                Home
+              </button>
+            )}
+
             {wedding && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[#7A7069] dark:text-[#A89F97] hidden md:inline-block">
@@ -198,9 +234,18 @@ export const WeddingGalleryPage: React.FC = () => {
               variant="circle"
               duration={450}
               className="text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors duration-200 cursor-pointer p-1 flex items-center justify-center select-none [&_svg]:size-4 sm:[&_svg]:size-[18px]"
-              title="Tukar tema mod gelap / cerah"
-              aria-label="Tukar tema mod gelap / cerah"
+              title="Toggle dark / light mode"
+              aria-label="Toggle dark / light mode"
             />
+
+            {onOpenRegister && (
+              <button
+                onClick={onOpenRegister}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] hover:border-[#A67C6B] text-[11px] uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors cursor-pointer"
+              >
+                <span>+ Create Wedding</span>
+              </button>
+            )}
 
             <button
               onClick={() => setIsUploadOpen(true)}
