@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import authRoute from "./routes/auth";
 import dashboardRoute from "./routes/dashboard";
+import invitesRoute from "./routes/invites";
 import { error } from "./lib/response";
 
 const app = new Hono();
@@ -31,6 +32,7 @@ app.get("/health", (c) => {
 
 // Admin API endpoints
 app.route("/admin/auth", authRoute);
+app.route("/admin/invites", invitesRoute);
 app.route("/admin", dashboardRoute);
 
 const port = Number(process.env.PORT) || 3002;

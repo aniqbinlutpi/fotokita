@@ -134,3 +134,108 @@ export async function getAdminHealth(): Promise<AdminHealth> {
   });
   return handleApiResponse<AdminHealth>(response);
 }
+
+// -------------------------------------------------------------
+// INVITE LINKS & ONBOARDING (24h Single-Use Tier Tokens)
+// -------------------------------------------------------------
+
+export type SubscriptionTier =
+  | "12h"
+  | "1day"
+  | "3days"
+  | "1week"
+  | "1month"
+  | "1year"
+  | "standard"
+  | "premium"
+  | "vip"
+  | (string & {});
+
+export interface TenantRegistrationDetails {
+  username: string;
+  email: string;
+  weddingId: string;
+  weddingSlug: string;
+  weddingName: string;
+  registeredAt: number;
+}
+
+export interface AdminInvite {
+  id: string;
+  token: string;
+  tier: SubscriptionTier;
+  clientName?: string;
+  notes?: string;
+  createdAt: number;
+  expiresAt: number;
+  isUsed: boolean;
+  usedAt?: number;
+  status: "active" | "used" | "expired";
+  remainingMinutes: number;
+  registrationDetails?: TenantRegistrationDetails;
+}
+
+export interface CreateInviteResponse {
+  invite: AdminInvite;
+  invitePath: string;
+  message: string;
+}
+
+export interface VerifyInviteResponse {
+  valid: boolean;
+  token: string;
+  tier: SubscriptionTier;
+  clientName?: string;
+  expiresAt: number;
+  remainingMs: number;
+}
+
+export async function getAdminInvites(): Promise<AdminInvite[]> {
+  const response = await fetch(`${ADMIN_BASE_URL}/invites`, {
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<AdminInvite[]>(response);
+}
+
+export async function createAdminInvite(params: {
+  tier: SubscriptionTier;
+  clientName?: string;
+  notes?: string;
+}): Promise<CreateInviteResponse> {
+  const response = await fetch(`${ADMIN_BASE_URL}/invites`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(params),
+  });
+  return handleApiResponse<CreateInviteResponse>(response);
+}
+
+export async function deleteAdminInvite(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${ADMIN_BASE_URL}/invites/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<{ message: string }>(response);
+}
+
+export async function verifyInviteToken(token: string): Promise<VerifyInviteResponse> {
+  const response = await fetch(`${ADMIN_BASE_URL}/invites/verify?token=${encodeURIComponent(token)}`);
+  return handleApiResponse<VerifyInviteResponse>(response);
+}
+
+export async function redeemInviteToken(data: {
+  token: string;
+  username: string;
+  email: string;
+  weddingId: string;
+  weddingSlug: string;
+  weddingName: string;
+}): Promise<{ message: string; invite: AdminInvite }> {
+  const response = await fetch(`${ADMIN_BASE_URL}/invites/redeem`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleApiResponse<{ message: string; invite: AdminInvite }>(response);
+}
+

@@ -20,12 +20,13 @@ import {
   Globe,
   Camera,
   ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 import type { AdminUser } from "@/api/admin";
 
 interface AdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  activeTab: "overview" | "weddings" | "system";
-  onSelectTab: (tab: "overview" | "weddings" | "system") => void;
+  activeTab: "overview" | "weddings" | "invites" | "system";
+  onSelectTab: (tab: "overview" | "weddings" | "invites" | "system") => void;
   adminUser: AdminUser | null;
   onLogout: () => void;
   onBackHome: () => void;
@@ -76,6 +77,17 @@ export function AdminSidebar({
                 >
                   <LayoutDashboard className="size-4" />
                   <span>Dashboard Overview</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeTab === "invites"}
+                  onClick={() => onSelectTab("invites")}
+                  tooltip="Tenant Invites (24h Single-Use)"
+                >
+                  <UserPlus className="size-4" />
+                  <span>Tenant Invites</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 

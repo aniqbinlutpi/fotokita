@@ -21,6 +21,9 @@ import {
   Eye,
   Lock,
   XCircle,
+  MessageCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +34,13 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -95,6 +105,121 @@ const INITIAL_FEEDBACKS: FeedbackItem[] = [
   },
 ];
 
+interface PricingPlanItem {
+  id: string;
+  name: string;
+  badge: string;
+  price: string;
+  duration: string;
+  description: string;
+  features: { text: string; highlight?: boolean }[];
+  isPopular?: boolean;
+  isSpecialPartner?: boolean;
+  code: string;
+}
+
+const PRICING_PLANS: PricingPlanItem[] = [
+  {
+    id: "12h",
+    name: "12 Hours Pass",
+    badge: "12 Jam • Sesi Singkat",
+    price: "RM 6",
+    duration: "/ 12 jam",
+    description: "Sesuai untuk majlis akad nikah, pertunangan, atau resepsi singkat.",
+    code: "12 Hours (RM6)",
+    features: [
+      { text: "1 GB Cloud Storage (~300 foto)" },
+      { text: "Live Table QR code meja tetamu" },
+      { text: "Live upload tanpa muat turun aplikasi" },
+      { text: "12 jam akses galeri aktif" },
+    ],
+  },
+  {
+    id: "1day",
+    name: "Whole Day Pass",
+    badge: "Sehari Penuh • 24 Jam",
+    isPopular: true,
+    price: "RM 10",
+    duration: "/ 24 jam",
+    description: "Pilihan paling popular untuk majlis perkahwinan sehari penuh (siang & malam).",
+    code: "Whole Day (RM10)",
+    features: [
+      { text: "5 GB Cloud Storage (~1,500 foto HD)", highlight: true },
+      { text: "Custom URL (fotokita.my/nama-anda)" },
+      { text: "Live Ballroom Screen & Projector Slideshow", highlight: true },
+      { text: "Digital Photobooth & Signature Polaroid" },
+      { text: "Templat Kad QR Meja sedia dicetak" },
+      { text: "1-Click Bulk High-Res ZIP Download" },
+      { text: "24 jam akses galeri penuh" },
+    ],
+  },
+  {
+    id: "3days",
+    name: "3 Days Pass",
+    badge: "3 Hari • Weekend Pass",
+    price: "RM 17",
+    duration: "/ 3 hari",
+    description: "Sesuai untuk majlis bersambung: berinai, nikah hari Jumaat sehingga kenduri Ahad.",
+    code: "3 Days (RM17)",
+    features: [
+      { text: "10 GB Cloud Storage (~3,000 foto HD)", highlight: true },
+      { text: "Semua ciri Sehari Penuh disertakan" },
+      { text: "Live Projector & TV Ballroom Slideshow" },
+      { text: "Digital Photobooth & Bingkai Polaroid" },
+      { text: "3 hari akses muat naik & tatapan" },
+    ],
+  },
+  {
+    id: "1week",
+    name: "1 Week Pass",
+    badge: "Seminggu • Super Jimat",
+    price: "RM 23",
+    duration: "/ 7 hari",
+    description: "Santai seminggu penuh bersama sanak saudara & kenduri kedua-dua belah pihak.",
+    code: "1 Week (RM23)",
+    features: [
+      { text: "15 GB Large Storage (~5,000 foto & klip)", highlight: true },
+      { text: "Semua ciri 3 Days Pass disertakan" },
+      { text: "Muat naik klip video pendek tetamu" },
+      { text: "7 hari akses muat naik & muat turun aktif" },
+      { text: "Templat cetakan kad meja PDF A6" },
+    ],
+  },
+  {
+    id: "1month",
+    name: "1 Month Pass",
+    badge: "Sebulan • Arkib Panjang",
+    price: "RM 46",
+    duration: "/ bulan",
+    description: "Puas tatap & kumpul semula semua memori tetamu tanpa tergesa-gesa sepanjang bulan.",
+    code: "1 Month (RM46)",
+    features: [
+      { text: "30 GB Large Storage (~10,000 foto & video)", highlight: true },
+      { text: "Semua ciri 1 Week Pass disertakan" },
+      { text: "30 hari akses muat naik & tatapan penuh" },
+      { text: "Kualiti foto tanpa mampatan (Full HD)" },
+      { text: "Sokongan bantuan teknikal keutamaan" },
+    ],
+  },
+  {
+    id: "1year",
+    name: "1 Year Special",
+    badge: "Khas Jurugambar & Dewan",
+    isSpecialPartner: true,
+    price: "RM 189",
+    duration: "/ tahun",
+    description: "Khas untuk Jurugambar, Pengurus Acara (Event Organizer), & Pemilik Dewan / Wedding Planner.",
+    code: "1 Year Special (RM189)",
+    features: [
+      { text: "100 GB Massive Cloud Storage", highlight: true },
+      { text: "Sokongan pelbagai majlis sepanjang 1 tahun" },
+      { text: "Custom Branding (Nama Studio / Dewan anda)" },
+      { text: "Video 4K & muat turun berkelajuan tinggi" },
+      { text: "VIP Priority WhatsApp Concierge Support" },
+    ],
+  },
+];
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -123,6 +248,72 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [activeStepTab, setActiveStepTab] = useState<
     "qr" | "guest" | "screen" | "vault"
   >("qr");
+
+  // WhatsApp Deals Modal State
+  const [selectedPlanForWhatsApp, setSelectedPlanForWhatsApp] = useState<{
+    name: string;
+    price: string;
+    code: string;
+  } | null>(null);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+
+  const handleOpenWhatsAppDeal = (plan: { name: string; price: string; code: string }) => {
+    setSelectedPlanForWhatsApp(plan);
+    setIsWhatsAppModalOpen(true);
+  };
+
+  const getWhatsAppUrlForPlan = (planCode: string) => {
+    const message = `Hai Fotokita! Saya berminat dengan pakej ${planCode} untuk pembayaran & tawaran deals terkini.`;
+    return `https://wa.me/60137848933?text=${encodeURIComponent(message)}`;
+  };
+
+  // Pricing Carousel State & Ref
+  const pricingCarouselRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [activePlanIndex, setActivePlanIndex] = useState(0);
+
+  const checkPricingScroll = () => {
+    if (!pricingCarouselRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = pricingCarouselRef.current;
+    setCanScrollLeft(scrollLeft > 15);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 15);
+
+    // Approximate active card index
+    const cardWidth = 350 + 24;
+    const index = Math.round(scrollLeft / cardWidth);
+    setActivePlanIndex(Math.min(Math.max(0, index), PRICING_PLANS.length - 1));
+  };
+
+  useEffect(() => {
+    const el = pricingCarouselRef.current;
+    if (!el) return;
+    checkPricingScroll();
+    el.addEventListener("scroll", checkPricingScroll, { passive: true });
+    window.addEventListener("resize", checkPricingScroll);
+    return () => {
+      el.removeEventListener("scroll", checkPricingScroll);
+      window.removeEventListener("resize", checkPricingScroll);
+    };
+  }, []);
+
+  const scrollPricing = (direction: "left" | "right") => {
+    if (!pricingCarouselRef.current) return;
+    const scrollAmount = 370;
+    pricingCarouselRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  const scrollToPlanIndex = (index: number) => {
+    if (!pricingCarouselRef.current) return;
+    const cardWidth = 350 + 24;
+    pricingCarouselRef.current.scrollTo({
+      left: index * cardWidth,
+      behavior: "smooth",
+    });
+  };
 
   // Navigation Dropdown State (Hover expand)
   const [isNavDropdownOpen, setIsNavDropdownOpen] = useState(false);
@@ -1345,200 +1536,218 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* ─────────────────────────────────────────────────────────────
             TRANSPARENT PRICING & SUBSCRIPTION PLANS
-            Clear, honest one-time payment for the event
+            Clear, honest duration-based event packages
         ───────────────────────────────────────────────────────────── */}
         <section id="pricing" className="py-20 transition-colors duration-300">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-16">
-              <Badge variant="accent" className="mb-2">
-                Transparent One-Time Pricing
-              </Badge>
-              <h2 className="font-serif text-3xl sm:text-4xl text-foreground font-normal">
-                Simple, Honest Plans for Your Wedding Day
-              </h2>
-              <p className="mt-3 text-sm text-muted-foreground">
-                One-time payment per wedding. No sneaky recurring subscriptions, no hidden bandwidth fees.
-              </p>
+            {/* Header with Title and Scroll Arrows */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 max-w-5xl mx-auto">
+              <div>
+                <Badge variant="accent" className="mb-2">
+                  Flexible Event Packages
+                </Badge>
+                <h2 className="font-serif text-3xl sm:text-4xl text-foreground font-normal">
+                  Pakej Fleksibel Mengikut Keperluan Majlis Anda
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground max-w-xl">
+                  Pilih tempoh masa yang sesuai untuk majlis anda. Tatal ke tepi untuk melihat semua 6 pakej langganan.
+                </p>
+              </div>
+
+              {/* Navigation Controls (Arrows) */}
+              <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
+                <span className="text-xs text-muted-foreground hidden sm:inline-block">
+                  Tatal ke tepi
+                </span>
+                <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-full border border-border">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => scrollPricing("left")}
+                    disabled={!canScrollLeft}
+                    className="size-8 rounded-full cursor-pointer hover:bg-background hover:text-accent disabled:opacity-30 disabled:pointer-events-none"
+                    aria-label="Pakej sebelumnya"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => scrollPricing("right")}
+                    disabled={!canScrollRight}
+                    className="size-8 rounded-full cursor-pointer hover:bg-background hover:text-accent disabled:opacity-30 disabled:pointer-events-none"
+                    aria-label="Pakej seterusnya"
+                  >
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-              {/* Plan 1: Starter Trial */}
-              <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-                <Card className="h-full bg-background/60 border-border/80 p-6 sm:p-7 flex flex-col justify-between">
-                  <div>
-                    <Badge variant="outline" className="text-[10px] uppercase font-semibold mb-2">
-                      Starter Trial
-                    </Badge>
-                    <CardTitle className="font-serif text-2xl text-foreground mt-1 mb-2 font-normal">
-                      Free Trial
-                    </CardTitle>
-                    <div className="flex items-baseline gap-1 mb-4">
-                      <span className="text-3xl font-semibold text-foreground">RM 0</span>
-                      <span className="text-xs text-muted-foreground">/ 14 days</span>
-                    </div>
-                    <CardDescription className="text-xs text-muted-foreground mb-6 leading-relaxed">
-                      Perfect for engagement parties, rehearsal dinners, or testing the platform before your big day.
-                    </CardDescription>
+            {/* Carousel Container */}
+            <div className="relative group max-w-6xl mx-auto">
+              {/* Left & Right floating navigation arrow buttons for desktop */}
+              {canScrollLeft && (
+                <button
+                  type="button"
+                  onClick={() => scrollPricing("left")}
+                  aria-label="Scroll left"
+                  className="absolute -left-3 lg:-left-5 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-background/95 border border-border shadow-xl backdrop-blur-md hidden sm:flex items-center justify-center text-foreground hover:text-accent hover:border-accent transition-all cursor-pointer"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+              )}
 
-                    <Separator className="mb-4" />
+              {canScrollRight && (
+                <button
+                  type="button"
+                  onClick={() => scrollPricing("right")}
+                  aria-label="Scroll right"
+                  className="absolute -right-3 lg:-right-5 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-background/95 border border-border shadow-xl backdrop-blur-md hidden sm:flex items-center justify-center text-foreground hover:text-accent hover:border-accent transition-all cursor-pointer"
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              )}
 
-                    <ul className="space-y-3 text-xs text-muted-foreground">
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span>1 GB Cloud Storage (~300 photos)</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span>Standard Table QR code</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span>No-app guest live upload</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span>14 days active gallery access</span>
-                      </li>
-                    </ul>
-                  </div>
+              {/* Edge Gradient Shadows */}
+              {canScrollLeft && (
+                <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+              )}
+              {canScrollRight && (
+                <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+              )}
 
-                  <div className="mt-8 pt-4">
-                    <Button
-                      variant="outline"
-                      className="w-full cursor-pointer uppercase text-xs tracking-wider"
-                      onClick={() => onNavigateToRegister("standard")}
+              {/* Side-to-side Scroll Track */}
+              <div
+                ref={pricingCarouselRef}
+                className="flex gap-5 sm:gap-6 overflow-x-auto pb-6 pt-5 px-3 sm:px-4 scroll-smooth snap-x snap-mandatory [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-muted/20 [&::-webkit-scrollbar-thumb]:bg-border/60 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-accent/40"
+              >
+                {PRICING_PLANS.map((plan) => (
+                  <motion.div
+                    key={plan.id}
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-[285px] sm:w-[325px] md:w-[350px] shrink-0 snap-center sm:snap-start flex flex-col"
+                  >
+                    <Card
+                      className={`h-full p-6 sm:p-7 flex flex-col justify-between relative transition-all duration-300 ${
+                        plan.isPopular
+                          ? "bg-card border-2 border-accent shadow-xl ring-1 ring-accent/30"
+                          : plan.isSpecialPartner
+                          ? "bg-accent/5 border-2 border-accent/60 hover:border-accent shadow-md"
+                          : "bg-background/60 border-border/80 hover:border-accent/50 shadow-xs"
+                      }`}
                     >
-                      Try For Free
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
+                      {plan.isPopular && (
+                        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[10px] uppercase tracking-widest font-bold px-3.5 py-1 rounded-full shadow-sm flex items-center gap-1 shrink-0 whitespace-nowrap">
+                          <Sparkles className="size-3" />
+                          Paling Popular Untuk Perkahwinan
+                        </div>
+                      )}
 
-              {/* Plan 2: Raja Sehari (Flagship Standard) */}
-              <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.2 }}>
-                <Card className="h-full bg-card border-2 border-accent p-6 sm:p-8 flex flex-col justify-between shadow-xl relative scale-102">
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[10px] uppercase tracking-widest font-bold px-3.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-                    <Sparkles className="size-3" />
-                    Most Popular For Weddings
-                  </div>
+                      {plan.isSpecialPartner && (
+                        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-foreground text-background text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1 shrink-0 whitespace-nowrap">
+                          <Sparkles className="size-3 text-accent" />
+                          Special Pro Partner
+                        </div>
+                      )}
 
-                  <div>
-                    <Badge variant="accent" className="text-[10px] uppercase font-semibold mb-2">
-                      Standard Banquet
-                    </Badge>
-                    <CardTitle className="font-serif text-3xl text-foreground mt-1 mb-2 font-normal">
-                      Raja Sehari
-                    </CardTitle>
-                    <div className="flex items-baseline gap-1 mb-4">
-                      <span className="text-4xl font-semibold text-foreground">RM 79</span>
-                      <span className="text-xs text-muted-foreground font-mono">($19 one-time)</span>
-                    </div>
-                    <CardDescription className="text-xs text-muted-foreground mb-6 leading-relaxed">
-                      Our flagship package designed for ballroom banquets, hall receptions, and garden weddings.
-                    </CardDescription>
+                      <div>
+                        <Badge
+                          variant={plan.isPopular ? "accent" : "outline"}
+                          className={`text-[10px] uppercase font-semibold mb-2 ${
+                            plan.isSpecialPartner ? "border-accent/40 text-accent" : ""
+                          }`}
+                        >
+                          {plan.badge}
+                        </Badge>
+                        <CardTitle className="font-serif text-2xl sm:text-3xl text-foreground mt-1 mb-2 font-normal">
+                          {plan.name}
+                        </CardTitle>
+                        <div className="flex items-baseline gap-1 mb-4">
+                          <span
+                            className={`font-semibold text-foreground ${
+                              plan.isPopular ? "text-4xl" : "text-3xl"
+                            }`}
+                          >
+                            {plan.price}
+                          </span>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {plan.duration}
+                          </span>
+                        </div>
+                        <CardDescription className="text-xs text-muted-foreground mb-6 leading-relaxed min-h-[38px]">
+                          {plan.description}
+                        </CardDescription>
 
-                    <Separator className="mb-4" />
+                        <Separator className="mb-4" />
 
-                    <ul className="space-y-3 text-xs text-foreground">
-                      <li className="flex items-center gap-2">
-                        <Check className="size-4 text-accent shrink-0" />
-                        <span><strong>10 GB Cloud Storage</strong> (~3,000 full-res photos)</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-4 text-accent shrink-0" />
-                        <span>Custom URL (fotokita.my/your-names)</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-4 text-accent shrink-0" />
-                        <span><strong>Live Ballroom Screen & Projector Slideshow</strong></span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-4 text-accent shrink-0" />
-                        <span>Digital Photobooth & Signature Polaroid Frames</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-4 text-accent shrink-0" />
-                        <span>Print-Ready PDF Table QR Templates</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-4 text-accent shrink-0" />
-                        <span>1-Click Bulk High-Res ZIP Download</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-4 text-accent shrink-0" />
-                        <span><strong>1 Full Year</strong> of private gallery archival</span>
-                      </li>
-                    </ul>
-                  </div>
+                        <ul className="space-y-3 text-xs text-muted-foreground">
+                          {plan.features.map((feat, fIdx) => (
+                            <li
+                              key={fIdx}
+                              className={`flex items-center gap-2 ${
+                                feat.highlight ? "text-foreground font-medium" : ""
+                              }`}
+                            >
+                              <Check className="size-3.5 text-accent shrink-0" />
+                              <span>{feat.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
 
-                  <div className="mt-8 pt-4">
-                    <Button
-                      size="lg"
-                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground uppercase text-xs tracking-widest font-semibold cursor-pointer shadow-md"
-                      onClick={() => onNavigateToRegister("standard")}
-                    >
-                      <span>Choose Standard Plan</span>
-                      <ArrowRight data-icon="inline-end" className="size-3.5" />
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
+                      <div className="mt-8 pt-4">
+                        <Button
+                          size={plan.isPopular ? "lg" : "default"}
+                          variant={plan.isPopular ? "default" : plan.isSpecialPartner ? "default" : "outline"}
+                          className={`w-full uppercase text-xs tracking-wider font-semibold cursor-pointer transition-colors ${
+                            plan.isPopular
+                              ? "bg-accent hover:bg-accent/90 text-accent-foreground shadow-md gap-1.5"
+                              : plan.isSpecialPartner
+                              ? "bg-foreground hover:bg-foreground/90 text-background shadow-sm"
+                              : "hover:border-accent hover:text-accent"
+                          }`}
+                          onClick={() =>
+                            handleOpenWhatsAppDeal({
+                              name: `${plan.name} (${plan.price})`,
+                              price: plan.price,
+                              code: plan.code,
+                            })
+                          }
+                        >
+                          <span>Get Started</span>
+                          {plan.isPopular && (
+                            <ArrowRight data-icon="inline-end" className="size-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
 
-              {/* Plan 3: Mahligai Cinta (Pro / VIP) */}
-              <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-                <Card className="h-full bg-background/60 border-border/80 p-6 sm:p-7 flex flex-col justify-between">
-                  <div>
-                    <Badge variant="outline" className="text-[10px] uppercase font-semibold mb-2">
-                      Pro Studio / VIP
-                    </Badge>
-                    <CardTitle className="font-serif text-2xl text-foreground mt-1 mb-2 font-normal">
-                      Mahligai Cinta
-                    </CardTitle>
-                    <div className="flex items-baseline gap-1 mb-4">
-                      <span className="text-3xl font-semibold text-foreground">RM 149</span>
-                      <span className="text-xs text-muted-foreground font-mono">($35 lifetime)</span>
-                    </div>
-                    <CardDescription className="text-xs text-muted-foreground mb-6 leading-relaxed">
-                      Designed for grand galas, photographer studios, and couples demanding an everlasting heirloom.
-                    </CardDescription>
-
-                    <Separator className="mb-4" />
-
-                    <ul className="space-y-3 text-xs text-muted-foreground">
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span><strong>30 GB Large Storage</strong> (~10,000 photos & clips)</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span>All Standard features included</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span>Short Video Clip Guest Uploads</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span><strong>Everlasting Lifetime Cloud Storage</strong></span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="size-3.5 text-accent shrink-0" />
-                        <span>VIP Same-Day WhatsApp Concierge Support</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="mt-8 pt-4">
-                    <Button
-                      variant="outline"
-                      className="w-full cursor-pointer uppercase text-xs tracking-wider"
-                      onClick={() => onNavigateToRegister("premium")}
-                    >
-                      Choose Pro Plan
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
+            {/* Dot indicators and swipe hint */}
+            <div className="flex flex-col items-center justify-center gap-3 mt-4">
+              <div className="flex items-center gap-1.5">
+                {PRICING_PLANS.map((plan, idx) => (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => scrollToPlanIndex(idx)}
+                    aria-label={`Lihat ${plan.name}`}
+                    className={`transition-all duration-300 rounded-full cursor-pointer ${
+                      activePlanIndex === idx
+                        ? "w-7 h-2 bg-accent shadow-xs"
+                        : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] text-muted-foreground font-mono sm:hidden">
+                &larr; Leret ke kiri / kanan &rarr;
+              </span>
             </div>
           </div>
         </section>
@@ -1947,6 +2156,88 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </footer>
       </div>
+
+      {/* WHATSAPP PAYMENT & DEALS MODAL */}
+      <Dialog open={isWhatsAppModalOpen} onOpenChange={setIsWhatsAppModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="size-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2">
+              <MessageCircle className="size-6" />
+            </div>
+            <DialogTitle className="text-center font-serif text-2xl font-normal text-foreground">
+              Get Started via WhatsApp
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
+              Hubungi kami di WhatsApp untuk bayaran QR bank, tawaran terkini, dan penerimaan link pendaftaran khas anda.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPlanForWhatsApp && (
+            <div className="space-y-4 py-2">
+              {/* Selected Plan Summary Card */}
+              <div className="p-4 rounded-xl bg-card border border-border/80 flex items-center justify-between shadow-2xs">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                    Pakej Pilihan Anda
+                  </div>
+                  <div className="font-serif text-lg font-medium text-foreground">
+                    {selectedPlanForWhatsApp.name}
+                  </div>
+                </div>
+                <Badge variant="outline" className="text-sm font-semibold border-accent/40 text-accent font-mono">
+                  {selectedPlanForWhatsApp.price}
+                </Badge>
+              </div>
+
+              {/* Step Flow Explanation */}
+              <div className="p-3.5 rounded-lg bg-muted/40 border border-border/60 text-xs space-y-2 text-muted-foreground">
+                <div className="font-medium text-foreground flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5 text-accent" />
+                  <span>Langkah Mudah Langganan:</span>
+                </div>
+                <ol className="list-decimal list-inside space-y-1.5 text-[11px] leading-relaxed">
+                  <li>
+                    Klik butang WhatsApp di bawah untuk berhubung terus dengan pihak admin kami.
+                  </li>
+                  <li>
+                    Admin kami akan berikan maklumat akaun bank / kod QR rasmi untuk pengesahan bayaran pantas &amp; promosi terkini.
+                  </li>
+                  <li>
+                    Selepas pembayaran disahkan, admin akan menjana{" "}
+                    <strong className="text-foreground">link jemputan pendaftaran 24 jam</strong> khas untuk anda melancarkan galeri &amp; portal Sub-Admin!
+                  </li>
+                </ol>
+              </div>
+
+              {/* Direct WhatsApp Action Button */}
+              <a
+                href={getWhatsAppUrlForPlan(selectedPlanForWhatsApp.code)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsWhatsAppModalOpen(false)}
+                className="w-full inline-flex items-center justify-center gap-2.5 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-widest transition-all shadow-md hover:shadow-lg cursor-pointer select-none"
+              >
+                <MessageCircle className="size-5" />
+                <span>Hubungi Admin di WhatsApp</span>
+              </a>
+
+              {/* Optional: Already have token? */}
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsWhatsAppModalOpen(false);
+                    onNavigateToRegister();
+                  }}
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors underline cursor-pointer"
+                >
+                  Sudah mempunyai link pendaftaran dari admin? Klik di sini
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

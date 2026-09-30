@@ -30,7 +30,11 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
   const activeWeddingId = propWeddingId || urlParams.get("weddingId") || undefined;
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
-  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
+  const initialAdminOpen =
+    urlParams.get("login") === "subadmin" ||
+    urlParams.get("admin") === "true" ||
+    urlParams.get("action") === "login";
+  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(initialAdminOpen);
   const queryClient = useQueryClient();
 
   // TanStack Query for Wedding

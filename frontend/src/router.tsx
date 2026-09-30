@@ -63,10 +63,14 @@ const indexRoute = createRoute({
     }
 
     if (page === "register") {
+      const token = urlParams.get("token") || undefined;
       return (
         <SubscriberRegisterPage
+          inviteToken={token}
           initialPlan={plan || "standard"}
-          onSuccess={(wedding) => navigate({ to: "/w/$slug", params: { slug: wedding.slug } } as any)}
+          onSuccess={(wedding) => {
+            window.location.href = `/w/${encodeURIComponent(wedding.slug)}?login=subadmin`;
+          }}
           onCancel={() => navigate({ to: "/" } as any)}
         />
       );
@@ -118,14 +122,16 @@ const registerRoute = createRoute({
     const navigate = useNavigate();
     const location = useLocation();
     const urlParams = new URLSearchParams(location.searchStr || window.location.search);
-    const plan = (urlParams.get("plan") as "standard" | "premium") || "standard";
+    const token = urlParams.get("token") || undefined;
+    const plan = (urlParams.get("plan") as any) || "standard";
 
     return (
       <SubscriberRegisterPage
+        inviteToken={token}
         initialPlan={plan}
-        onSuccess={(newWedding: Wedding) =>
-          navigate({ to: "/w/$slug", params: { slug: newWedding.slug } } as any)
-        }
+        onSuccess={(newWedding: Wedding) => {
+          window.location.href = `/w/${encodeURIComponent(newWedding.slug)}?login=subadmin`;
+        }}
         onCancel={() => navigate({ to: "/" } as any)}
       />
     );

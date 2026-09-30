@@ -59,6 +59,12 @@ import {
   XCircle,
   AlertTriangle,
   Radio,
+  UserPlus,
+  Clock,
+  MessageCircle,
+  Trash2,
+  User,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLogin } from "@/components/admin/AdminLogin";
@@ -69,8 +75,13 @@ import {
   getStoredAdminToken,
   clearStoredAdminSession,
   getAdminStats,
+  getAdminInvites,
+  createAdminInvite,
+  deleteAdminInvite,
   type AdminUser,
   type AdminStats,
+  type AdminInvite,
+  type SubscriptionTier,
 } from "@/api/admin";
 import {
   getWeddings,
@@ -97,12 +108,22 @@ export function AdminControlPage({
   });
 
   // Navigation tab
-  const [activeTab, setActiveTab] = useState<"overview" | "weddings" | "system">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "invites" | "weddings" | "system">("overview");
 
   // Data states
   const [weddings, setWeddings] = useState<Wedding[]>([]);
+  const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Invite generation modal states
+  const [isCreateInviteOpen, setIsCreateInviteOpen] = useState(false);
+  const [inviteTier, setInviteTier] = useState<SubscriptionTier>("1day");
+  const [inviteClientName, setInviteClientName] = useState("");
+  const [inviteNotes, setInviteNotes] = useState("");
+  const [isCreatingInvite, setIsCreatingInvite] = useState(false);
+  const [newlyCreatedInvite, setNewlyCreatedInvite] = useState<AdminInvite | null>(null);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
   // Create wedding modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -158,7 +179,15 @@ export function AdminControlPage({
       }));
     }
 
-    // 3. Ping services directly
+    // 3. Fetch invites from admin-service
+    try {
+      const invitesData = await getAdminInvites();
+      setInvites(invitesData);
+    } catch (err) {
+      console.warn("Could not fetch invites:", err);
+    }
+
+    // 4. Ping services directly
     await checkAllServices();
 
     setIsRefreshing(false);
@@ -197,6 +226,77 @@ export function AdminControlPage({
     } catch {
       setSystemPings((prev) => ({ ...prev, adminService: "offline" }));
     }
+  };
+
+  // Handle invite operations
+  const handleCreateInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingInvite(true);
+    try {
+      const res = await createAdminInvite({
+        tier: inviteTier,
+        clientName: inviteClientName.trim() || undefined,
+        notes: inviteNotes.trim() || undefined,
+      });
+      setInvites((prev) => [res.invite, ...prev]);
+      setNewlyCreatedInvite(res.invite);
+      toast.success("Link jemputan sah 24 jam berjaya dihasilkan!");
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal menghasilkan link jemputan");
+    } finally {
+      setIsCreatingInvite(false);
+    }
+  };
+
+  const handleDeleteInvite = async (id: string) => {
+    try {
+      await deleteAdminInvite(id);
+      setInvites((prev) => prev.filter((i) => i.id !== id));
+      toast.success("Link jemputan berjaya dipadamkan");
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal memadam link jemputan");
+    }
+  };
+
+  const handleCopyInviteUrl = (token: string, id: string) => {
+    const url = `${window.location.origin}/register?token=${encodeURIComponent(token)}`;
+    navigator.clipboard.writeText(url);
+    setCopiedInviteId(id);
+    toast.success("Link pendaftaran 24 jam disalin!");
+    setTimeout(() => setCopiedInviteId(null), 2000);
+  };
+
+  const formatTierLabel = (tier: string) => {
+    switch (tier) {
+      case "12h":
+        return "12 Jam (RM6)";
+      case "1day":
+        return "Sehari Penuh (RM10)";
+      case "3days":
+        return "3 Hari (RM17)";
+      case "1week":
+        return "1 Minggu (RM23)";
+      case "1month":
+        return "1 Bulan (RM46)";
+      case "1year":
+        return "1 Tahun Khas (RM189)";
+      case "vip":
+        return "VIP (100GB)";
+      case "premium":
+        return "Pro Studio (30GB)";
+      case "standard":
+        return "Standard (10GB)";
+      default:
+        return tier;
+    }
+  };
+
+  const getWhatsAppShareUrl = (invite: AdminInvite) => {
+    const url = `${window.location.origin}/register?token=${encodeURIComponent(invite.token)}`;
+    const clientGreeting = invite.clientName ? `Hai ${invite.clientName}` : "Hai";
+    const tierName = formatTierLabel(invite.tier);
+    const message = `${clientGreeting}! Terima kasih atas bayaran pakej ${tierName} Fotokita.\n\nSila gunakan link pendaftaran rasmi ini untuk mendaftar akaun Sub-Admin & memulakan galeri perkahwinan anda:\n${url}\n\n⚠️ Peringatan: Pautan ini sah selama 24 jam sahaja & sekali guna (Single-Use Token). Sila lengkapkan pendaftaran sebelum tamat tempoh.`;
+    return `https://wa.me/?text=${encodeURIComponent(message)}`;
   };
 
   useEffect(() => {
@@ -358,6 +458,7 @@ export function AdminControlPage({
                   <BreadcrumbItem>
                     <BreadcrumbPage className="capitalize">
                       {activeTab === "overview" && "Dashboard Overview"}
+                      {activeTab === "invites" && "Tenant Invites (24h Single-Use)"}
                       {activeTab === "weddings" && "Weddings Management"}
                       {activeTab === "system" && "System & Services"}
                     </BreadcrumbPage>
@@ -378,6 +479,19 @@ export function AdminControlPage({
                   className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`}
                 />
                 <span className="hidden sm:inline">Refresh</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setNewlyCreatedInvite(null);
+                  setIsCreateInviteOpen(true);
+                }}
+                className="gap-1.5 text-xs h-8 border-accent/40 text-accent hover:bg-accent/10"
+              >
+                <UserPlus className="size-3.5" />
+                <span>Generate Invite</span>
               </Button>
 
               <Button
@@ -598,6 +712,260 @@ export function AdminControlPage({
               </div>
             )}
 
+            {/* TAB: TENANT INVITES (24H SINGLE-USE) */}
+            {activeTab === "invites" && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight">
+                      Tenant Invites & Onboarding
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                      Jana link pendaftaran khas (sah 24 jam &amp; sekali guna) mengikut pakej langganan yang dipilih pelanggan selepas bayaran QR diterima.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setNewlyCreatedInvite(null);
+                      setIsCreateInviteOpen(true);
+                    }}
+                    className="gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
+                  >
+                    <UserPlus className="size-4" />
+                    <span>Jana Link Baru</span>
+                  </Button>
+                </div>
+
+                {/* Metrics */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <Card className="shadow-xs">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Jumlah Link Dijana
+                      </CardTitle>
+                      <Sparkles className="size-4 text-accent" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{invites.length}</div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Rekod keseluruhan jemputan
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-xs">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Link Aktif (Sah 24 Jam)
+                      </CardTitle>
+                      <Clock className="size-4 text-emerald-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                        {invites.filter((i) => i.status === "active").length}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Menunggu pelanggan mendaftar
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-xs">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Berjaya Didaftarkan
+                      </CardTitle>
+                      <CheckCircle2 className="size-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {invites.filter((i) => i.status === "used").length}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Token terbakar (Single-use)
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-xs">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Tamat Tempoh
+                      </CardTitle>
+                      <AlertTriangle className="size-4 text-amber-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                        {invites.filter((i) => i.status === "expired").length}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Melebihi had 24 jam
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Invites Table */}
+                <Card className="shadow-xs">
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold">
+                      Senarai Link Pendaftaran Tenant
+                    </CardTitle>
+                    <CardDescription>
+                      Maklumat pakej langganan, status single-use token, dan data yang diisi oleh tenant.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Pelanggan / Nota</TableHead>
+                          <TableHead>Pakej Langganan</TableHead>
+                          <TableHead>Status Token (24 Jam)</TableHead>
+                          <TableHead>Maklumat Pendaftaran Tenant</TableHead>
+                          <TableHead className="text-right">Tindakan</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {invites.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={5}
+                              className="text-center py-12 text-muted-foreground"
+                            >
+                              Tiada link jemputan. Klik &quot;Jana Link Baru&quot; untuk memulakan.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          invites.map((inv) => (
+                            <TableRow key={inv.id}>
+                              <TableCell className="align-top">
+                                <div className="font-medium text-foreground">
+                                  {inv.clientName || "Pelanggan Tanpa Nama"}
+                                </div>
+                                {inv.notes && (
+                                  <div className="text-xs text-muted-foreground mt-0.5">
+                                    {inv.notes}
+                                  </div>
+                                )}
+                                <div className="text-[11px] font-mono text-muted-foreground mt-1">
+                                  Token: {inv.token.slice(0, 12)}...
+                                </div>
+                              </TableCell>
+
+                              <TableCell className="align-top">
+                                <Badge
+                                  variant="outline"
+                                  className="capitalize text-xs font-medium border-accent/40 text-accent bg-accent/10"
+                                >
+                                  {formatTierLabel(inv.tier)}
+                                </Badge>
+                              </TableCell>
+
+                              <TableCell className="align-top">
+                                {inv.status === "active" && (
+                                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+                                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span>Aktif (baki {Math.ceil(inv.remainingMinutes / 60)}j)</span>
+                                  </div>
+                                )}
+                                {inv.status === "used" && (
+                                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium">
+                                    <CheckCircle2 className="size-3" />
+                                    <span>Telah Didaftarkan</span>
+                                  </div>
+                                )}
+                                {inv.status === "expired" && (
+                                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+                                    <Clock className="size-3" />
+                                    <span>Tamat Tempoh (&gt;24j)</span>
+                                  </div>
+                                )}
+                              </TableCell>
+
+                              <TableCell className="align-top">
+                                {inv.registrationDetails ? (
+                                  <div className="text-xs space-y-1">
+                                    <div className="flex items-center gap-1 text-foreground font-mono">
+                                      <User className="size-3 text-accent" />
+                                      <span>@{inv.registrationDetails.username}</span>
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                      {inv.registrationDetails.email}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[11px] text-muted-foreground">Galeri:</span>
+                                      <a
+                                        href={`/w/${inv.registrationDetails.weddingSlug}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-accent hover:underline font-mono text-[11px]"
+                                      >
+                                        <span>/{inv.registrationDetails.weddingSlug}</span>
+                                        <ExternalLink className="size-2.5" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground italic">
+                                    Belum mengisi pendaftaran
+                                  </span>
+                                )}
+                              </TableCell>
+
+                              <TableCell className="align-top text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {inv.status === "active" && (
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleCopyInviteUrl(inv.token, inv.id)}
+                                        className="h-8 text-xs gap-1.5"
+                                        title="Salin Pautan Pendaftaran"
+                                      >
+                                        {copiedInviteId === inv.id ? (
+                                          <Check className="size-3.5 text-emerald-500" />
+                                        ) : (
+                                          <Copy className="size-3.5" />
+                                        )}
+                                        <span className="hidden sm:inline">Salin Link</span>
+                                      </Button>
+
+                                      <a
+                                        href={getWhatsAppShareUrl(inv)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
+                                        title="Kirim ke WhatsApp"
+                                      >
+                                        <MessageCircle className="size-3.5" />
+                                        <span className="hidden sm:inline">WhatsApp</span>
+                                      </a>
+                                    </>
+                                  )}
+
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={() => handleDeleteInvite(inv.id)}
+                                    className="text-muted-foreground hover:text-destructive h-8 w-8 cursor-pointer"
+                                    title="Padam Link"
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             {/* TAB 2: WEDDINGS MANAGEMENT */}
             {activeTab === "weddings" && (
               <div className="space-y-6">
@@ -786,6 +1154,242 @@ export function AdminControlPage({
           </main>
         </SidebarInset>
       </div>
+
+      {/* GENERATE INVITE LINK DIALOG */}
+      <Dialog open={isCreateInviteOpen} onOpenChange={setIsCreateInviteOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="size-5 text-accent" />
+              <span>Jana Link Pendaftaran Tenant</span>
+            </DialogTitle>
+            <DialogDescription>
+              Hasilkan pautan pendaftaran 24 jam berserta pakej langganan yang dikunci khas untuk pelanggan selepas mereka membuat bayaran QR.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!newlyCreatedInvite ? (
+            <form onSubmit={handleCreateInvite} className="space-y-5 py-2">
+              {/* 1. Subscription Tier Selection */}
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
+                  Pilih Pakej Langganan *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  <div
+                    onClick={() => setInviteTier("12h")}
+                    className={`cursor-pointer p-3 rounded-lg border transition-all ${
+                      inviteTier === "12h"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-border hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="font-serif text-sm font-semibold">12 Jam</div>
+                    <div className="text-xs text-accent font-medium mt-0.5">RM 6</div>
+                    <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                      Acara singkat &amp; ringkas
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setInviteTier("1day")}
+                    className={`cursor-pointer p-3 rounded-lg border transition-all ${
+                      inviteTier === "1day"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-border hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="font-serif text-sm font-semibold">Sehari Penuh</div>
+                    <div className="text-xs text-accent font-medium mt-0.5">RM 10</div>
+                    <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                      Majlis kahwin 1 hari
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setInviteTier("3days")}
+                    className={`cursor-pointer p-3 rounded-lg border transition-all ${
+                      inviteTier === "3days"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-border hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="font-serif text-sm font-semibold">3 Hari</div>
+                    <div className="text-xs text-accent font-medium mt-0.5">RM 17</div>
+                    <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                      Nikah &amp; Resepsi hujung minggu
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setInviteTier("1week")}
+                    className={`cursor-pointer p-3 rounded-lg border transition-all ${
+                      inviteTier === "1week"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-border hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="font-serif text-sm font-semibold">1 Minggu</div>
+                    <div className="text-xs text-accent font-medium mt-0.5">RM 23</div>
+                    <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                      Liputan penuh seminggu
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setInviteTier("1month")}
+                    className={`cursor-pointer p-3 rounded-lg border transition-all ${
+                      inviteTier === "1month"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-border hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="font-serif text-sm font-semibold">1 Bulan</div>
+                    <div className="text-xs text-accent font-medium mt-0.5">RM 46</div>
+                    <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                      Akses santai &amp; muat turun
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setInviteTier("1year")}
+                    className={`cursor-pointer p-3 rounded-lg border transition-all ${
+                      inviteTier === "1year"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-border hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="font-serif text-sm font-semibold">1 Tahun Khas</div>
+                    <div className="text-xs text-accent font-medium mt-0.5">RM 189</div>
+                    <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                      Photographer, Dewan &amp; Organizer
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Client / Couple Name (Optional) */}
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
+                  Nama Pasangan / Pelanggan (Pilihan)
+                </label>
+                <Input
+                  placeholder="cth. Farid & Nurul"
+                  value={inviteClientName}
+                  onChange={(e) => setInviteClientName(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Nama ini akan dipaparkan secara automatik dalam borang pendaftaran mereka.
+                </p>
+              </div>
+
+              {/* 3. Internal Notes (Optional) */}
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
+                  Nota Bayaran / Rujukan (Pilihan)
+                </label>
+                <Input
+                  placeholder="cth. Maybank QR RM150 (Resit verified)"
+                  value={inviteNotes}
+                  onChange={(e) => setInviteNotes(e.target.value)}
+                />
+              </div>
+
+              {/* Safety notice */}
+              <div className="p-3 rounded-lg bg-muted/40 border text-xs text-muted-foreground flex items-start gap-2">
+                <Clock className="size-4 text-accent shrink-0 mt-0.5" />
+                <span>
+                  <strong>Had Masa 24 Jam &amp; Sekali Guna:</strong> Pautan ini akan tamat tempoh secara automatik selepas 24 jam dan terbakar serta-merta apabila pelanggan berjaya mendaftar.
+                </span>
+              </div>
+
+              <DialogFooter className="pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateInviteOpen(false)}
+                  disabled={isCreatingInvite}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isCreatingInvite}
+                  className="gap-2 cursor-pointer"
+                >
+                  <Sparkles className="size-4" />
+                  <span>{isCreatingInvite ? "Menjana..." : "Jana Link 24 Jam"}</span>
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : (
+            /* Newly Created Link View */
+            <div className="space-y-5 py-2">
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
+                <div className="size-10 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                  <Check className="size-5" />
+                </div>
+                <h3 className="font-semibold text-sm text-foreground">
+                  Link Pendaftaran 24 Jam Berjaya Dijana!
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Pakej <strong>{formatTierLabel(newlyCreatedInvite.tier)}</strong> telah dikunci pada pautan ini.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Pautan Pendaftaran Rasmi
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={`${window.location.origin}/register?token=${newlyCreatedInvite.token}`}
+                    className="font-mono text-xs bg-muted/50"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => handleCopyInviteUrl(newlyCreatedInvite.token, newlyCreatedInvite.id)}
+                    className="shrink-0 gap-1.5 text-xs"
+                  >
+                    {copiedInviteId === newlyCreatedInvite.id ? (
+                      <Check className="size-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="size-3.5" />
+                    )}
+                    <span>Salin</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+                <a
+                  href={getWhatsAppShareUrl(newlyCreatedInvite)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm"
+                >
+                  <MessageCircle className="size-4" />
+                  <span>Kirim ke WhatsApp Pelanggan</span>
+                </a>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setNewlyCreatedInvite(null);
+                    setInviteClientName("");
+                    setInviteNotes("");
+                  }}
+                  className="text-xs uppercase tracking-wider"
+                >
+                  Jana Satu Lagi
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* CREATE WEDDING DIALOG */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

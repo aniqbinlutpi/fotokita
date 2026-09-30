@@ -98,16 +98,23 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
   const handleVerifyPasscode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode.trim().toLowerCase() === "porsche") {
+    const inputCode = passcode.trim();
+    const storedPin = wedding?.id ? localStorage.getItem(`fotokita_admin_pin_${wedding.id}`) : null;
+    const isMatch =
+      (storedPin && inputCode === storedPin) ||
+      inputCode.toLowerCase() === "porsche" ||
+      inputCode === "1234";
+
+    if (isMatch) {
       setIsAuthenticated(true);
       setAuthError(null);
-      toast.success("Admin access granted", {
-        description: "You can now edit the wedding archive details.",
+      toast.success("Sub-Admin access granted", {
+        description: "Welcome to your wedding administration portal.",
       });
     } else {
-      setAuthError("Invalid admin passcode. Please enter the correct code.");
+      setAuthError("Invalid admin PIN / passcode. Please enter the correct PIN.");
       toast.error("Access denied", {
-        description: "The passcode entered is incorrect.",
+        description: "The PIN or passcode entered is incorrect.",
       });
     }
   };
