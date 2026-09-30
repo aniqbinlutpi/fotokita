@@ -276,13 +276,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const checkPricingScroll = () => {
     if (!pricingCarouselRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = pricingCarouselRef.current;
-    setCanScrollLeft(scrollLeft > 15);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 15);
+    const maxScrollLeft = scrollWidth - clientWidth;
 
-    // Approximate active card index
-    const cardWidth = 350 + 24;
-    const index = Math.round(scrollLeft / cardWidth);
-    setActivePlanIndex(Math.min(Math.max(0, index), PRICING_PLANS.length - 1));
+    setCanScrollLeft(scrollLeft > 15);
+    setCanScrollRight(scrollLeft < maxScrollLeft - 15);
+
+    if (maxScrollLeft <= 0) {
+      setActivePlanIndex(0);
+      return;
+    }
+
+    // Edge check: start of carousel
+    if (scrollLeft <= 20) {
+      setActivePlanIndex(0);
+      return;
+    }
+
+    // Edge check: end of carousel (card 6 / 1 Year Special)
+    if (scrollLeft >= maxScrollLeft - 20) {
+      setActivePlanIndex(PRICING_PLANS.length - 1);
+      return;
+    }
+
+    // Accurate normalized progress mapping across all plan cards
+    const progress = scrollLeft / maxScrollLeft;
+    const targetIndex = Math.round(progress * (PRICING_PLANS.length - 1));
+    setActivePlanIndex(Math.min(Math.max(0, targetIndex), PRICING_PLANS.length - 1));
   };
 
   useEffect(() => {
@@ -297,22 +316,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     };
   }, []);
 
-  const scrollPricing = (direction: "left" | "right") => {
-    if (!pricingCarouselRef.current) return;
-    const scrollAmount = 370;
-    pricingCarouselRef.current.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
   const scrollToPlanIndex = (index: number) => {
     if (!pricingCarouselRef.current) return;
-    const cardWidth = 350 + 24;
+    const { scrollWidth, clientWidth } = pricingCarouselRef.current;
+    const maxScrollLeft = scrollWidth - clientWidth;
+    if (maxScrollLeft <= 0) return;
+
+    let targetLeft = 0;
+    if (index === 0) {
+      targetLeft = 0;
+    } else if (index === PRICING_PLANS.length - 1) {
+      targetLeft = maxScrollLeft;
+    } else {
+      targetLeft = (maxScrollLeft / (PRICING_PLANS.length - 1)) * index;
+    }
+
     pricingCarouselRef.current.scrollTo({
-      left: index * cardWidth,
+      left: targetLeft,
       behavior: "smooth",
     });
+    setActivePlanIndex(index);
+  };
+
+  const scrollPricing = (direction: "left" | "right") => {
+    if (!pricingCarouselRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = pricingCarouselRef.current;
+    const maxScrollLeft = scrollWidth - clientWidth;
+    if (maxScrollLeft <= 0) return;
+
+    const progress = scrollLeft / maxScrollLeft;
+    const currentIndex = Math.round(progress * (PRICING_PLANS.length - 1));
+    const nextIndex =
+      direction === "left"
+        ? Math.max(0, currentIndex - 1)
+        : Math.min(PRICING_PLANS.length - 1, currentIndex + 1);
+
+    scrollToPlanIndex(nextIndex);
   };
 
   // Navigation Dropdown State (Hover expand)
@@ -1617,10 +1656,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
               )}
 
-              {/* Side-to-side Scroll Track */}
+              {/* Side-to-side Scroll Track (Scrollbar hidden, controlled via dots & arrows) */}
               <div
                 ref={pricingCarouselRef}
-                className="flex gap-5 sm:gap-6 overflow-x-auto pb-6 pt-5 px-3 sm:px-4 scroll-smooth snap-x snap-mandatory [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-muted/20 [&::-webkit-scrollbar-thumb]:bg-border/60 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-accent/40"
+                className="flex gap-5 sm:gap-6 overflow-x-auto pb-4 pt-5 px-3 sm:px-4 scroll-smooth snap-x snap-mandatory [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0"
               >
                 {PRICING_PLANS.map((plan) => (
                   <motion.div
@@ -1728,9 +1767,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
             </div>
 
-            {/* Dot indicators and swipe hint */}
-            <div className="flex flex-col items-center justify-center gap-3 mt-4">
-              <div className="flex items-center gap-1.5">
+            {/* Dot indicators (No scrollbar, pure dot navigation) */}
+            <div className="flex flex-col items-center justify-center gap-3 mt-6">
+              <div className="flex items-center gap-2">
                 {PRICING_PLANS.map((plan, idx) => (
                   <button
                     key={plan.id}
@@ -1739,8 +1778,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     aria-label={`View ${plan.name}`}
                     className={`transition-all duration-300 rounded-full cursor-pointer ${
                       activePlanIndex === idx
-                        ? "w-7 h-2 bg-accent shadow-xs"
-                        : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                        ? "w-8 h-2.5 bg-accent shadow-xs"
+                        : "w-2.5 h-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/60"
                     }`}
                   />
                 ))}
