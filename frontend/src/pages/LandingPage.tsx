@@ -37,7 +37,8 @@ import { Separator } from "@/components/ui/separator";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 interface LandingPageProps {
-  onNavigateToGallery: () => void;
+  onNavigateToGallery?: () => void;
+  onNavigateToDemo?: () => void;
   onNavigateToRegister: (plan?: "standard" | "premium") => void;
 }
 
@@ -115,6 +116,7 @@ const itemVariants = {
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigateToGallery,
+  onNavigateToDemo,
   onNavigateToRegister,
 }) => {
   // Interactive Product Simulator Active Tab
@@ -263,6 +265,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex((prev) => (prev === index ? null : index));
+  };
+
+  const handleOpenDemo = (e?: React.MouseEvent) => {
+    if (onNavigateToDemo) {
+      e?.preventDefault();
+      onNavigateToDemo();
+    } else if (onNavigateToGallery) {
+      e?.preventDefault();
+      onNavigateToGallery();
+    } else {
+      e?.preventDefault();
+      const demoUrl = new URL(window.location.origin + window.location.pathname);
+      demoUrl.searchParams.set("page", "demo");
+      window.open(demoUrl.toString(), "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
@@ -450,15 +467,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 title="Toggle theme"
               />
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onNavigateToGallery}
-                className="hidden sm:inline-flex cursor-pointer border-border/80 hover:border-accent hover:bg-accent/10 transition-colors"
+              <a
+                href="?page=demo"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleOpenDemo}
+                className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium cursor-pointer border border-border/80 hover:border-accent hover:bg-accent/10 text-foreground transition-colors select-none"
               >
-                <Eye data-icon="inline-start" className="text-accent size-3.5" />
+                <Eye className="text-accent size-3.5" />
                 <span>Live Demo</span>
-              </Button>
+              </a>
 
               <Button
                 variant="default"
@@ -536,15 +554,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <ArrowRight data-icon="inline-end" className="size-4" />
               </Button>
 
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={onNavigateToGallery}
-                className="w-full sm:w-auto h-12 px-7 rounded-xl text-xs uppercase tracking-widest font-semibold cursor-pointer bg-card/60 backdrop-blur-sm border-border hover:border-accent hover:bg-card transition-all"
+              <a
+                href="?page=demo"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleOpenDemo}
+                className="w-full sm:w-auto h-12 px-7 rounded-xl text-xs uppercase tracking-widest font-semibold cursor-pointer bg-card/60 backdrop-blur-sm border border-border hover:border-accent hover:bg-card transition-all inline-flex items-center justify-center gap-2 text-foreground select-none"
               >
-                <Eye data-icon="inline-start" className="text-accent size-4" />
+                <Eye className="text-accent size-4" />
                 <span>Explore Live Demo</span>
-              </Button>
+              </a>
             </motion.div>
 
             {/* Key Trust Signals Bar */}
@@ -1902,12 +1921,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <a href="#testimonials" className="hover:text-foreground transition-colors">
                 Reviews
               </a>
-              <button
-                onClick={onNavigateToGallery}
+              <a
+                href="?page=demo"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleOpenDemo}
                 className="hover:text-foreground transition-colors cursor-pointer"
               >
                 Live Demo
-              </button>
+              </a>
               <button
                 onClick={() => onNavigateToRegister("standard")}
                 className="text-accent font-semibold hover:underline cursor-pointer"

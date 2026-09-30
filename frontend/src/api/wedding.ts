@@ -54,3 +54,10 @@ export async function updateWedding(
   return handleApiResponse<Wedding>(response);
 }
 
+export async function deleteWedding(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${WEDDINGS_BASE_URL}/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  return handleApiResponse<{ message: string }>(response);
+}
+

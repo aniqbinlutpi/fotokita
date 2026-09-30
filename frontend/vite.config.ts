@@ -66,6 +66,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api\/weddings/, "/weddings"),
       },
+      "/api/admin": {
+        target: "http://localhost:3002",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/admin/, "/admin"),
+      },
     },
   },
 })
