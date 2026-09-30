@@ -122,99 +122,99 @@ const PRICING_PLANS: PricingPlanItem[] = [
   {
     id: "12h",
     name: "12 Hours Pass",
-    badge: "12 Jam • Sesi Singkat",
+    badge: "12 Hours • Short Session",
     price: "RM 6",
-    duration: "/ 12 jam",
-    description: "Sesuai untuk majlis akad nikah, pertunangan, atau resepsi singkat.",
+    duration: "/ 12 hours",
+    description: "Ideal for solemnization (nikah), engagement ceremonies, or brief receptions.",
     code: "12 Hours (RM6)",
     features: [
-      { text: "1 GB Cloud Storage (~300 foto)" },
-      { text: "Live Table QR code meja tetamu" },
-      { text: "Live upload tanpa muat turun aplikasi" },
-      { text: "12 jam akses galeri aktif" },
+      { text: "1 GB Cloud Storage (~300 photos)" },
+      { text: "Live Table QR code guest standees" },
+      { text: "Instant upload with zero app downloads" },
+      { text: "12 hours active live gallery access" },
     ],
   },
   {
     id: "1day",
     name: "Whole Day Pass",
-    badge: "Sehari Penuh • 24 Jam",
+    badge: "Whole Day • 24 Hours",
     isPopular: true,
     price: "RM 10",
-    duration: "/ 24 jam",
-    description: "Pilihan paling popular untuk majlis perkahwinan sehari penuh (siang & malam).",
+    duration: "/ 24 hours",
+    description: "Most popular choice for full-day wedding celebrations (day & evening).",
     code: "Whole Day (RM10)",
     features: [
-      { text: "5 GB Cloud Storage (~1,500 foto HD)", highlight: true },
-      { text: "Custom URL (fotokita.my/nama-anda)" },
+      { text: "5 GB Cloud Storage (~1,500 HD photos)", highlight: true },
+      { text: "Custom URL (fotokita.my/your-name)" },
       { text: "Live Ballroom Screen & Projector Slideshow", highlight: true },
       { text: "Digital Photobooth & Signature Polaroid" },
-      { text: "Templat Kad QR Meja sedia dicetak" },
+      { text: "Print-ready table QR card templates" },
       { text: "1-Click Bulk High-Res ZIP Download" },
-      { text: "24 jam akses galeri penuh" },
+      { text: "24 hours full gallery access" },
     ],
   },
   {
     id: "3days",
     name: "3 Days Pass",
-    badge: "3 Hari • Weekend Pass",
+    badge: "3 Days • Weekend Pass",
     price: "RM 17",
-    duration: "/ 3 hari",
-    description: "Sesuai untuk majlis bersambung: berinai, nikah hari Jumaat sehingga kenduri Ahad.",
+    duration: "/ 3 days",
+    description: "Perfect for multi-day events: henna night, Friday solemnization & Sunday banquet.",
     code: "3 Days (RM17)",
     features: [
-      { text: "10 GB Cloud Storage (~3,000 foto HD)", highlight: true },
-      { text: "Semua ciri Sehari Penuh disertakan" },
+      { text: "10 GB Cloud Storage (~3,000 HD photos)", highlight: true },
+      { text: "Everything in Whole Day Pass included" },
       { text: "Live Projector & TV Ballroom Slideshow" },
-      { text: "Digital Photobooth & Bingkai Polaroid" },
-      { text: "3 hari akses muat naik & tatapan" },
+      { text: "Digital Photobooth & Polaroid Frames" },
+      { text: "3 days active upload & viewing access" },
     ],
   },
   {
     id: "1week",
     name: "1 Week Pass",
-    badge: "Seminggu • Super Jimat",
+    badge: "1 Week • Best Value",
     price: "RM 23",
-    duration: "/ 7 hari",
-    description: "Santai seminggu penuh bersama sanak saudara & kenduri kedua-dua belah pihak.",
+    duration: "/ 7 days",
+    description: "A full week of leisurely celebration with extended family across both venues.",
     code: "1 Week (RM23)",
     features: [
-      { text: "15 GB Large Storage (~5,000 foto & klip)", highlight: true },
-      { text: "Semua ciri 3 Days Pass disertakan" },
-      { text: "Muat naik klip video pendek tetamu" },
-      { text: "7 hari akses muat naik & muat turun aktif" },
-      { text: "Templat cetakan kad meja PDF A6" },
+      { text: "15 GB Large Storage (~5,000 photos & clips)", highlight: true },
+      { text: "Everything in 3 Days Pass included" },
+      { text: "Short guest video clip uploads" },
+      { text: "7 days active upload & download access" },
+      { text: "Print-ready A6 PDF table card templates" },
     ],
   },
   {
     id: "1month",
     name: "1 Month Pass",
-    badge: "Sebulan • Arkib Panjang",
+    badge: "1 Month • Extended Archive",
     price: "RM 46",
-    duration: "/ bulan",
-    description: "Puas tatap & kumpul semula semua memori tetamu tanpa tergesa-gesa sepanjang bulan.",
+    duration: "/ month",
+    description: "Relive and gather every guest memory with zero rush throughout the month.",
     code: "1 Month (RM46)",
     features: [
-      { text: "30 GB Large Storage (~10,000 foto & video)", highlight: true },
-      { text: "Semua ciri 1 Week Pass disertakan" },
-      { text: "30 hari akses muat naik & tatapan penuh" },
-      { text: "Kualiti foto tanpa mampatan (Full HD)" },
-      { text: "Sokongan bantuan teknikal keutamaan" },
+      { text: "30 GB Large Storage (~10,000 photos & videos)", highlight: true },
+      { text: "Everything in 1 Week Pass included" },
+      { text: "30 days complete upload & viewing access" },
+      { text: "Uncompressed full HD photo quality" },
+      { text: "Priority technical assistance & support" },
     ],
   },
   {
     id: "1year",
     name: "1 Year Special",
-    badge: "Khas Jurugambar & Dewan",
+    badge: "Photographers & Hall Partners",
     isSpecialPartner: true,
     price: "RM 189",
-    duration: "/ tahun",
-    description: "Khas untuk Jurugambar, Pengurus Acara (Event Organizer), & Pemilik Dewan / Wedding Planner.",
+    duration: "/ year",
+    description: "Tailored for Photographers, Event Organizers, Wedding Planners & Banquet Hall Owners.",
     code: "1 Year Special (RM189)",
     features: [
       { text: "100 GB Massive Cloud Storage", highlight: true },
-      { text: "Sokongan pelbagai majlis sepanjang 1 tahun" },
-      { text: "Custom Branding (Nama Studio / Dewan anda)" },
-      { text: "Video 4K & muat turun berkelajuan tinggi" },
+      { text: "Multi-event coverage throughout 1 full year" },
+      { text: "Custom Branding (Your studio / hall name)" },
+      { text: "4K video support & high-speed downloads" },
       { text: "VIP Priority WhatsApp Concierge Support" },
     ],
   },
@@ -263,7 +263,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   const getWhatsAppUrlForPlan = (planCode: string) => {
-    const message = `Hai Fotokita! Saya berminat dengan pakej ${planCode} untuk pembayaran & tawaran deals terkini.`;
+    const message = `Hi Fotokita! I am interested in the ${planCode} package for payment & current deals.`;
     return `https://wa.me/60137848933?text=${encodeURIComponent(message)}`;
   };
 
@@ -1547,17 +1547,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Flexible Event Packages
                 </Badge>
                 <h2 className="font-serif text-3xl sm:text-4xl text-foreground font-normal">
-                  Pakej Fleksibel Mengikut Keperluan Majlis Anda
+                  Flexible Packages Tailored to Your Celebration
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground max-w-xl">
-                  Pilih tempoh masa yang sesuai untuk majlis anda. Tatal ke tepi untuk melihat semua 6 pakej langganan.
+                  Select the ideal event duration for your wedding. Scroll side to side to view all 6 packages.
                 </p>
               </div>
 
               {/* Navigation Controls (Arrows) */}
               <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
                 <span className="text-xs text-muted-foreground hidden sm:inline-block">
-                  Tatal ke tepi
+                  Scroll side to side
                 </span>
                 <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-full border border-border">
                   <Button
@@ -1566,7 +1566,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     onClick={() => scrollPricing("left")}
                     disabled={!canScrollLeft}
                     className="size-8 rounded-full cursor-pointer hover:bg-background hover:text-accent disabled:opacity-30 disabled:pointer-events-none"
-                    aria-label="Pakej sebelumnya"
+                    aria-label="Previous plan"
                   >
                     <ChevronLeft className="size-4" />
                   </Button>
@@ -1576,7 +1576,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     onClick={() => scrollPricing("right")}
                     disabled={!canScrollRight}
                     className="size-8 rounded-full cursor-pointer hover:bg-background hover:text-accent disabled:opacity-30 disabled:pointer-events-none"
-                    aria-label="Pakej seterusnya"
+                    aria-label="Next plan"
                   >
                     <ChevronRight className="size-4" />
                   </Button>
@@ -1641,7 +1641,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       {plan.isPopular && (
                         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[10px] uppercase tracking-widest font-bold px-3.5 py-1 rounded-full shadow-sm flex items-center gap-1 shrink-0 whitespace-nowrap">
                           <Sparkles className="size-3" />
-                          Paling Popular Untuk Perkahwinan
+                          Most Popular for Weddings
                         </div>
                       )}
 
@@ -1736,7 +1736,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     key={plan.id}
                     type="button"
                     onClick={() => scrollToPlanIndex(idx)}
-                    aria-label={`Lihat ${plan.name}`}
+                    aria-label={`View ${plan.name}`}
                     className={`transition-all duration-300 rounded-full cursor-pointer ${
                       activePlanIndex === idx
                         ? "w-7 h-2 bg-accent shadow-xs"
@@ -1746,7 +1746,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 ))}
               </div>
               <span className="text-[11px] text-muted-foreground font-mono sm:hidden">
-                &larr; Leret ke kiri / kanan &rarr;
+                &larr; Swipe left / right &rarr;
               </span>
             </div>
           </div>
@@ -2168,7 +2168,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Get Started via WhatsApp
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-muted-foreground">
-              Hubungi kami di WhatsApp untuk bayaran QR bank, tawaran terkini, dan penerimaan link pendaftaran khas anda.
+              Contact us on WhatsApp for instant QR bank transfers, exclusive deals, and receiving your dedicated registration link.
             </DialogDescription>
           </DialogHeader>
 
@@ -2178,7 +2178,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="p-4 rounded-xl bg-card border border-border/80 flex items-center justify-between shadow-2xs">
                 <div>
                   <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    Pakej Pilihan Anda
+                    Your Selected Package
                   </div>
                   <div className="font-serif text-lg font-medium text-foreground">
                     {selectedPlanForWhatsApp.name}
@@ -2193,18 +2193,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="p-3.5 rounded-lg bg-muted/40 border border-border/60 text-xs space-y-2 text-muted-foreground">
                 <div className="font-medium text-foreground flex items-center gap-1.5">
                   <CheckCircle2 className="size-3.5 text-accent" />
-                  <span>Langkah Mudah Langganan:</span>
+                  <span>Simple Subscription Steps:</span>
                 </div>
                 <ol className="list-decimal list-inside space-y-1.5 text-[11px] leading-relaxed">
                   <li>
-                    Klik butang WhatsApp di bawah untuk berhubung terus dengan pihak admin kami.
+                    Click the WhatsApp button below to connect directly with our admin team.
                   </li>
                   <li>
-                    Admin kami akan berikan maklumat akaun bank / kod QR rasmi untuk pengesahan bayaran pantas &amp; promosi terkini.
+                    Our admin will share official bank details / DuitNow QR for swift payment verification &amp; latest promotions.
                   </li>
                   <li>
-                    Selepas pembayaran disahkan, admin akan menjana{" "}
-                    <strong className="text-foreground">link jemputan pendaftaran 24 jam</strong> khas untuk anda melancarkan galeri &amp; portal Sub-Admin!
+                    Once verified, admin will generate your dedicated{" "}
+                    <strong className="text-foreground">24-hour single-use invite link</strong> to activate your gallery &amp; Sub-Admin portal!
                   </li>
                 </ol>
               </div>
@@ -2218,7 +2218,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 className="w-full inline-flex items-center justify-center gap-2.5 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-widest transition-all shadow-md hover:shadow-lg cursor-pointer select-none"
               >
                 <MessageCircle className="size-5" />
-                <span>Hubungi Admin di WhatsApp</span>
+                <span>Contact Admin on WhatsApp</span>
               </a>
 
               {/* Optional: Already have token? */}
@@ -2231,7 +2231,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   }}
                   className="text-[11px] text-muted-foreground hover:text-foreground transition-colors underline cursor-pointer"
                 >
-                  Sudah mempunyai link pendaftaran dari admin? Klik di sini
+                  Already have a registration link from admin? Click here
                 </button>
               </div>
             </div>

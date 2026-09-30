@@ -269,17 +269,17 @@ export function AdminControlPage({
   const formatTierLabel = (tier: string) => {
     switch (tier) {
       case "12h":
-        return "12 Jam (RM6)";
+        return "12 Hours (RM6)";
       case "1day":
-        return "Sehari Penuh (RM10)";
+        return "Whole Day (RM10)";
       case "3days":
-        return "3 Hari (RM17)";
+        return "3 Days (RM17)";
       case "1week":
-        return "1 Minggu (RM23)";
+        return "1 Week (RM23)";
       case "1month":
-        return "1 Bulan (RM46)";
+        return "1 Month (RM46)";
       case "1year":
-        return "1 Tahun Khas (RM189)";
+        return "1 Year Special (RM189)";
       case "vip":
         return "VIP (100GB)";
       case "premium":
@@ -293,9 +293,9 @@ export function AdminControlPage({
 
   const getWhatsAppShareUrl = (invite: AdminInvite) => {
     const url = `${window.location.origin}/register?token=${encodeURIComponent(invite.token)}`;
-    const clientGreeting = invite.clientName ? `Hai ${invite.clientName}` : "Hai";
+    const clientGreeting = invite.clientName ? `Hi ${invite.clientName}` : "Hi";
     const tierName = formatTierLabel(invite.tier);
-    const message = `${clientGreeting}! Terima kasih atas bayaran pakej ${tierName} Fotokita.\n\nSila gunakan link pendaftaran rasmi ini untuk mendaftar akaun Sub-Admin & memulakan galeri perkahwinan anda:\n${url}\n\n⚠️ Peringatan: Pautan ini sah selama 24 jam sahaja & sekali guna (Single-Use Token). Sila lengkapkan pendaftaran sebelum tamat tempoh.`;
+    const message = `${clientGreeting}! Thank you for your payment for the Fotokita ${tierName} package.\n\nPlease use this official link to register your Sub-Admin account and launch your wedding gallery:\n${url}\n\n⚠️ Notice: This link is valid for 24 hours only and is single-use. Please complete your registration before expiry.`;
     return `https://wa.me/?text=${encodeURIComponent(message)}`;
   };
 
@@ -721,7 +721,7 @@ export function AdminControlPage({
                       Tenant Invites & Onboarding
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                      Jana link pendaftaran khas (sah 24 jam &amp; sekali guna) mengikut pakej langganan yang dipilih pelanggan selepas bayaran QR diterima.
+                      Generate exclusive registration links (24h validity &amp; single-use) based on client's chosen subscription package after payment.
                     </p>
                   </div>
                   <Button
@@ -732,7 +732,7 @@ export function AdminControlPage({
                     className="gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
                   >
                     <UserPlus className="size-4" />
-                    <span>Jana Link Baru</span>
+                    <span>Generate New Link</span>
                   </Button>
                 </div>
 
@@ -819,11 +819,11 @@ export function AdminControlPage({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Pelanggan / Nota</TableHead>
-                          <TableHead>Pakej Langganan</TableHead>
-                          <TableHead>Status Token (24 Jam)</TableHead>
-                          <TableHead>Maklumat Pendaftaran Tenant</TableHead>
-                          <TableHead className="text-right">Tindakan</TableHead>
+                          <TableHead>Client / Notes</TableHead>
+                          <TableHead>Subscription Plan</TableHead>
+                          <TableHead>Token Status (24h)</TableHead>
+                          <TableHead>Tenant Registration Details</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -833,7 +833,7 @@ export function AdminControlPage({
                               colSpan={5}
                               className="text-center py-12 text-muted-foreground"
                             >
-                              Tiada link jemputan. Klik &quot;Jana Link Baru&quot; untuk memulakan.
+                              No invite links found. Click &quot;Generate New Link&quot; to get started.
                             </TableCell>
                           </TableRow>
                         ) : (
@@ -841,7 +841,7 @@ export function AdminControlPage({
                             <TableRow key={inv.id}>
                               <TableCell className="align-top">
                                 <div className="font-medium text-foreground">
-                                  {inv.clientName || "Pelanggan Tanpa Nama"}
+                                  {inv.clientName || "Unnamed Client"}
                                 </div>
                                 {inv.notes && (
                                   <div className="text-xs text-muted-foreground mt-0.5">
@@ -866,19 +866,19 @@ export function AdminControlPage({
                                 {inv.status === "active" && (
                                   <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
                                     <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span>Aktif (baki {Math.ceil(inv.remainingMinutes / 60)}j)</span>
+                                    <span>Active ({Math.ceil(inv.remainingMinutes / 60)}h left)</span>
                                   </div>
                                 )}
                                 {inv.status === "used" && (
                                   <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium">
                                     <CheckCircle2 className="size-3" />
-                                    <span>Telah Didaftarkan</span>
+                                    <span>Registered</span>
                                   </div>
                                 )}
                                 {inv.status === "expired" && (
                                   <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
                                     <Clock className="size-3" />
-                                    <span>Tamat Tempoh (&gt;24j)</span>
+                                    <span>Expired (&gt;24h)</span>
                                   </div>
                                 )}
                               </TableCell>
@@ -894,7 +894,7 @@ export function AdminControlPage({
                                       {inv.registrationDetails.email}
                                     </div>
                                     <div className="flex items-center gap-1">
-                                      <span className="text-[11px] text-muted-foreground">Galeri:</span>
+                                      <span className="text-[11px] text-muted-foreground">Gallery:</span>
                                       <a
                                         href={`/w/${inv.registrationDetails.weddingSlug}`}
                                         target="_blank"
@@ -908,7 +908,7 @@ export function AdminControlPage({
                                   </div>
                                 ) : (
                                   <span className="text-xs text-muted-foreground italic">
-                                    Belum mengisi pendaftaran
+                                    Awaiting registration
                                   </span>
                                 )}
                               </TableCell>
@@ -922,14 +922,14 @@ export function AdminControlPage({
                                         size="sm"
                                         onClick={() => handleCopyInviteUrl(inv.token, inv.id)}
                                         className="h-8 text-xs gap-1.5"
-                                        title="Salin Pautan Pendaftaran"
+                                        title="Copy Registration Link"
                                       >
                                         {copiedInviteId === inv.id ? (
                                           <Check className="size-3.5 text-emerald-500" />
                                         ) : (
                                           <Copy className="size-3.5" />
                                         )}
-                                        <span className="hidden sm:inline">Salin Link</span>
+                                        <span className="hidden sm:inline">Copy Link</span>
                                       </Button>
 
                                       <a
@@ -937,7 +937,7 @@ export function AdminControlPage({
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
-                                        title="Kirim ke WhatsApp"
+                                        title="Send to WhatsApp"
                                       >
                                         <MessageCircle className="size-3.5" />
                                         <span className="hidden sm:inline">WhatsApp</span>
@@ -950,7 +950,7 @@ export function AdminControlPage({
                                     size="icon-xs"
                                     onClick={() => handleDeleteInvite(inv.id)}
                                     className="text-muted-foreground hover:text-destructive h-8 w-8 cursor-pointer"
-                                    title="Padam Link"
+                                    title="Delete Link"
                                   >
                                     <Trash2 className="size-3.5" />
                                   </Button>
@@ -1173,7 +1173,7 @@ export function AdminControlPage({
               {/* 1. Subscription Tier Selection */}
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                  Pilih Pakej Langganan *
+                  Select Subscription Plan *
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   <div
@@ -1184,10 +1184,10 @@ export function AdminControlPage({
                         : "border-border hover:border-accent/40"
                     }`}
                   >
-                    <div className="font-serif text-sm font-semibold">12 Jam</div>
+                    <div className="font-serif text-sm font-semibold">12 Hours</div>
                     <div className="text-xs text-accent font-medium mt-0.5">RM 6</div>
                     <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                      Acara singkat &amp; ringkas
+                      Short event &amp; ceremony
                     </div>
                   </div>
 
@@ -1199,10 +1199,10 @@ export function AdminControlPage({
                         : "border-border hover:border-accent/40"
                     }`}
                   >
-                    <div className="font-serif text-sm font-semibold">Sehari Penuh</div>
+                    <div className="font-serif text-sm font-semibold">Whole Day</div>
                     <div className="text-xs text-accent font-medium mt-0.5">RM 10</div>
                     <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                      Majlis kahwin 1 hari
+                      Full-day wedding banquet
                     </div>
                   </div>
 
@@ -1214,10 +1214,10 @@ export function AdminControlPage({
                         : "border-border hover:border-accent/40"
                     }`}
                   >
-                    <div className="font-serif text-sm font-semibold">3 Hari</div>
+                    <div className="font-serif text-sm font-semibold">3 Days</div>
                     <div className="text-xs text-accent font-medium mt-0.5">RM 17</div>
                     <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                      Nikah &amp; Resepsi hujung minggu
+                      Weekend solemnization &amp; reception
                     </div>
                   </div>
 
@@ -1229,10 +1229,10 @@ export function AdminControlPage({
                         : "border-border hover:border-accent/40"
                     }`}
                   >
-                    <div className="font-serif text-sm font-semibold">1 Minggu</div>
+                    <div className="font-serif text-sm font-semibold">1 Week</div>
                     <div className="text-xs text-accent font-medium mt-0.5">RM 23</div>
                     <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                      Liputan penuh seminggu
+                      Full week multi-event coverage
                     </div>
                   </div>
 
@@ -1244,10 +1244,10 @@ export function AdminControlPage({
                         : "border-border hover:border-accent/40"
                     }`}
                   >
-                    <div className="font-serif text-sm font-semibold">1 Bulan</div>
+                    <div className="font-serif text-sm font-semibold">1 Month</div>
                     <div className="text-xs text-accent font-medium mt-0.5">RM 46</div>
                     <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                      Akses santai &amp; muat turun
+                      Relaxed access &amp; downloads
                     </div>
                   </div>
 
@@ -1259,10 +1259,10 @@ export function AdminControlPage({
                         : "border-border hover:border-accent/40"
                     }`}
                   >
-                    <div className="font-serif text-sm font-semibold">1 Tahun Khas</div>
+                    <div className="font-serif text-sm font-semibold">1 Year Special</div>
                     <div className="text-xs text-accent font-medium mt-0.5">RM 189</div>
                     <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                      Photographer, Dewan &amp; Organizer
+                      Photographer, Hall &amp; Organizer
                     </div>
                   </div>
                 </div>
@@ -1330,16 +1330,16 @@ export function AdminControlPage({
                   <Check className="size-5" />
                 </div>
                 <h3 className="font-semibold text-sm text-foreground">
-                  Link Pendaftaran 24 Jam Berjaya Dijana!
+                  24-Hour Registration Link Generated Successfully!
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Pakej <strong>{formatTierLabel(newlyCreatedInvite.tier)}</strong> telah dikunci pada pautan ini.
+                  Package <strong>{formatTierLabel(newlyCreatedInvite.tier)}</strong> is locked to this link.
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Pautan Pendaftaran Rasmi
+                  Official Registration Link
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -1357,7 +1357,7 @@ export function AdminControlPage({
                     ) : (
                       <Copy className="size-3.5" />
                     )}
-                    <span>Salin</span>
+                    <span>Copy</span>
                   </Button>
                 </div>
               </div>
@@ -1370,7 +1370,7 @@ export function AdminControlPage({
                   className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm"
                 >
                   <MessageCircle className="size-4" />
-                  <span>Kirim ke WhatsApp Pelanggan</span>
+                  <span>Send to Client via WhatsApp</span>
                 </a>
 
                 <Button

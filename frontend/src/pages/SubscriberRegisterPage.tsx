@@ -36,15 +36,15 @@ interface SubscriberRegisterPageProps {
 }
 
 const PLAN_DETAILS: Record<string, { title: string; price: string; duration: string; desc: string }> = {
-  "12h": { title: "12 Jam", price: "RM 6", duration: "12 Jam", desc: "Akses perkongsian & muat naik tetamu selama 12 jam." },
-  "1day": { title: "Sehari Penuh", price: "RM 10", duration: "24 Jam", desc: "Sesuai untuk majlis nikah atau sanding sepanjang hari." },
-  "3days": { title: "3 Hari", price: "RM 17", duration: "3 Hari", desc: "Liputan hujung minggu lengkap untuk nikah & resepsi." },
-  "1week": { title: "1 Minggu", price: "RM 23", duration: "7 Hari", desc: "Masa tambahan untuk tetamu & keluarga berkongsi foto." },
-  "1month": { title: "1 Bulan", price: "RM 46", duration: "30 Hari", desc: "Akses santai untuk muat turun & arkib keluarga." },
-  "1year": { title: "1 Tahun Khas", price: "RM 189", duration: "365 Hari", desc: "Khas untuk jurugambar, perancang majlis & pengusaha dewan." },
-  standard: { title: "Standard", price: "RM 6", duration: "12 Jam", desc: "Foto tetamu resolusi tinggi." },
-  premium: { title: "Pro Studio", price: "RM 10", duration: "24 Jam", desc: "Foto & klip video pantas." },
-  vip: { title: "VIP Exclusive", price: "RM 189", duration: "1 Tahun", desc: "Video 4K & arkib tanpa had." },
+  "12h": { title: "12 Hours", price: "RM 6", duration: "12 Hours", desc: "Active guest photo uploads & gallery access for 12 hours." },
+  "1day": { title: "Whole Day", price: "RM 10", duration: "24 Hours", desc: "Ideal for full-day solemnization & evening wedding banquets." },
+  "3days": { title: "3 Days", price: "RM 17", duration: "3 Days", desc: "Full weekend celebration: henna night, ceremony & reception." },
+  "1week": { title: "1 Week", price: "RM 23", duration: "7 Days", desc: "Leisurely 7-day extended family photo gathering & sharing." },
+  "1month": { title: "1 Month", price: "RM 46", duration: "30 Days", desc: "Relaxed 30-day guest downloads & high-res archive access." },
+  "1year": { title: "1 Year Special", price: "RM 189", duration: "365 Days", desc: "Tailored for photographers, wedding planners & banquet halls." },
+  standard: { title: "Standard", price: "RM 6", duration: "12 Hours", desc: "High-resolution guest candid gallery." },
+  premium: { title: "Pro Studio", price: "RM 10", duration: "24 Hours", desc: "HD photos & quick video clip uploads." },
+  vip: { title: "VIP Exclusive", price: "RM 189", duration: "1 Year", desc: "4K video archives & unlimited multi-event support." },
 };
 
 export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
@@ -408,7 +408,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
-                  Pakej Langganan
+                  Subscription Package
                 </span>
                 <Badge variant="secondary" className="capitalize text-[10px]">
                   {PLAN_DETAILS[selectedPlan]?.title || selectedPlan} ({PLAN_DETAILS[selectedPlan]?.price || ""})
@@ -593,11 +593,11 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs uppercase tracking-widest font-medium text-muted-foreground">
-                  Pakej Langganan
+                  Subscription Package
                 </label>
                 {lockedPlan && (
                   <Badge variant="secondary" className="text-[10px] uppercase font-mono">
-                    Ditetapkan oleh Admin (24 Jam Token)
+                    Locked by Admin (24h Token)
                   </Badge>
                 )}
               </div>
@@ -614,12 +614,12 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {PLAN_DETAILS[selectedPlan]?.desc || "Pakej langganan yang telah disahkan."}
+                      {PLAN_DETAILS[selectedPlan]?.desc || "Verified and locked subscription package."}
                     </p>
                   </div>
                   <div className="shrink-0">
                     <Badge variant="outline" className="text-[11px] font-medium border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
-                      Disahkan &bull; {PLAN_DETAILS[selectedPlan]?.duration || "Aktif"}
+                      Verified &bull; {PLAN_DETAILS[selectedPlan]?.duration || "Active"}
                     </Badge>
                   </div>
                 </div>
