@@ -15,7 +15,7 @@ app.use("*", cors({
 app.onError((err, c) => {
   console.error("Admin Service Error:", err);
   return c.json(
-    error("INTERNAL_SERVER_ERROR", "Ralat dalaman server"),
+    error("INTERNAL_SERVER_ERROR", "Internal server error"),
     500
   );
 });

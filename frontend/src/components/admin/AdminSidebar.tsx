@@ -65,14 +65,14 @@ export function AdminSidebar({
       <SidebarContent>
         {/* Main Admin Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Kawalan</SidebarGroupLabel>
+          <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   isActive={activeTab === "overview"}
                   onClick={() => onSelectTab("overview")}
-                  tooltip="Ringkasan Dashboard"
+                  tooltip="Dashboard Overview"
                 >
                   <LayoutDashboard className="size-4" />
                   <span>Dashboard Overview</span>
@@ -83,10 +83,10 @@ export function AdminSidebar({
                 <SidebarMenuButton
                   isActive={activeTab === "weddings"}
                   onClick={() => onSelectTab("weddings")}
-                  tooltip="Pengurusan Majlis"
+                  tooltip="Weddings Management"
                 >
                   <Heart className="size-4" />
-                  <span>Pengurusan Majlis</span>
+                  <span>Weddings Management</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
@@ -94,10 +94,10 @@ export function AdminSidebar({
                 <SidebarMenuButton
                   isActive={activeTab === "system"}
                   onClick={() => onSelectTab("system")}
-                  tooltip="Status Servis"
+                  tooltip="System & Services"
                 >
                   <Server className="size-4" />
-                  <span>Status Sistem & Servis</span>
+                  <span>System & Services</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -106,13 +106,13 @@ export function AdminSidebar({
 
         {/* Quick Links */}
         <SidebarGroup>
-          <SidebarGroupLabel>Pautan Pantas</SidebarGroupLabel>
+          <SidebarGroupLabel>Quick Links</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={onBackHome} tooltip="Laman Awam Fotokita">
+                <SidebarMenuButton onClick={onBackHome} tooltip="Public Home Page">
                   <Globe className="size-4" />
-                  <span>Laman Utama Awam</span>
+                  <span>Public Home Page</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -140,7 +140,7 @@ export function AdminSidebar({
               <button
                 type="button"
                 onClick={onLogout}
-                title="Log Keluar"
+                title="Sign out"
                 className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-background transition-colors"
               >
                 <LogOut className="size-4" />

@@ -12,21 +12,21 @@ type Env = {
 const authRoute = new Hono<Env>();
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username diperlukan"),
-  password: z.string().min(1, "Password diperlukan"),
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const requireAdminAuth = async (c: any, next: () => Promise<void>) => {
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json(error("UNAUTHORIZED", "Sila log masuk untuk mengakses panel admin"), 401);
+    return c.json(error("UNAUTHORIZED", "Please log in to access the admin panel"), 401);
   }
 
   const token = authHeader.split(" ")[1];
   const payload = await verifyToken(token);
 
   if (!payload) {
-    return c.json(error("INVALID_TOKEN", "Sesi telah tamat atau tidak sah"), 401);
+    return c.json(error("INVALID_TOKEN", "Session expired or invalid token"), 401);
   }
 
   c.set("admin", payload);
@@ -39,19 +39,19 @@ authRoute.post("/login", async (c) => {
 
   if (!parsed.success) {
     return c.json(
-      error("VALIDATION_ERROR", "Data log masuk tidak lengkap", parsed.error.flatten()),
+      error("VALIDATION_ERROR", "Incomplete login credentials", parsed.error.flatten()),
       400
     );
   }
 
-  const expectedUsername = process.env.ADMIN_USERNAME || "superadmin";
-  const expectedPassword = process.env.ADMIN_PASSWORD || "fotokitaAdmin2026!";
+  const expectedUsername = process.env.ADMIN_USERNAME || "aniqbinlutpi";
+  const expectedPassword = process.env.ADMIN_PASSWORD || "Fotokita61_";
 
   const { username, password } = parsed.data;
 
   // Verify username & password
   if (username !== expectedUsername || password !== expectedPassword) {
-    return c.json(error("INVALID_CREDENTIALS", "Username atau password tidak tepat"), 401);
+    return c.json(error("INVALID_CREDENTIALS", "Invalid username or password"), 401);
   }
 
   const token = await createToken({
@@ -86,7 +86,7 @@ authRoute.get("/me", requireAdminAuth, async (c) => {
 });
 
 authRoute.post("/logout", async (c) => {
-  return c.json(success({ message: "Log keluar berjaya" }));
+  return c.json(success({ message: "Successfully logged out" }));
 });
 
 export default authRoute;

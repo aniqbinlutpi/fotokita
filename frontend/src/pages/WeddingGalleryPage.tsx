@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { WeddingHero } from "@/components/wedding/WeddingHero";
 import { Gallery } from "@/components/wedding/Gallery";
 import { UploadPhotos } from "@/components/wedding/UploadPhotos";
@@ -6,165 +6,66 @@ import { AdminModal } from "@/components/wedding/AdminModal";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import { getWeddings, createWedding, getWeddingById, getWeddingBySlug } from "@/api/wedding";
-import { getMediaByWeddingId, deleteMedia } from "@/api/media";
-import type { Wedding } from "@/types/wedding";
-import type { MediaItem } from "@/types/media";
+import { deleteMedia } from "@/api/media";
+import { useActiveWedding, weddingKeys } from "@/hooks/queries/useWeddings";
+import { useMedia, useDeleteMedia } from "@/hooks/queries/useMedia";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 interface WeddingGalleryPageProps {
+  slug?: string;
+  weddingId?: string;
   onOpenRegister?: () => void;
   onNavigateToLanding?: () => void;
 }
 
 export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
+  slug: propSlug,
+  weddingId: propWeddingId,
   onOpenRegister,
   onNavigateToLanding,
 }) => {
-  const [wedding, setWedding] = useState<Wedding | null>(null);
-  const [mediaList, setMediaList] = useState<MediaItem[]>([]);
-  const [isLoadingWedding, setIsLoadingWedding] = useState<boolean>(true);
-  const [isLoadingMedia, setIsLoadingMedia] = useState<boolean>(true);
-  const [mediaError, setMediaError] = useState<string | null>(null);
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeSlug = propSlug || urlParams.get("slug") || undefined;
+  const activeWeddingId = propWeddingId || urlParams.get("weddingId") || undefined;
+
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
+  const queryClient = useQueryClient();
 
-  // Fetch active wedding
-  const fetchWeddingData = useCallback(async (): Promise<Wedding> => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlSlug = urlParams.get("slug");
-    const urlWeddingId = urlParams.get("weddingId");
+  // TanStack Query for Wedding
+  const {
+    data: wedding,
+    isLoading: isLoadingWedding,
+  } = useActiveWedding({ slug: activeSlug, weddingId: activeWeddingId });
 
-    // 1. If slug is in query (?slug=ali-dan-siti), fetch by slug
-    if (urlSlug) {
-      try {
-        const weddingBySlug = await getWeddingBySlug(urlSlug);
-        if (weddingBySlug) {
-          return weddingBySlug;
-        }
-      } catch (e) {
-        console.warn("Could not find wedding from slug param, falling back", e);
-      }
-    }
+  // TanStack Query for Media
+  const {
+    data: mediaList = [],
+    isLoading: isLoadingMedia,
+    error: mediaQueryError,
+    refetch: refetchMedia,
+  } = useMedia(wedding?.id);
 
-    // 2. If weddingId is in query, fetch by id
-    if (urlWeddingId) {
-      try {
-        const specificWedding = await getWeddingById(urlWeddingId);
-        if (specificWedding) {
-          return specificWedding;
-        }
-      } catch (e) {
-        console.warn("Could not find wedding from URL param, falling back to listing", e);
-      }
-    }
-
-    const weddings = await getWeddings();
-    if (weddings && weddings.length > 0) {
-      return weddings[0];
-    }
-
-    return await createWedding({
-      name: "Afiq & Wieam",
-      slug: "afiq-wieam",
-      date: new Date("2026-12-20T02:00:00Z").toISOString(),
-    });
-  }, []);
-
-  // Fetch media items for a wedding
-  const fetchMediaData = useCallback(async (weddingId: string): Promise<MediaItem[]> => {
-    const items = await getMediaByWeddingId(weddingId);
-    return [...items].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  }, []);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function loadInitialData() {
-      try {
-        let activeWedding = await fetchWeddingData();
-        try {
-          const savedOverride = localStorage.getItem("fotokita_wedding_override");
-          if (savedOverride) {
-            const parsed = JSON.parse(savedOverride);
-            activeWedding = { ...activeWedding, ...parsed };
-          }
-        } catch {
-          // ignore
-        }
-        if (isCancelled) return;
-        setWedding(activeWedding);
-        setIsLoadingWedding(false);
-
-        try {
-          const media = await fetchMediaData(activeWedding.id);
-          if (isCancelled) return;
-          setMediaList(media);
-        } catch (err: any) {
-          if (isCancelled) return;
-          console.error("Failed to load media:", err);
-          setMediaError(err?.message || "Failed to load photographs from the media service.");
-        } finally {
-          if (!isCancelled) {
-            setIsLoadingMedia(false);
-          }
-        }
-      } catch (err: any) {
-        if (isCancelled) return;
-        console.error("Failed to load wedding details:", err);
-        let fallback: Wedding = {
-          id: "123e4567-e89b-12d3-a456-426614174000",
-          name: "Afiq & Wieam",
-          slug: "afiq-wieam",
-          date: new Date("2026-12-20T02:00:00Z").toISOString(),
-          createdAt: new Date().toISOString(),
-        };
-        try {
-          const savedOverride = localStorage.getItem("fotokita_wedding_override");
-          if (savedOverride) {
-            const parsed = JSON.parse(savedOverride);
-            fallback = { ...fallback, ...parsed };
-          }
-        } catch {
-          // ignore
-        }
-        setWedding(fallback);
-        setIsLoadingWedding(false);
-        setIsLoadingMedia(false);
-      }
-    }
-
-    loadInitialData();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [fetchWeddingData, fetchMediaData]);
+  // TanStack Query Mutation for Delete
+  const deleteMutation = useDeleteMedia(wedding?.id);
 
   const handleRefresh = async () => {
-    if (!wedding) return;
-    try {
-      setIsLoadingMedia(true);
-      setMediaError(null);
-      const items = await fetchMediaData(wedding.id);
-      setMediaList(items);
-    } catch (err: any) {
-      console.error("Failed to refresh media:", err);
-      setMediaError(err?.message || "Failed to refresh photographs.");
-    } finally {
-      setIsLoadingMedia(false);
-    }
+    await refetchMedia();
   };
 
-  const handleUploadSuccess = (newMedia: MediaItem) => {
-    setMediaList((prev) => [newMedia, ...prev]);
+  const handleUploadSuccess = () => {
+    refetchMedia();
   };
 
   const handleDeleteMedia = async (mediaId: string, code?: string) => {
     try {
-      await deleteMedia(mediaId, code);
-      setMediaList((prev) => prev.filter((item) => item.id !== mediaId));
+      if (code) {
+        await deleteMedia(mediaId, code);
+        await refetchMedia();
+      } else {
+        await deleteMutation.mutateAsync(mediaId);
+      }
       try {
         localStorage.removeItem(`fotokita_secret_${mediaId}`);
       } catch {
@@ -179,6 +80,7 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
       throw err;
     }
   };
+
 
   return (
     <div className="min-h-screen bg-[#F8F5F0] dark:bg-[#12100E] text-[#2F2926] dark:text-[#F5EFEB] selection:bg-[#A67C6B]/20 selection:text-[#2F2926] dark:selection:text-[#F5EFEB] flex flex-col font-sans transition-colors duration-300">
@@ -267,7 +169,7 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
           </div>
         ) : (
           <WeddingHero
-            wedding={wedding}
+            wedding={wedding || null}
             photoCount={mediaList.length}
             onOpenUpload={() => setIsUploadOpen(true)}
           />
@@ -279,7 +181,7 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
             wedding={wedding}
             mediaList={mediaList}
             isLoading={isLoadingMedia}
-            error={mediaError}
+            error={mediaQueryError ? (mediaQueryError as Error).message : null}
             onRefresh={handleRefresh}
             onDeleteMedia={handleDeleteMedia}
             onOpenUpload={() => setIsUploadOpen(true)}
@@ -304,8 +206,8 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
           wedding={wedding}
           isOpen={isAdminOpen}
           onOpenChange={setIsAdminOpen}
-          onWeddingUpdated={(updated) => {
-            setWedding(updated);
+          onWeddingUpdated={(_updated) => {
+            queryClient.invalidateQueries({ queryKey: weddingKeys.all });
           }}
         />
       )}

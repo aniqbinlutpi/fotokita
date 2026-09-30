@@ -6,12 +6,18 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+const accessKeyId = (process.env.R2_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID)!;
+const secretAccessKey = (process.env.R2_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY)!;
+const endpoint = process.env.R2_ENDPOINT || process.env.S3_ENDPOINT;
+const bucketName = (process.env.R2_BUCKET_NAME || process.env.S3_BUCKET_NAME)!;
+const region = process.env.R2_REGION || process.env.AWS_REGION || "auto";
+
 export const s3 = new S3Client({
-  region: process.env.AWS_REGION || "auto",
-  endpoint: process.env.S3_ENDPOINT,
+  region,
+  endpoint,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId,
+    secretAccessKey,
   },
   forcePathStyle: true,
 });
@@ -27,7 +33,7 @@ export async function uploadToS3({
 }) {
   await s3.send(
     new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME!,
+      Bucket: bucketName,
       Key: key,
       Body: file,
       ContentType: contentType,
@@ -37,7 +43,7 @@ export async function uploadToS3({
 
 export async function generatePresignedUrl(key: string) {
   const command = new GetObjectCommand({
-    Bucket: process.env.S3_BUCKET_NAME!,
+    Bucket: bucketName,
     Key: key,
   });
 
@@ -49,9 +55,15 @@ export async function generatePresignedUrl(key: string) {
 export async function deleteFromS3(key: string) {
   await s3.send(
     new DeleteObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME!,
+      Bucket: bucketName,
       Key: key,
     }),
   );
 }
+
+// Cloudflare R2 Aliases
+export const r2 = s3;
+export const uploadToR2 = uploadToS3;
+export const deleteFromR2 = deleteFromS3;
+export const generateR2PresignedUrl = generatePresignedUrl;
 

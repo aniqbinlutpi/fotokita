@@ -1,13 +1,13 @@
 # Fotokita Admin Service
 
-Microservice khas untuk Super Admin Control Panel Fotokita.
+Dedicated microservice for the Fotokita Super Admin Control Panel.
 
-## Ciri-ciri
-- Pengesahan keselamatan Super Admin (Username & Password + HMAC JWT).
-- Pemantauan status kesihatan servis (`wedding-service`, `media-service`).
-- Pengurusan metadata majlis & statistik keseluruhan sistem.
+## Features
+- Super Admin security authentication (Username & Password + HMAC-SHA256 JWT).
+- Cross-service health check monitoring (`wedding-service`, `media-service`).
+- Wedding metadata management and system-wide statistics aggregation.
 
-## Menjalankan Servis
+## Running the Service
 
 ```bash
 cd services/admin-service
@@ -15,8 +15,8 @@ bun install
 bun run dev
 ```
 
-Port lalai: `3002`.
+Default port: `3002`.
 
-Kredensial lalai (boleh dikonfigurasi melalui `.env`):
-- **Username**: `superadmin`
-- **Password**: `fotokitaAdmin2026!`
+Default credentials (configurable via `.env`):
+- **Username**: yourusername
+- **Password**: yourpassword

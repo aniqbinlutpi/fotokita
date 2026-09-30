@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -50,22 +50,20 @@ import {
 import {
   Heart,
   Plus,
-  Trash2,
   ExternalLink,
   Copy,
   Check,
-  Search,
   RefreshCw,
   Camera,
   CheckCircle2,
   XCircle,
-  Calendar,
   AlertTriangle,
   Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLogin } from "@/components/admin/AdminLogin";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { WeddingsDataTable } from "@/components/admin/WeddingsDataTable";
 import {
   getStoredAdminUser,
   getStoredAdminToken,
@@ -105,7 +103,6 @@ export function AdminControlPage({
   const [weddings, setWeddings] = useState<Wedding[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Create wedding modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -212,19 +209,8 @@ export function AdminControlPage({
   const handleLogout = () => {
     clearStoredAdminSession();
     setAdminUser(null);
-    toast.info("Anda telah log keluar daripada panel Super Admin");
+    toast.info("You have signed out of the Super Admin panel");
   };
-
-  // Filtered weddings
-  const filteredWeddings = useMemo(() => {
-    if (!searchQuery.trim()) return weddings;
-    const q = searchQuery.toLowerCase();
-    return weddings.filter(
-      (w) =>
-        w.name.toLowerCase().includes(q) ||
-        w.slug.toLowerCase().includes(q)
-    );
-  }, [weddings, searchQuery]);
 
   // Auto-slug generator when typing name
   const handleNameChange = (name: string) => {
@@ -246,7 +232,7 @@ export function AdminControlPage({
   // Real-time slug availability check
   const checkSlug = async (slug: string) => {
     if (!slug || slug.length < 3) {
-      setSlugStatus({ available: false, message: "URL slug minimum 3 aksara" });
+      setSlugStatus({ available: false, message: "URL slug must be at least 3 characters" });
       return;
     }
     try {
@@ -261,7 +247,7 @@ export function AdminControlPage({
   const handleCreateWedding = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWeddingName || !newWeddingSlug || !newWeddingDate) {
-      toast.error("Sila isi semua maklumat majlis.");
+      toast.error("Please fill in all wedding details.");
       return;
     }
 
@@ -274,14 +260,14 @@ export function AdminControlPage({
       });
 
       setWeddings((prev) => [created, ...prev]);
-      toast.success(`Majlis "${created.name}" berjaya dicipta!`);
+      toast.success(`Wedding "${created.name}" created successfully!`);
       setIsCreateOpen(false);
       setNewWeddingName("");
       setNewWeddingSlug("");
       setNewWeddingDate("");
       setSlugStatus(null);
     } catch (err: any) {
-      toast.error(err.message || "Gagal mencipta majlis");
+      toast.error(err.message || "Failed to create wedding");
     } finally {
       setIsCreating(false);
     }
@@ -294,10 +280,10 @@ export function AdminControlPage({
     try {
       await deleteWedding(weddingToDelete.id);
       setWeddings((prev) => prev.filter((w) => w.id !== weddingToDelete.id));
-      toast.success(`Majlis "${weddingToDelete.name}" telah dipadam`);
+      toast.success(`Wedding "${weddingToDelete.name}" has been deleted`);
       setWeddingToDelete(null);
     } catch (err: any) {
-      toast.error(err.message || "Gagal memadam majlis");
+      toast.error(err.message || "Failed to delete wedding");
     } finally {
       setIsDeleting(false);
     }
@@ -309,7 +295,7 @@ export function AdminControlPage({
     const url = `${origin}/?slug=${encodeURIComponent(slug)}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
-    toast.success("Pautan galeri disalin ke clipboard!");
+    toast.success("Gallery link copied to clipboard!");
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -328,7 +314,7 @@ export function AdminControlPage({
       <AdminLogin
         onLoginSuccess={(user) => {
           setAdminUser(user);
-          toast.success(`Selamat kembali, ${user.name}!`);
+          toast.success(`Welcome back, ${user.name}!`);
         }}
         onBackHome={onNavigateHome}
       />
@@ -372,8 +358,8 @@ export function AdminControlPage({
                   <BreadcrumbItem>
                     <BreadcrumbPage className="capitalize">
                       {activeTab === "overview" && "Dashboard Overview"}
-                      {activeTab === "weddings" && "Pengurusan Majlis"}
-                      {activeTab === "system" && "Status Sistem"}
+                      {activeTab === "weddings" && "Weddings Management"}
+                      {activeTab === "system" && "System & Services"}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
@@ -391,7 +377,7 @@ export function AdminControlPage({
                 <RefreshCw
                   className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`}
                 />
-                <span className="hidden sm:inline">Kemaskini</span>
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
 
               <Button
@@ -400,7 +386,7 @@ export function AdminControlPage({
                 className="gap-1.5 text-xs h-8"
               >
                 <Plus className="size-3.5" />
-                <span>Cipta Majlis</span>
+                <span>Create Wedding</span>
               </Button>
             </div>
           </header>
@@ -415,7 +401,7 @@ export function AdminControlPage({
                     Super Admin Dashboard
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    Ringkasan data, statistik majlis, dan status infrastruktur servis.
+                    Data summary, weddings statistics, and microservice infrastructure health.
                   </p>
                 </div>
 
@@ -424,7 +410,7 @@ export function AdminControlPage({
                   <Card className="shadow-xs">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Jumlah Majlis
+                        Total Weddings
                       </CardTitle>
                       <Heart className="size-4 text-primary" />
                     </CardHeader>
@@ -433,7 +419,7 @@ export function AdminControlPage({
                         {weddings.length}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Majlis berdaftar dalam sistem
+                        Active registered weddings
                       </p>
                     </CardContent>
                   </Card>
@@ -441,7 +427,7 @@ export function AdminControlPage({
                   <Card className="shadow-xs">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Jumlah Media
+                        Total Media
                       </CardTitle>
                       <Camera className="size-4 text-primary" />
                     </CardHeader>
@@ -450,7 +436,7 @@ export function AdminControlPage({
                         {stats?.totalMedia ?? "—"}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Foto & video dalam galeri S3
+                        Photos & videos in S3 storage
                       </p>
                     </CardContent>
                   </Card>
@@ -458,7 +444,7 @@ export function AdminControlPage({
                   <Card className="shadow-xs">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Status Wedding Service
+                        Wedding Service Status
                       </CardTitle>
                       <Radio
                         className={`size-4 ${
@@ -482,7 +468,7 @@ export function AdminControlPage({
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Port 3001 &bull; Postgres Drizzle
+                        Port 3001 &bull; PostgreSQL Drizzle
                       </p>
                     </CardContent>
                   </Card>
@@ -490,7 +476,7 @@ export function AdminControlPage({
                   <Card className="shadow-xs">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Status Media Service
+                        Media Service Status
                       </CardTitle>
                       <Radio
                         className={`size-4 ${
@@ -514,7 +500,7 @@ export function AdminControlPage({
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Port 3000 &bull; AWS S3 Storage
+                        Port 3000 &bull; Cloudflare R2 Storage
                       </p>
                     </CardContent>
                   </Card>
@@ -525,10 +511,10 @@ export function AdminControlPage({
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                       <CardTitle className="text-base font-semibold">
-                        Majlis Terkini
+                        Recent Weddings
                       </CardTitle>
                       <CardDescription>
-                        5 majlis yang paling baru didaftarkan.
+                        Latest 5 registered wedding events.
                       </CardDescription>
                     </div>
                     <Button
@@ -537,17 +523,17 @@ export function AdminControlPage({
                       onClick={() => setActiveTab("weddings")}
                       className="text-xs"
                     >
-                      Lihat Semua ({weddings.length})
+                      View All ({weddings.length})
                     </Button>
                   </CardHeader>
                   <CardContent className="p-0">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Nama Majlis</TableHead>
-                          <TableHead>Slug URL</TableHead>
-                          <TableHead>Tarikh</TableHead>
-                          <TableHead className="text-right">Tindakan</TableHead>
+                          <TableHead>Wedding Name</TableHead>
+                          <TableHead>URL Slug</TableHead>
+                          <TableHead>Event Date</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -557,7 +543,7 @@ export function AdminControlPage({
                               colSpan={4}
                               className="text-center py-8 text-muted-foreground"
                             >
-                              Tiada majlis ditemui. Sila cipta majlis baru.
+                              No weddings found. Create your first wedding.
                             </TableCell>
                           </TableRow>
                         ) : (
@@ -572,7 +558,7 @@ export function AdminControlPage({
                                 </span>
                               </TableCell>
                               <TableCell className="text-xs text-muted-foreground">
-                                {new Date(w.date).toLocaleDateString("ms-MY", {
+                                {new Date(w.date).toLocaleDateString("en-US", {
                                   year: "numeric",
                                   month: "short",
                                   day: "numeric",
@@ -584,7 +570,7 @@ export function AdminControlPage({
                                     variant="ghost"
                                     size="icon-xs"
                                     onClick={() => handleCopyLink(w.slug, w.id)}
-                                    title="Salin Link"
+                                    title="Copy Link"
                                   >
                                     {copiedId === w.id ? (
                                       <Check className="size-3 text-emerald-500" />
@@ -596,7 +582,7 @@ export function AdminControlPage({
                                     variant="ghost"
                                     size="icon-xs"
                                     onClick={() => handleViewGallery(w.slug)}
-                                    title="Buka Galeri"
+                                    title="Open Gallery"
                                   >
                                     <ExternalLink className="size-3" />
                                   </Button>
@@ -618,10 +604,10 @@ export function AdminControlPage({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="text-2xl font-bold tracking-tight">
-                      Pengurusan Majlis
+                      Weddings Management
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                      Kawal, pantau, dan urus semua pendaftaran galeri perkahwinan.
+                      Monitor, manage, and configure all wedding gallery registrations.
                     </p>
                   </div>
                   <Button
@@ -629,125 +615,18 @@ export function AdminControlPage({
                     className="gap-2 shrink-0 self-start sm:self-auto"
                   >
                     <Plus className="size-4" />
-                    <span>Cipta Majlis Baru</span>
+                    <span>Create Wedding</span>
                   </Button>
                 </div>
 
-                {/* Search Bar */}
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Cari mengikut nama atau slug..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 h-9"
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    Menunjukkan {filteredWeddings.length} daripada {weddings.length} majlis
-                  </span>
-                </div>
-
-                {/* Full Weddings Table */}
-                <Card className="shadow-xs overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nama Majlis / Pengantin</TableHead>
-                        <TableHead>Pautan Galeri (Slug)</TableHead>
-                        <TableHead>Tarikh Majlis</TableHead>
-                        <TableHead>Dicipta Pada</TableHead>
-                        <TableHead className="text-right">Tindakan</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredWeddings.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={5}
-                            className="text-center py-12 text-muted-foreground"
-                          >
-                            Tiada majlis yang sepadan dengan carian anda.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredWeddings.map((w) => (
-                          <TableRow key={w.id}>
-                            <TableCell className="font-semibold text-sm">
-                              {w.name}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-mono text-xs px-2 py-0.5 rounded bg-muted/80 text-foreground">
-                                  /{w.slug}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1.5">
-                                <Calendar className="size-3.5 text-muted-foreground" />
-                                {new Date(w.date).toLocaleDateString("ms-MY", {
-                                  weekday: "short",
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {w.createdAt
-                                ? new Date(w.createdAt).toLocaleDateString("ms-MY")
-                                : "—"}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <Button
-                                  variant="outline"
-                                  size="xs"
-                                  onClick={() => handleCopyLink(w.slug, w.id)}
-                                  className="gap-1 h-7"
-                                >
-                                  {copiedId === w.id ? (
-                                    <>
-                                      <Check className="size-3 text-emerald-500" />
-                                      <span>Disalin</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="size-3" />
-                                      <span>Salin</span>
-                                    </>
-                                  )}
-                                </Button>
-
-                                <Button
-                                  variant="outline"
-                                  size="xs"
-                                  onClick={() => handleViewGallery(w.slug)}
-                                  className="gap-1 h-7 text-primary hover:text-primary"
-                                >
-                                  <ExternalLink className="size-3" />
-                                  <span>Galeri</span>
-                                </Button>
-
-                                <Button
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={() => setWeddingToDelete(w)}
-                                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                  title="Padam Majlis"
-                                >
-                                  <Trash2 className="size-3.5" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </Card>
+                {/* Full Weddings Table powered by TanStack Table */}
+                <WeddingsDataTable
+                  data={weddings}
+                  copiedId={copiedId}
+                  onCopyLink={handleCopyLink}
+                  onViewGallery={handleViewGallery}
+                  onDelete={(w) => setWeddingToDelete(w)}
+                />
               </div>
             )}
 
@@ -756,10 +635,10 @@ export function AdminControlPage({
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-bold tracking-tight">
-                    Status Sistem & Microservices
+                    System & Microservices Status
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    Pemantauan status kesihatan backend microservices Fotokita.
+                    Live operational health and telemetry across Fotokita backend microservices.
                   </p>
                 </div>
 
@@ -783,7 +662,7 @@ export function AdminControlPage({
                         </Badge>
                       </div>
                       <CardDescription>
-                        Port 3001 &bull; Pengurusan Metadata & CRUD
+                        Port 3001 &bull; Metadata Management & CRUD
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 text-xs text-muted-foreground">
@@ -796,7 +675,7 @@ export function AdminControlPage({
                         <span className="font-mono text-foreground">Drizzle ORM</span>
                       </div>
                       <div className="flex justify-between py-1">
-                        <span>Endpoint Kesihatan:</span>
+                        <span>Health Endpoint:</span>
                         <span className="font-mono text-foreground">/health</span>
                       </div>
                     </CardContent>
@@ -821,20 +700,20 @@ export function AdminControlPage({
                         </Badge>
                       </div>
                       <CardDescription>
-                        Port 3000 &bull; Muat Naik & S3 Presigned URLs
+                        Port 3000 &bull; Uploads & S3 Presigned URLs
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 text-xs text-muted-foreground">
                       <div className="flex justify-between py-1 border-b border-border/40">
-                        <span>Storan Objek:</span>
+                        <span>Object Storage:</span>
                         <span className="font-mono text-foreground">Amazon S3</span>
                       </div>
                       <div className="flex justify-between py-1 border-b border-border/40">
-                        <span>Protokol URL:</span>
+                        <span>URL Protocol:</span>
                         <span className="font-mono text-foreground">Presigned S3</span>
                       </div>
                       <div className="flex justify-between py-1">
-                        <span>Endpoint Kesihatan:</span>
+                        <span>Health Endpoint:</span>
                         <span className="font-mono text-foreground">/health</span>
                       </div>
                     </CardContent>
@@ -864,15 +743,15 @@ export function AdminControlPage({
                     </CardHeader>
                     <CardContent className="space-y-2 text-xs text-muted-foreground">
                       <div className="flex justify-between py-1 border-b border-border/40">
-                        <span>Keselamatan:</span>
+                        <span>Security:</span>
                         <span className="font-mono text-foreground">HMAC-SHA256 JWT</span>
                       </div>
                       <div className="flex justify-between py-1 border-b border-border/40">
-                        <span>Akses Peranan:</span>
+                        <span>Access Role:</span>
                         <span className="font-mono text-foreground">Super Admin</span>
                       </div>
                       <div className="flex justify-between py-1">
-                        <span>Endpoint Kesihatan:</span>
+                        <span>Health Endpoint:</span>
                         <span className="font-mono text-foreground">/health</span>
                       </div>
                     </CardContent>
@@ -883,21 +762,21 @@ export function AdminControlPage({
                 <Card className="shadow-xs">
                   <CardHeader>
                     <CardTitle className="text-base font-semibold">
-                      Panduan Menjalankan Servis Backend
+                      Running Backend Microservices
                     </CardTitle>
                     <CardDescription>
-                      Untuk menjalankan kesemua perkhidmatan mikro Fotokita secara serentak di terminal.
+                      Commands to start all Fotokita services concurrently in your terminal.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="p-4 rounded-lg bg-muted/60 font-mono text-xs space-y-2 overflow-x-auto">
-                      <p className="text-muted-foreground"># 1. Mulakan pangkalan data Postgres</p>
+                      <p className="text-muted-foreground"># 1. Start PostgreSQL database container</p>
                       <p className="text-foreground">docker compose up -d postgres</p>
-                      <p className="text-muted-foreground mt-3"># 2. Mulakan Wedding Service (Port 3001)</p>
+                      <p className="text-muted-foreground mt-3"># 2. Start Wedding Service (Port 3001)</p>
                       <p className="text-foreground">cd services/wedding-service && bun run dev</p>
-                      <p className="text-muted-foreground mt-3"># 3. Mulakan Media Service (Port 3000)</p>
+                      <p className="text-muted-foreground mt-3"># 3. Start Media Service (Port 3000)</p>
                       <p className="text-foreground">cd services/media-service && bun run dev</p>
-                      <p className="text-muted-foreground mt-3"># 4. Mulakan Admin Service (Port 3002)</p>
+                      <p className="text-muted-foreground mt-3"># 4. Start Admin Service (Port 3002)</p>
                       <p className="text-foreground">cd services/admin-service && bun run dev</p>
                     </div>
                   </CardContent>
@@ -912,17 +791,17 @@ export function AdminControlPage({
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Cipta Majlis Baru</DialogTitle>
+            <DialogTitle>Create New Wedding</DialogTitle>
             <DialogDescription>
-              Daftarkan majlis perkahwinan baru ke dalam pangkalan data.
+              Register a new wedding event into the database.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleCreateWedding} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium">Nama Majlis / Pasangan</label>
+              <label className="text-xs font-medium">Wedding / Couple Name</label>
               <Input
-                placeholder="cth: Amir & Nadia"
+                placeholder="e.g. Amir & Nadia"
                 value={newWeddingName}
                 onChange={(e) => handleNameChange(e.target.value)}
                 required
@@ -930,9 +809,9 @@ export function AdminControlPage({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium">URL Slug Galeri</label>
+              <label className="text-xs font-medium">Gallery URL Slug</label>
               <Input
-                placeholder="amir-dan-nadia"
+                placeholder="amir-and-nadia"
                 value={newWeddingSlug}
                 onChange={(e) => {
                   setNewWeddingSlug(e.target.value);
@@ -957,7 +836,7 @@ export function AdminControlPage({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium">Tarikh Majlis</label>
+              <label className="text-xs font-medium">Event Date</label>
               <Input
                 type="date"
                 value={newWeddingDate}
@@ -973,13 +852,13 @@ export function AdminControlPage({
                 onClick={() => setIsCreateOpen(false)}
                 disabled={isCreating}
               >
-                Batal
+                Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isCreating || Boolean(slugStatus && !slugStatus.available)}
               >
-                {isCreating ? "Mencipta..." : "Cipta Majlis"}
+                {isCreating ? "Creating..." : "Create Wedding"}
               </Button>
             </DialogFooter>
           </form>
@@ -995,12 +874,12 @@ export function AdminControlPage({
           <AlertDialogHeader>
             <div className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="size-5" />
-              <AlertDialogTitle>Padam Majlis Ini?</AlertDialogTitle>
+              <AlertDialogTitle>Delete this Wedding?</AlertDialogTitle>
             </div>
             <AlertDialogDescription>
-              Adakah anda pasti mahu memadamkan majlis{" "}
+              Are you sure you want to delete{" "}
               <strong>&ldquo;{weddingToDelete?.name}&rdquo;</strong> (slug: /{weddingToDelete?.slug})?
-              Tindakan ini tidak boleh diundur.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1009,14 +888,14 @@ export function AdminControlPage({
               onClick={() => setWeddingToDelete(null)}
               disabled={isDeleting}
             >
-              Batal
+              Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDeleteWedding}
               disabled={isDeleting}
             >
-              {isDeleting ? "Memadam..." : "Ya, Padam Majlis"}
+              {isDeleting ? "Deleting..." : "Yes, Delete Wedding"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

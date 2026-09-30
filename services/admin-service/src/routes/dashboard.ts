@@ -80,12 +80,12 @@ dashboardRoute.get("/weddings", async (c) => {
   try {
     const res = await fetch(`${WEDDING_SERVICE_URL}/weddings`);
     if (!res.ok) {
-      return c.json(error("UPSTREAM_ERROR", "Gagal mendapatkan senarai majlis dari wedding-service"), 502);
+      return c.json(error("UPSTREAM_ERROR", "Failed to retrieve weddings from wedding-service"), 502);
     }
     const json = (await res.json()) as any;
     return c.json(success(json.data || []));
-  } catch (err: any) {
-    return c.json(error("SERVICE_UNAVAILABLE", "Wedding service tidak dapat dihubungi"), 503);
+  } catch {
+    return c.json(error("SERVICE_UNAVAILABLE", "Wedding service is currently unreachable"), 503);
   }
 });
 
@@ -102,7 +102,7 @@ dashboardRoute.post("/weddings", async (c) => {
     const json = (await res.json()) as any;
     return c.json(json, res.status as any);
   } catch {
-    return c.json(error("SERVICE_UNAVAILABLE", "Wedding service tidak dapat dihubungi"), 503);
+    return c.json(error("SERVICE_UNAVAILABLE", "Wedding service is currently unreachable"), 503);
   }
 });
 
@@ -117,7 +117,7 @@ dashboardRoute.delete("/weddings/:id", async (c) => {
     const json = (await res.json()) as any;
     return c.json(json, res.status as any);
   } catch {
-    return c.json(error("SERVICE_UNAVAILABLE", "Wedding service tidak dapat dihubungi"), 503);
+    return c.json(error("SERVICE_UNAVAILABLE", "Wedding service is currently unreachable"), 503);
   }
 });
 

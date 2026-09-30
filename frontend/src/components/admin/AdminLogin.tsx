@@ -31,7 +31,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password) {
-      setErrorMessage("Sila masukkan username dan password.");
+      setErrorMessage("Please enter both username and password.");
       return;
     }
 
@@ -46,7 +46,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
       onLoginSuccess(response.user);
     } catch (err: any) {
       setErrorMessage(
-        err.message || "Log masuk gagal. Sila semak kredensial anda."
+        err.message || "Login failed. Please check your credentials."
       );
     } finally {
       setIsLoading(false);
@@ -54,8 +54,8 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
   };
 
   const handleFillDemo = () => {
-    setUsername("superadmin");
-    setPassword("fotokitaAdmin2026!");
+    setUsername("aniqbinlutpi");
+    setPassword("Fotokita61_");
     setErrorMessage(null);
   };
 
@@ -73,7 +73,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
           className="gap-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
-          <span>Kembali ke Laman Utama</span>
+          <span>Back to Home</span>
         </Button>
       </div>
 
@@ -94,7 +94,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
             </div>
 
             <CardDescription className="text-sm">
-              Sila masukkan username & password untuk mengakses panel kawalan
+              Please enter your username & password to access the control panel
             </CardDescription>
           </CardHeader>
 
@@ -118,7 +118,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
                 <Input
                   id="admin-username"
                   type="text"
-                  placeholder="superadmin"
+                  placeholder="aniqbinlutpi"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
@@ -166,7 +166,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50 border border-border/50 text-xs">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <KeyRound className="size-3.5 shrink-0" />
-                  <span>Kredensial lalai:</span>
+                  <span>Default credentials:</span>
                 </div>
                 <Button
                   type="button"
@@ -175,7 +175,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
                   onClick={handleFillDemo}
                   className="text-primary p-0 h-auto font-medium"
                 >
-                  Isi Automatik
+                  Auto Fill
                 </Button>
               </div>
             </CardContent>
@@ -189,12 +189,12 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
                 {isLoading ? (
                   <span className="flex items-center gap-2">
                     <span className="size-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Mengesahkan...
+                    Authenticating...
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <Sparkles className="size-4" />
-                    Log Masuk Super Admin
+                    Super Admin Sign In
                   </span>
                 )}
               </Button>
@@ -203,7 +203,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Kawalan Panel Keselamatan Fotokita &bull; Akses Terhad Kepada Pentadbir
+          Fotokita Security Control Panel &bull; Restricted Administrator Access
         </p>
       </div>
     </div>
