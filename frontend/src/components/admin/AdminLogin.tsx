@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   Sparkles,
   AlertCircle,
-  KeyRound,
 } from "lucide-react";
 import { loginAdmin, type AdminUser } from "@/api/admin";
 
@@ -51,12 +50,6 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFillDemo = () => {
-    setUsername("aniqbinlutpi");
-    setPassword("Fotokita61_");
-    setErrorMessage(null);
   };
 
   return (
@@ -118,7 +111,7 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
                 <Input
                   id="admin-username"
                   type="text"
-                  placeholder="aniqbinlutpi"
+                  placeholder="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
@@ -160,23 +153,6 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
                     )}
                   </button>
                 </div>
-              </div>
-
-              {/* Quick credential filler for ease of use */}
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50 border border-border/50 text-xs">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <KeyRound className="size-3.5 shrink-0" />
-                  <span>Default credentials:</span>
-                </div>
-                <Button
-                  type="button"
-                  variant="link"
-                  size="xs"
-                  onClick={handleFillDemo}
-                  className="text-primary p-0 h-auto font-medium"
-                >
-                  Auto Fill
-                </Button>
               </div>
             </CardContent>
 

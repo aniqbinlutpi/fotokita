@@ -44,8 +44,8 @@ authRoute.post("/login", async (c) => {
     );
   }
 
-  const expectedUsername = process.env.ADMIN_USERNAME || "aniqbinlutpi";
-  const expectedPassword = process.env.ADMIN_PASSWORD || "Fotokita61_";
+  const expectedUsername = process.env.ADMIN_USERNAME;
+  const expectedPassword = process.env.ADMIN_PASSWORD;
 
   const { username, password } = parsed.data;
 
