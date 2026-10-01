@@ -239,3 +239,63 @@ export async function redeemInviteToken(data: {
   return handleApiResponse<{ message: string; invite: AdminInvite }>(response);
 }
 
+// -------------------------------------------------------------
+// CLIENT INQUIRIES & WHATSAPP LEADS
+// -------------------------------------------------------------
+
+export interface CustomerInquiry {
+  id: string;
+  username: string;
+  phone: string;
+  planId: string;
+  planName: string;
+  price: string;
+  status: "pending" | "contacted" | "converted";
+  createdAt: number;
+  notes?: string;
+}
+
+export async function submitCustomerInquiry(data: {
+  username: string;
+  phone: string;
+  planId: string;
+  planName: string;
+  price: string;
+  notes?: string;
+}): Promise<{ inquiry: CustomerInquiry; message: string }> {
+  const response = await fetch(`${ADMIN_BASE_URL}/inquiries`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleApiResponse<{ inquiry: CustomerInquiry; message: string }>(response);
+}
+
+export async function getAdminInquiries(): Promise<CustomerInquiry[]> {
+  const response = await fetch(`${ADMIN_BASE_URL}/inquiries`, {
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<CustomerInquiry[]>(response);
+}
+
+export async function updateAdminInquiryStatus(
+  id: string,
+  status: "pending" | "contacted" | "converted",
+  notes?: string
+): Promise<{ inquiry: CustomerInquiry }> {
+  const response = await fetch(`${ADMIN_BASE_URL}/inquiries/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status, notes }),
+  });
+  return handleApiResponse<{ inquiry: CustomerInquiry }>(response);
+}
+
+export async function deleteAdminInquiry(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${ADMIN_BASE_URL}/inquiries/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<{ message: string }>(response);
+}
+

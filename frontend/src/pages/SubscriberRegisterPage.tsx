@@ -74,6 +74,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
     return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   });
   const [username, setUsername] = useState("");
+  const [isUsernameLocked, setIsUsernameLocked] = useState(false);
   const [subscriberEmail, setSubscriberEmail] = useState("");
   const [adminPin, setAdminPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
@@ -105,14 +106,14 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         if (!isMounted) return;
         setLockedPlan(res.tier);
         setSelectedPlan(res.tier);
+
+        // Auto-fill and lock username registered from inquiry
         if (res.clientName) {
-          setCoupleName(res.clientName);
-          const generated = formatToSlug(res.clientName);
-          setSlug(generated);
-          if (generated.length >= 3) {
-            setIsCheckingSlug(true);
-          }
+          const lockedUsername = res.clientName.toLowerCase().replace(/[^a-z0-9_.]/g, "");
+          setUsername(lockedUsername);
+          setIsUsernameLocked(true);
         }
+
         const hoursLeft = Math.max(0, Math.ceil(res.remainingMs / (1000 * 60 * 60)));
         setTokenRemainingHours(hoursLeft);
       })
@@ -120,7 +121,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         if (!isMounted) return;
         setTokenError(
           err?.message ||
-            "Link jemputan ini tidak sah, telah digunakan, atau telah melebihi had masa 24 jam."
+            "This invitation link is invalid, has already been used, or has expired after 24 hours."
         );
       })
       .finally(() => {
@@ -503,12 +504,12 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             {/* 1. Couple Names */}
             <div>
               <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                Nama Pasangan Pengantin *
+                Wedding / Couple Names *
               </label>
               <div className="relative">
                 <Input
                   required
-                  placeholder="cth. Afiq & Wieam"
+                  placeholder="e.g. Afiq & Wieam"
                   value={coupleName}
                   onChange={handleCoupleNameChange}
                   className="pr-10"
@@ -521,10 +522,10 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs uppercase tracking-widest font-medium text-muted-foreground">
-                  URL Galeri (Mestilah Unik) *
+                  Gallery URL Slug (Must be unique) *
                 </label>
                 <span className="text-[11px] text-accent font-mono">
-                  fotokita.my/{slug || "slug-anda"}
+                  fotokita.my/{slug || "your-slug"}
                 </span>
               </div>
 
@@ -535,7 +536,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="afiq-dan-wieam"
+                  placeholder="afiq-and-wieam"
                   value={slug}
                   onChange={handleSlugChange}
                   className="flex-1 px-4 py-2.5 bg-background/50 border border-input rounded-r-lg text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors"
@@ -575,7 +576,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             {/* 3. Wedding Date */}
             <div>
               <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                Tarikh Majlis Perkahwinan *
+                Wedding Event Date *
               </label>
               <div className="relative">
                 <Input
@@ -652,29 +653,59 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             {/* 5. Sub-Admin Username & Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
               <div>
-                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Username Sub-Admin *
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground">
+                    Sub-Admin Username *
+                  </label>
+                  {isUsernameLocked && (
+                    <Badge variant="secondary" className="text-[10px] uppercase font-mono gap-1 text-muted-foreground">
+                      <Lock className="size-2.5 text-accent" />
+                      Locked
+                    </Badge>
+                  )}
+                </div>
                 <div className="relative">
                   <Input
                     required
-                    placeholder="cth. afiq_wieam"
+                    readOnly={isUsernameLocked}
+                    placeholder="e.g. ainafarhana"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s+/g, ""))}
-                    className="pr-10 font-mono text-sm"
+                    onChange={(e) => {
+                      if (!isUsernameLocked) {
+                        setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""));
+                      }
+                    }}
+                    className={`pr-10 font-mono text-sm ${
+                      isUsernameLocked
+                        ? "bg-muted/70 cursor-not-allowed select-none text-foreground font-semibold"
+                        : ""
+                    }`}
                   />
-                  <User className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+                  {isUsernameLocked ? (
+                    <Lock className="size-4 absolute right-3.5 top-3 text-accent pointer-events-none" />
+                  ) : (
+                    <User className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+                  )}
                 </div>
+                {isUsernameLocked ? (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Username is locked to your reservation and cannot be modified.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Allowed: lowercase letters, numbers, underscores (_), and dots (.).
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Emel Pengesahan *
+                  Confirmation Email *
                 </label>
                 <Input
                   required
                   type="email"
-                  placeholder="pasangan@emel.com"
+                  placeholder="couple@email.com"
                   value={subscriberEmail}
                   onChange={(e) => setSubscriberEmail(e.target.value)}
                 />
@@ -685,13 +716,13 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  PIN / Kata Laluan Sub-Admin *
+                  Sub-Admin Password / PIN *
                 </label>
                 <div className="relative">
                   <Input
                     required
                     type="password"
-                    placeholder="4-8 digit / kata laluan"
+                    placeholder="4-8 digits or password"
                     value={adminPin}
                     onChange={(e) => setAdminPin(e.target.value)}
                     className="pr-10 font-mono"
@@ -702,13 +733,13 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
               <div>
                 <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Sahkan PIN / Kata Laluan *
+                  Confirm Password / PIN *
                 </label>
                 <div className="relative">
                   <Input
                     required
                     type="password"
-                    placeholder="Ulang kata laluan"
+                    placeholder="Re-enter password"
                     value={confirmPin}
                     onChange={(e) => setConfirmPin(e.target.value)}
                     className="pr-10 font-mono"
