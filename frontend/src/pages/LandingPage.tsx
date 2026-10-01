@@ -621,12 +621,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <span className="text-primary-foreground/80 hidden sm:inline">
             Host your live wedding gallery with zero app installs & full HD resolution.
           </span>
-          <button
-            onClick={() => onNavigateToRegister?.("standard")}
+          <a
+            href="#pricing"
             className="underline font-semibold text-accent hover:text-primary-foreground transition-colors ml-1 cursor-pointer"
           >
-            Claim 20% Launch Offer &rarr;
-          </button>
+            Book Now & View Pricing &rarr;
+          </a>
         </div>
 
         {/* Navigation Bar - Sticky with dynamic frosted elevation */}
@@ -1834,7 +1834,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                             })
                           }
                         >
-                          <span>Get Started</span>
+                          <span>Book Now</span>
                           {plan.isPopular && (
                             <ArrowRight data-icon="inline-end" className="size-3.5" />
                           )}

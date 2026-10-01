@@ -25,6 +25,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import imgExpand from "@/assets/images/img-expand.png";
+import { PricingModal } from "@/components/pricing/PricingModal";
 
 // Palette matching WeddingHero for the 3D brick orb
 const warmGoldChocolateBrickColors = {
@@ -141,6 +142,7 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
   const [isUploadDemoOpen, setIsUploadDemoOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -279,15 +281,14 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
               aria-label="Toggle dark / light mode"
             />
 
-            {/* CTA: Create Wedding */}
-            {onOpenRegister && (
-              <button
-                onClick={onOpenRegister}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#A67C6B]/40 hover:border-[#A67C6B] bg-[#A67C6B]/10 hover:bg-[#A67C6B]/20 text-[11px] uppercase tracking-wider text-[#A67C6B] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-all cursor-pointer font-medium"
-              >
-                <span>+ Create Wedding</span>
-              </button>
-            )}
+            {/* CTA: Book Now */}
+            <button
+              type="button"
+              onClick={() => setIsPricingModalOpen(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#A67C6B]/40 hover:border-[#A67C6B] bg-[#A67C6B]/10 hover:bg-[#A67C6B]/20 text-[11px] uppercase tracking-wider text-[#A67C6B] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-all cursor-pointer font-medium"
+            >
+              <span>Book Now</span>
+            </button>
 
             {/* Upload Demo Modal */}
             <button
@@ -469,16 +470,14 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
               </div>
             </div>
 
-            {onOpenRegister && (
-              <Button
-                size="sm"
-                onClick={onOpenRegister}
-                className="shrink-0 bg-foreground text-background hover:bg-foreground/90 text-xs font-medium cursor-pointer shadow-xs gap-1.5"
-              >
-                <span>Create Your Wedding</span>
-                <ArrowRight className="size-3.5" />
-              </Button>
-            )}
+            <Button
+              size="sm"
+              onClick={() => setIsPricingModalOpen(true)}
+              className="shrink-0 bg-foreground text-background hover:bg-foreground/90 text-xs font-medium cursor-pointer shadow-xs gap-1.5"
+            >
+              <span>Book Now</span>
+              <ArrowRight className="size-3.5" />
+            </Button>
           </div>
         </section>
 
@@ -700,18 +699,16 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
                     <span>Download Photograph</span>
                   </Button>
 
-                  {onOpenRegister && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedPhotoIndex(null);
-                        onOpenRegister();
-                      }}
-                      className="w-full border-[#E7DED5] dark:border-[#332B25] text-xs uppercase tracking-wider rounded-xs"
-                    >
-                      <span>Create Your Own Gallery</span>
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedPhotoIndex(null);
+                      setIsPricingModalOpen(true);
+                    }}
+                    className="w-full border-[#E7DED5] dark:border-[#332B25] text-xs uppercase tracking-wider rounded-xs cursor-pointer"
+                  >
+                    <span>Book Now</span>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -777,18 +774,16 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
-              {onOpenRegister && (
-                <Button
-                  onClick={() => {
-                    setIsUploadDemoOpen(false);
-                    onOpenRegister();
-                  }}
-                  className="flex-1 bg-foreground text-background hover:bg-foreground/90 text-xs uppercase tracking-wider font-medium"
-                >
-                  <span>Start Your Wedding</span>
-                  <ArrowRight className="size-3.5 ml-1" />
-                </Button>
-              )}
+              <Button
+                onClick={() => {
+                  setIsUploadDemoOpen(false);
+                  setIsPricingModalOpen(true);
+                }}
+                className="flex-1 bg-foreground text-background hover:bg-foreground/90 text-xs uppercase tracking-wider font-medium cursor-pointer"
+              >
+                <span>Book Now</span>
+                <ArrowRight className="size-3.5 ml-1" />
+              </Button>
 
               <Button
                 variant="outline"
@@ -852,11 +847,11 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
               <Button
                 onClick={() => {
                   setIsInfoModalOpen(false);
-                  onOpenRegister?.();
+                  setIsPricingModalOpen(true);
                 }}
-                className="w-full bg-foreground text-background hover:bg-foreground/90 text-xs uppercase tracking-wider font-medium"
+                className="w-full bg-foreground text-background hover:bg-foreground/90 text-xs uppercase tracking-wider font-medium cursor-pointer"
               >
-                <span>Create Your Wedding Gallery &rarr;</span>
+                <span>Book Now &rarr;</span>
               </Button>
             </div>
           </div>
@@ -875,14 +870,20 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
             <span>Showcase: Tewkesbury & Enola</span>
             <span className="w-1 h-1 rounded-full bg-[#A67C6B]" />
             <button
-              onClick={onOpenRegister}
+              onClick={() => setIsPricingModalOpen(true)}
               className="text-[#A67C6B] hover:underline font-semibold cursor-pointer"
             >
-              Get Your Gallery
+              Pricing & Booking
             </button>
           </div>
         </div>
       </footer>
+
+      {/* Pricing & Booking Dialog */}
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onOpenChange={setIsPricingModalOpen}
+      />
     </div>
   );
 };

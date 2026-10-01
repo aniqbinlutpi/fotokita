@@ -11,6 +11,7 @@ import { getTenantCustomization, type TenantCustomization } from "@/api/tenant";
 import { useActiveWedding, weddingKeys } from "@/hooks/queries/useWeddings";
 import { useMedia, useDeleteMedia } from "@/hooks/queries/useMedia";
 import { useQueryClient } from "@tanstack/react-query";
+import { PricingModal } from "@/components/pricing/PricingModal";
 
 
 interface WeddingGalleryPageProps {
@@ -36,6 +37,7 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
     urlParams.get("admin") === "true" ||
     urlParams.get("action") === "login";
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(initialAdminOpen);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // TanStack Query for Wedding
@@ -157,6 +159,15 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
               aria-label="Toggle dark / light mode"
             />
 
+            {/* CTA: Book Now */}
+            <button
+              type="button"
+              onClick={() => setIsPricingModalOpen(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#A67C6B]/40 hover:border-[#A67C6B] bg-[#A67C6B]/10 hover:bg-[#A67C6B]/20 text-[11px] uppercase tracking-wider text-[#A67C6B] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-all cursor-pointer font-medium"
+            >
+              <span>Book Now</span>
+            </button>
+
             <button
               onClick={() => setIsUploadOpen(true)}
               className="text-xs uppercase tracking-widest text-[#A67C6B] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors duration-200 font-medium cursor-pointer"
@@ -251,11 +262,24 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
           <p className="font-serif italic text-sm text-[#2F2926] dark:text-[#F5EFEB]">
             Fotokita — Preserving timeless wedding memories
           </p>
-          <p className="text-[11px] text-[#7A7069] dark:text-[#A89F97] uppercase tracking-widest">
-            Photography & Art Direction
-          </p>
+          <div className="flex items-center gap-4 text-[11px] uppercase tracking-widest">
+            <span>Photography & Art Direction</span>
+            <span className="w-1 h-1 rounded-full bg-[#A67C6B]" />
+            <button
+              onClick={() => setIsPricingModalOpen(true)}
+              className="text-[#A67C6B] hover:underline font-semibold cursor-pointer"
+            >
+              Book Now
+            </button>
+          </div>
         </div>
       </footer>
+
+      {/* Pricing & Booking Dialog */}
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onOpenChange={setIsPricingModalOpen}
+      />
     </div>
   );
 };
