@@ -21,15 +21,11 @@ import {
   Eye,
   Lock,
   XCircle,
-  MessageCircle,
   ChevronLeft,
   ChevronRight,
-  User,
-  Phone,
-  Loader2,
   LogIn,
 } from "lucide-react";
-import { submitCustomerInquiry } from "@/api/admin";
+import { WhatsAppInquiryModal } from "@/components/pricing/WhatsAppInquiryModal";
 import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,13 +36,6 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -268,69 +257,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     code: string;
   } | null>(null);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
-  const [customerUsername, setCustomerUsername] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
-  const [inquiryError, setInquiryError] = useState("");
 
   const handleOpenWhatsAppDeal = (plan: { id: string; name: string; price: string; code: string }) => {
     setSelectedPlanForWhatsApp(plan);
-    setCustomerUsername("");
-    setCustomerPhone("");
-    setInquiryError("");
     setIsWhatsAppModalOpen(true);
-  };
-
-  const handleSubmitWhatsAppInquiry = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPlanForWhatsApp) return;
-
-    const trimmedUsername = customerUsername.trim().toLowerCase();
-    const trimmedPhone = customerPhone.trim();
-
-    if (!trimmedUsername || trimmedUsername.length < 3) {
-      setInquiryError("Username must be at least 3 characters.");
-      return;
-    }
-
-    if (!/^[a-z0-9_.]+$/.test(trimmedUsername)) {
-      setInquiryError("Username can only contain lowercase letters, numbers, underscores (_), and dots (.). No spaces.");
-      return;
-    }
-
-    const sanitizedDigits = trimmedPhone.replace(/\D/g, "");
-    if (sanitizedDigits.length < 8) {
-      setInquiryError("Please enter a valid phone number (at least 8 digits).");
-      return;
-    }
-
-    setInquiryError("");
-    setIsSubmittingInquiry(true);
-
-    try {
-      // 1. Submit inquiry to Admin Portal first
-      await submitCustomerInquiry({
-        username: trimmedUsername,
-        phone: trimmedPhone,
-        planId: selectedPlanForWhatsApp.id,
-        planName: selectedPlanForWhatsApp.name,
-        price: selectedPlanForWhatsApp.price,
-      });
-
-      // 2. Open WhatsApp with prefilled message containing user's name & phone
-      const message = `Hi Fotokita! I am ${trimmedUsername} (${trimmedPhone}). I am interested in the ${selectedPlanForWhatsApp.code} package for payment & deals.`;
-      const waUrl = `https://wa.me/60137848933?text=${encodeURIComponent(message)}`;
-
-      window.open(waUrl, "_blank", "noopener,noreferrer");
-      toast.success("Details received! Connecting you to Fotokita Admin on WhatsApp.");
-      setIsWhatsAppModalOpen(false);
-    } catch (err: any) {
-      const msg = err?.message || "Failed to submit inquiry. Please try again.";
-      setInquiryError(msg);
-      toast.error(msg);
-    } finally {
-      setIsSubmittingInquiry(false);
-    }
   };
 
   // Pricing Carousel State & Ref
@@ -2282,144 +2212,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </div>
 
       {/* WHATSAPP PAYMENT & DEALS MODAL */}
-      <Dialog open={isWhatsAppModalOpen} onOpenChange={setIsWhatsAppModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="size-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2">
-              <MessageCircle className="size-6" />
-            </div>
-            <DialogTitle className="text-center font-serif text-2xl font-normal text-foreground">
-              Get Started via WhatsApp
-            </DialogTitle>
-            <DialogDescription className="text-center text-xs text-muted-foreground">
-              Please enter your details below. Our admin team will receive your inquiry and assist you directly on WhatsApp with deals and payment.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedPlanForWhatsApp && (
-            <form onSubmit={handleSubmitWhatsAppInquiry} className="space-y-4 py-2">
-              {/* Selected Plan Summary Card */}
-              <div className="p-3.5 rounded-xl bg-card border border-border/80 flex items-center justify-between shadow-2xs">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    Selected Package
-                  </div>
-                  <div className="font-serif text-base font-medium text-foreground">
-                    {selectedPlanForWhatsApp.name}
-                  </div>
-                </div>
-                <Badge variant="outline" className="text-sm font-semibold border-accent/40 text-accent font-mono">
-                  {selectedPlanForWhatsApp.price}
-                </Badge>
-              </div>
-
-              {/* Input Fields */}
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                      <User className="size-3.5 text-muted-foreground" />
-                      <span>Username</span>
-                    </label>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      Letters, numbers, _ and .
-                    </span>
-                  </div>
-                  <Input
-                    type="text"
-                    required
-                    placeholder="e.g. ainafarhana"
-                    value={customerUsername}
-                    onChange={(e) => {
-                      const cleaned = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, "");
-                      setCustomerUsername(cleaned);
-                      if (inquiryError) setInquiryError("");
-                    }}
-                    className="h-10 text-sm font-mono"
-                    disabled={isSubmittingInquiry}
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck="false"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    This username will be locked and assigned to your registration link.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                    <Phone className="size-3.5 text-muted-foreground" />
-                    <span>WhatsApp Phone Number</span>
-                  </label>
-                  <Input
-                    type="tel"
-                    required
-                    placeholder="e.g. 012-3456789"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="h-10 text-sm"
-                    disabled={isSubmittingInquiry}
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    Used to identify your order and connect with you on WhatsApp.
-                  </p>
-                </div>
-              </div>
-
-              {inquiryError && (
-                <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">
-                  {inquiryError}
-                </div>
-              )}
-
-              {/* Privacy Notice */}
-              <div className="p-3 rounded-lg bg-muted/40 border border-border/60 text-[11px] text-muted-foreground leading-relaxed flex items-start gap-2">
-                <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <span>
-                  Your inquiry will be logged directly into our Admin Portal first, followed by opening WhatsApp to finalize payment &amp; issue your 24-hour single-use activation link.
-                </span>
-              </div>
-
-              {/* Direct WhatsApp Action Button */}
-              <Button
-                type="submit"
-                disabled={isSubmittingInquiry}
-                className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-widest transition-all shadow-md hover:shadow-lg cursor-pointer select-none gap-2"
-              >
-                {isSubmittingInquiry ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    <span>Submitting Inquiry...</span>
-                  </>
-                ) : (
-                  <>
-                    <MessageCircle className="size-5" />
-                    <span>Contact Admin on WhatsApp</span>
-                  </>
-                )}
-              </Button>
-
-              {/* Sub-Admin portal login shortcut */}
-              <div className="text-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsWhatsAppModalOpen(false);
-                    if (onNavigateToSubAdmin) {
-                      onNavigateToSubAdmin();
-                    } else {
-                      setIsLoginModalOpen(true);
-                    }
-                  }}
-                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors underline cursor-pointer"
-                >
-                  Already registered? Login to Sub-Admin Portal
-                </button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      <WhatsAppInquiryModal
+        isOpen={isWhatsAppModalOpen}
+        onOpenChange={setIsWhatsAppModalOpen}
+        plan={selectedPlanForWhatsApp}
+        onNavigateToSubAdmin={() => {
+          if (onNavigateToSubAdmin) {
+            onNavigateToSubAdmin();
+          } else {
+            setIsLoginModalOpen(true);
+          }
+        }}
+      />
 
       {/* Sub-Admin Login Modal */}
       <SubAdminLoginModal

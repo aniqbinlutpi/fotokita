@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -8,38 +8,29 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Check,
   Sparkles,
-  MessageCircle,
   ArrowRight,
-  User,
-  Phone,
-  Loader2,
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { PRICING_PLANS, type PricingPlanItem } from "@/data/pricingPlans";
-import { submitCustomerInquiry } from "@/api/admin";
-import { toast } from "sonner";
+import { WhatsAppInquiryModal } from "@/components/pricing/WhatsAppInquiryModal";
 
 interface PricingModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onNavigateToSubAdmin?: () => void;
 }
 
 export const PricingModal: React.FC<PricingModalProps> = ({
   isOpen,
   onOpenChange,
+  onNavigateToSubAdmin,
 }) => {
-  const [selectedPlan, setSelectedPlan] = useState<PricingPlanItem | null>(null);
-  const [username, setUsername] = useState("");
-  const [phone, setPhone] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [inquiryError, setInquiryError] = useState("");
+  const [selectedPlanForWhatsApp, setSelectedPlanForWhatsApp] = useState<PricingPlanItem | null>(null);
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
 
   // Carousel ref & scroll states matching LandingPage.tsx
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -125,7 +116,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({
       el.removeEventListener("scroll", checkScroll);
       window.removeEventListener("resize", checkScroll);
     };
-  }, [isOpen, selectedPlan]);
+  }, [isOpen]);
 
   const scrollToPlanIndex = (index: number) => {
     const el = carouselRef.current;
@@ -179,379 +170,207 @@ export const PricingModal: React.FC<PricingModalProps> = ({
   };
 
   const handleSelectPlan = (plan: PricingPlanItem) => {
-    setSelectedPlan(plan);
-    setInquiryError("");
-  };
-
-  const handleDirectWhatsApp = (plan: PricingPlanItem) => {
-    const message = `Hi Fotokita! I am interested in booking the ${plan.name} (${plan.price}) package.`;
-    const waUrl = `https://wa.me/60137848933?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, "_blank", "noopener,noreferrer");
-  };
-
-  const handleSubmitInquiry = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPlan) return;
-
-    const trimmedUsername = username.trim().toLowerCase();
-    const trimmedPhone = phone.trim();
-
-    if (!trimmedUsername || trimmedUsername.length < 3) {
-      setInquiryError("Username must be at least 3 characters.");
-      return;
-    }
-
-    const sanitizedDigits = trimmedPhone.replace(/\D/g, "");
-    if (sanitizedDigits.length < 8) {
-      setInquiryError("Please enter a valid phone number (at least 8 digits).");
-      return;
-    }
-
-    setInquiryError("");
-    setIsSubmitting(true);
-
-    try {
-      await submitCustomerInquiry({
-        username: trimmedUsername,
-        phone: trimmedPhone,
-        planId: selectedPlan.id,
-        planName: selectedPlan.name,
-        price: selectedPlan.price,
-      });
-
-      const message = `Hi Fotokita! I am ${trimmedUsername} (${trimmedPhone}). I would like to book the ${selectedPlan.name} (${selectedPlan.price}) package.`;
-      const waUrl = `https://wa.me/60137848933?text=${encodeURIComponent(message)}`;
-      window.open(waUrl, "_blank", "noopener,noreferrer");
-
-      toast.success("Inquiry submitted! Redirecting to WhatsApp.");
-      onOpenChange(false);
-      setSelectedPlan(null);
-    } catch (err: any) {
-      console.error("Inquiry submission error:", err);
-      handleDirectWhatsApp(selectedPlan);
-      onOpenChange(false);
-      setSelectedPlan(null);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setSelectedPlanForWhatsApp(plan);
+    onOpenChange(false);
+    setIsInquiryModalOpen(true);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full sm:max-w-4xl md:max-w-5xl lg:max-w-6xl p-0 overflow-hidden bg-card border-border shadow-2xl font-sans max-h-[92vh] flex flex-col">
-        {/* Header */}
-        <DialogHeader className="p-4 sm:p-5 pb-2 sm:pb-2.5 border-b border-border/80 bg-background/50 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pr-6">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#A67C6B]/15 text-[#A67C6B] text-[9.5px] uppercase tracking-widest font-semibold mb-1">
-                <Sparkles className="size-3" />
-                <span>Wedding Packages & Passes</span>
+    <>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="w-full sm:max-w-4xl md:max-w-5xl lg:max-w-6xl p-0 overflow-hidden bg-card border-border shadow-2xl font-sans max-h-[92vh] flex flex-col">
+          {/* Header */}
+          <DialogHeader className="p-4 sm:p-5 pb-2 sm:pb-2.5 border-b border-border/80 bg-background/50 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pr-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#A67C6B]/15 text-[#A67C6B] text-[9.5px] uppercase tracking-widest font-semibold mb-1">
+                  <Sparkles className="size-3" />
+                  <span>Wedding Packages & Passes</span>
+                </div>
+                <DialogTitle className="font-serif text-xl sm:text-2xl text-foreground font-normal">
+                  Choose Your Wedding Pass
+                </DialogTitle>
+                <DialogDescription className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                  Select your event duration.
+                </DialogDescription>
               </div>
-              <DialogTitle className="font-serif text-xl sm:text-2xl text-foreground font-normal">
-                Choose Your Wedding Pass
-              </DialogTitle>
-              <DialogDescription className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                Select your event duration.
-              </DialogDescription>
             </div>
+          </DialogHeader>
 
-            {selectedPlan ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedPlan(null)}
-                className="self-start sm:self-auto text-xs text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer h-8"
+          {/* Modal Body */}
+          <div className="p-3 sm:p-4 overflow-y-auto flex-1 relative">
+            {/* Floating Left Navigation Arrow Button */}
+            {canScrollLeft && (
+              <button
+                type="button"
+                onClick={() => scrollCarousel("left")}
+                aria-label="Scroll left"
+                className="absolute left-1.5 sm:left-2 top-1/2 -translate-y-1/2 z-30 size-8 rounded-full bg-background/95 border border-border shadow-md backdrop-blur-md hidden sm:flex items-center justify-center text-foreground hover:text-[#A67C6B] hover:border-[#A67C6B] transition-all cursor-pointer"
               >
-                <ArrowLeft className="size-3.5" />
-                <span>View All Plans</span>
-              </Button>
-            ) : (
-              /* Carousel Navigation Controls in Header */
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-              </div>
+                <ChevronLeft className="size-3.5" />
+              </button>
             )}
-          </div>
-        </DialogHeader>
 
-        {/* Modal Body */}
-        <div className="p-3 sm:p-4 overflow-y-auto flex-1">
-          <AnimatePresence mode="wait">
-            {!selectedPlan ? (
-              <motion.div
-                key="carousel"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="relative"
+            {/* Floating Right Navigation Arrow Button */}
+            {canScrollRight && (
+              <button
+                type="button"
+                onClick={() => scrollCarousel("right")}
+                aria-label="Scroll right"
+                className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 z-30 size-8 rounded-full bg-background/95 border border-border shadow-md backdrop-blur-md hidden sm:flex items-center justify-center text-foreground hover:text-[#A67C6B] hover:border-[#A67C6B] transition-all cursor-pointer"
               >
-                {/* Floating Left Navigation Arrow Button */}
-                {canScrollLeft && (
-                  <button
-                    type="button"
-                    onClick={() => scrollCarousel("left")}
-                    aria-label="Scroll left"
-                    className="absolute left-1.5 sm:left-2 top-1/2 -translate-y-1/2 z-30 size-8 rounded-full bg-background/95 border border-border shadow-md backdrop-blur-md hidden sm:flex items-center justify-center text-foreground hover:text-[#A67C6B] hover:border-[#A67C6B] transition-all cursor-pointer"
-                  >
-                    <ChevronLeft className="size-3.5" />
-                  </button>
-                )}
+                <ChevronRight className="size-3.5" />
+              </button>
+            )}
 
-                {/* Floating Right Navigation Arrow Button */}
-                {canScrollRight && (
-                  <button
-                    type="button"
-                    onClick={() => scrollCarousel("right")}
-                    aria-label="Scroll right"
-                    className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 z-30 size-8 rounded-full bg-background/95 border border-border shadow-md backdrop-blur-md hidden sm:flex items-center justify-center text-foreground hover:text-[#A67C6B] hover:border-[#A67C6B] transition-all cursor-pointer"
-                  >
-                    <ChevronRight className="size-3.5" />
-                  </button>
-                )}
-
-                {/* Horizontal Scroll Track */}
-                <div
-                  ref={carouselRef}
-                  onScroll={checkScroll}
-                  className="flex gap-4 sm:gap-5 overflow-x-auto pb-3 pt-5 px-6 sm:px-8 scroll-smooth snap-x snap-mandatory [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0"
+            {/* Horizontal Scroll Track */}
+            <div
+              ref={carouselRef}
+              onScroll={checkScroll}
+              className="flex gap-4 sm:gap-5 overflow-x-auto pb-3 pt-5 px-6 sm:px-8 scroll-smooth snap-x snap-mandatory [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0"
+            >
+              {PRICING_PLANS.map((plan) => (
+                <motion.div
+                  key={plan.id}
+                  data-plan-card
+                  whileHover={{ y: -2 }}
+                  transition={{ duration: 0.15 }}
+                  className="w-[260px] sm:w-[285px] pt-1 shrink-0 snap-center sm:snap-start flex flex-col"
                 >
-                  {PRICING_PLANS.map((plan) => (
-                    <motion.div
-                      key={plan.id}
-                      data-plan-card
-                      whileHover={{ y: -2 }}
-                      transition={{ duration: 0.15 }}
-                      className="w-[260px] sm:w-[285px] pt-1 shrink-0 snap-center sm:snap-start flex flex-col"
-                    >
-                      <div
-                        className={`h-full rounded-xl border p-4 sm:p-5 flex flex-col justify-between relative transition-all duration-200 ${
+                  <div
+                    className={`h-full rounded-xl border p-4 sm:p-5 flex flex-col justify-between relative transition-all duration-200 ${
+                      plan.isPopular
+                        ? "bg-card border-2 border-[#A67C6B] shadow-md ring-1 ring-[#A67C6B]/20"
+                        : plan.isSpecialPartner
+                        ? "bg-[#A67C6B]/5 border border-[#A67C6B]/50 hover:border-[#A67C6B] shadow-2xs"
+                        : "bg-background/60 border-border/80 hover:border-[#A67C6B]/40 shadow-2xs"
+                    }`}
+                  >
+                    {/* Popular Badge */}
+                    {plan.isPopular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 bg-[#A67C6B] text-white text-[9.5px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-xs flex items-center gap-1 shrink-0 whitespace-nowrap">
+                        <Sparkles className="size-2.5" />
+                        <span>Most Popular</span>
+                      </div>
+                    )}
+
+                    {/* Special Partner Badge */}
+                    {plan.isSpecialPartner && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 bg-foreground text-background text-[9.5px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-xs flex items-center gap-1 shrink-0 whitespace-nowrap">
+                        <Sparkles className="size-2.5 text-[#A67C6B]" />
+                        <span>Partner Pass</span>
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="mb-1">
+                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium block truncate">
+                          {plan.badge}
+                        </span>
+                      </div>
+
+                      <h3 className="font-serif text-lg sm:text-xl font-normal text-foreground leading-tight">
+                        {plan.name}
+                      </h3>
+
+                      <div className="mt-1 mb-2 flex items-baseline gap-1">
+                        <span
+                          className={`font-serif font-bold text-foreground ${
+                            plan.isPopular ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
+                          }`}
+                        >
+                          {plan.price}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground font-mono">
+                          {plan.duration}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground leading-snug mb-2.5 line-clamp-2 min-h-[30px]">
+                        {plan.description}
+                      </p>
+
+                      <div className="w-full h-px bg-border/60 mb-2.5" />
+
+                      <ul className="space-y-1.5 text-[11px] text-muted-foreground">
+                        {plan.features.map((feat, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5 leading-tight">
+                            <Check className="size-3 text-[#A67C6B] shrink-0 mt-0.5" />
+                            <span className={feat.highlight ? "text-foreground font-medium" : ""}>
+                              {feat.text}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-border/40">
+                      <Button
+                        size="sm"
+                        onClick={() => handleSelectPlan(plan)}
+                        className={`w-full text-[11px] uppercase tracking-wider font-semibold h-8.5 rounded-lg cursor-pointer transition-all shadow-xs ${
                           plan.isPopular
-                            ? "bg-card border-2 border-[#A67C6B] shadow-md ring-1 ring-[#A67C6B]/20"
-                            : plan.isSpecialPartner
-                            ? "bg-[#A67C6B]/5 border border-[#A67C6B]/50 hover:border-[#A67C6B] shadow-2xs"
-                            : "bg-background/60 border-border/80 hover:border-[#A67C6B]/40 shadow-2xs"
+                            ? "bg-[#2F2926] hover:bg-[#4A3728] text-white dark:bg-[#F5EFEB] dark:text-[#12100E] dark:hover:bg-white"
+                            : "bg-primary text-primary-foreground hover:bg-primary/90"
                         }`}
                       >
-                        {/* Popular Badge */}
-                        {plan.isPopular && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 bg-[#A67C6B] text-white text-[9.5px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-xs flex items-center gap-1 shrink-0 whitespace-nowrap">
-                            <Sparkles className="size-2.5" />
-                            <span>Most Popular</span>
-                          </div>
-                        )}
-
-                        {/* Special Partner Badge */}
-                        {plan.isSpecialPartner && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 bg-foreground text-background text-[9.5px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-xs flex items-center gap-1 shrink-0 whitespace-nowrap">
-                            <Sparkles className="size-2.5 text-[#A67C6B]" />
-                            <span>Partner Pass</span>
-                          </div>
-                        )}
-
-                        <div>
-                          <div className="mb-1">
-                            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium block truncate">
-                              {plan.badge}
-                            </span>
-                          </div>
-
-                          <h3 className="font-serif text-lg sm:text-xl font-normal text-foreground leading-tight">
-                            {plan.name}
-                          </h3>
-
-                          <div className="mt-1 mb-2 flex items-baseline gap-1">
-                            <span
-                              className={`font-serif font-bold text-foreground ${
-                                plan.isPopular ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
-                              }`}
-                            >
-                              {plan.price}
-                            </span>
-                            <span className="text-[11px] text-muted-foreground font-mono">
-                              {plan.duration}
-                            </span>
-                          </div>
-
-                          <p className="text-[11px] text-muted-foreground leading-snug mb-2.5 line-clamp-2 min-h-[30px]">
-                            {plan.description}
-                          </p>
-
-                          <div className="w-full h-px bg-border/60 mb-2.5" />
-
-                          <ul className="space-y-1.5 text-[11px] text-muted-foreground">
-                            {plan.features.map((feat, idx) => (
-                              <li key={idx} className="flex items-start gap-1.5 leading-tight">
-                                <Check className="size-3 text-[#A67C6B] shrink-0 mt-0.5" />
-                                <span className={feat.highlight ? "text-foreground font-medium" : ""}>
-                                  {feat.text}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="mt-3 pt-2.5 border-t border-border/40">
-                          <Button
-                            size="sm"
-                            onClick={() => handleSelectPlan(plan)}
-                            className={`w-full text-[11px] uppercase tracking-wider font-semibold h-8.5 rounded-lg cursor-pointer transition-all shadow-xs ${
-                              plan.isPopular
-                                ? "bg-[#2F2926] hover:bg-[#4A3728] text-white dark:bg-[#F5EFEB] dark:text-[#12100E] dark:hover:bg-white"
-                                : "bg-primary text-primary-foreground hover:bg-primary/90"
-                            }`}
-                          >
-                            <span>Book Now</span>
-                            <ArrowRight className="size-3 ml-1" />
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Carousel Dot Indicators */}
-                <div className="flex flex-col items-center justify-center gap-1.5 mt-2 pt-0.5">
-                  <div className="flex items-center gap-1.5">
-                    {PRICING_PLANS.map((plan, idx) => (
-                      <button
-                        key={plan.id}
-                        type="button"
-                        onClick={() => scrollToPlanIndex(idx)}
-                        aria-label={`View ${plan.name}`}
-                        className={`transition-all duration-300 rounded-full cursor-pointer ${
-                          activePlanIndex === idx
-                            ? "w-6 h-1.5 bg-[#A67C6B] shadow-xs"
-                            : "w-1.5 h-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60"
-                        }`}
-                      />
-                    ))}
+                        <span>Book Now</span>
+                        <ArrowRight className="size-3 ml-1" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ) : (
-              /* Selected Plan Inquiry / WhatsApp Step */
-              <motion.div
-                key="inquiry"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="max-w-lg mx-auto py-2"
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Carousel Dot Indicators */}
+            <div className="flex flex-col items-center justify-center gap-1.5 mt-2 pt-0.5">
+              <div className="flex items-center gap-1.5">
+                {PRICING_PLANS.map((plan, idx) => (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => scrollToPlanIndex(idx)}
+                    aria-label={`View ${plan.name}`}
+                    className={`transition-all duration-300 rounded-full cursor-pointer ${
+                      activePlanIndex === idx
+                        ? "w-6 h-1.5 bg-[#A67C6B] shadow-xs"
+                        : "w-1.5 h-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-3.5 bg-muted/30 border-t border-border/60 text-center shrink-0">
+            <p className="text-[11px] text-muted-foreground">
+              Need a custom package or banquet hall partnership? WhatsApp us directly at{" "}
+              <a
+                href="https://wa.me/60137848933"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#A67C6B] hover:underline font-medium"
               >
-                <div className="rounded-2xl border border-border bg-background/50 p-5 mb-5 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#A67C6B] font-semibold">
-                        Selected Package
-                      </span>
-                      <h3 className="font-serif text-2xl font-normal text-foreground mt-0.5">
-                        {selectedPlan.name}
-                      </h3>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-3xl font-serif font-bold text-foreground">
-                        {selectedPlan.price}
-                      </span>
-                      <span className="text-xs text-muted-foreground font-mono block">
-                        {selectedPlan.duration}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                    {selectedPlan.description}
-                  </p>
-                </div>
+                +60 13-784 8933
+              </a>
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-                <form onSubmit={handleSubmitInquiry} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                      <User className="size-3.5 text-muted-foreground" />
-                      <span>Your Name / Username *</span>
-                    </label>
-                    <Input
-                      required
-                      placeholder="e.g. Sarah & Danial"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="h-10 text-sm rounded-xl"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                      <Phone className="size-3.5 text-muted-foreground" />
-                      <span>WhatsApp Phone Number *</span>
-                    </label>
-                    <Input
-                      type="tel"
-                      required
-                      placeholder="e.g. 012-3456789"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="h-10 text-sm rounded-xl"
-                      disabled={isSubmitting}
-                    />
-                    <p className="text-[11px] text-muted-foreground">
-                      We will connect with you on WhatsApp to activate your gallery URL.
-                    </p>
-                  </div>
-
-                  {inquiryError && (
-                    <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">
-                      {inquiryError}
-                    </div>
-                  )}
-
-                  <div className="pt-2 space-y-2.5">
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs uppercase tracking-wider font-semibold cursor-pointer gap-2 shadow-md"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="size-4 animate-spin" />
-                          <span>Submitting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <MessageCircle className="size-4" />
-                          <span>Book via WhatsApp</span>
-                        </>
-                      )}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleDirectWhatsApp(selectedPlan)}
-                      className="w-full h-10 rounded-xl text-xs tracking-wider border-border hover:bg-muted cursor-pointer"
-                    >
-                      Skip form & open WhatsApp directly &rarr;
-                    </Button>
-                  </div>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Footer */}
-        <div className="p-3.5 bg-muted/30 border-t border-border/60 text-center shrink-0">
-          <p className="text-[11px] text-muted-foreground">
-            Need a custom package or banquet hall partnership? WhatsApp us directly at{" "}
-            <a
-              href="https://wa.me/60137848933"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#A67C6B] hover:underline font-medium"
-            >
-              +60 13-784 8933
-            </a>
-          </p>
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* Shared WhatsApp Deals & Inquiry Modal */}
+      <WhatsAppInquiryModal
+        isOpen={isInquiryModalOpen}
+        onOpenChange={setIsInquiryModalOpen}
+        plan={selectedPlanForWhatsApp}
+        onNavigateToSubAdmin={onNavigateToSubAdmin}
+        onBack={() => {
+          setIsInquiryModalOpen(false);
+          onOpenChange(true);
+        }}
+      />
+    </>
   );
 };
