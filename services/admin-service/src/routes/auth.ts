@@ -85,6 +85,28 @@ authRoute.get("/me", requireAdminAuth, async (c) => {
   );
 });
 
+authRoute.post("/verify-password", requireAdminAuth, async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const verifySchema = z.object({
+    password: z.string().min(1, "Password is required"),
+  });
+  const parsed = verifySchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(error("VALIDATION_ERROR", "Sila masukkan kata laluan admin"), 400);
+  }
+
+  const expectedPassword = process.env.ADMIN_PASSWORD;
+  if (!expectedPassword || parsed.data.password !== expectedPassword) {
+    return c.json(
+      error("INVALID_PASSWORD", "Kata laluan Super Admin tidak tepat. Pengesahan gagal."),
+      403
+    );
+  }
+
+  return c.json(success({ verified: true }));
+});
+
 authRoute.post("/logout", async (c) => {
   return c.json(success({ message: "Successfully logged out" }));
 });

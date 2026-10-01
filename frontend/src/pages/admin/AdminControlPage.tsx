@@ -46,6 +46,8 @@ import {
   getAdminTenantAccounts,
   toggleAdminPreserveMedia,
   triggerAdminMediaCleanup,
+  purgeEntireWedding,
+  verifyAdminPassword,
   type AdminUser,
   type AdminStats,
   type AdminInvite,
@@ -388,16 +390,27 @@ export function AdminControlPage({
     }
   };
 
-  const confirmDeleteWedding = async () => {
+  const confirmDeleteWedding = async (adminPassword: string) => {
     if (!weddingToDelete) return;
     setIsDeleting(true);
     try {
-      await deleteWedding(weddingToDelete.id);
+      // 1. Verify Super Admin password before critical destructive purge
+      await verifyAdminPassword(adminPassword);
+
+      // 2. Perform full cascade purge
+      await purgeEntireWedding(weddingToDelete.id);
       setWeddings((prev) => prev.filter((w) => w.id !== weddingToDelete.id));
-      toast.success(`Wedding "${weddingToDelete.name}" has been deleted`);
+      setTenantAccounts((prev) => {
+        const next = { ...prev };
+        delete next[weddingToDelete.id];
+        return next;
+      });
+      toast.success(
+        `Wedding "${weddingToDelete.name}" and all associated storage files & accounts have been permanently purged`
+      );
       setWeddingToDelete(null);
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete wedding");
+      toast.error(err.message || "Failed to purge wedding data");
     } finally {
       setIsDeleting(false);
     }

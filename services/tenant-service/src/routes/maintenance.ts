@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { db } from "../db";
-import { tenantAccounts } from "../db/schema";
+import { tenantAccounts, tenantCustomizations } from "../db/schema";
 import { runMediaRetentionCleanup } from "../services/cleanup.service";
 import { success, error } from "../lib/response";
 
@@ -185,6 +185,29 @@ maintenanceRoute.patch("/accounts/:weddingId/extend-plan", async (c) => {
   } catch (err: any) {
     console.error("Failed to extend plan:", err);
     return c.json(error("DATABASE_ERROR", "Failed to extend tenant plan"), 500);
+  }
+});
+
+// DELETE /tenant/accounts/:weddingId - Delete tenant account and customizations permanently
+maintenanceRoute.delete("/accounts/:weddingId", async (c) => {
+  const weddingId = c.req.param("weddingId");
+  if (!weddingId) {
+    return c.json(error("VALIDATION_ERROR", "Wedding ID is required"), 400);
+  }
+
+  try {
+    await db.delete(tenantAccounts).where(eq(tenantAccounts.weddingId, weddingId));
+    await db.delete(tenantCustomizations).where(eq(tenantCustomizations.weddingId, weddingId));
+
+    return c.json(
+      success({
+        weddingId,
+        message: "Tenant account and customizations deleted permanently",
+      })
+    );
+  } catch (err: any) {
+    console.error(`Failed to delete tenant account for wedding ${weddingId}:`, err);
+    return c.json(error("DATABASE_ERROR", "Failed to delete tenant account"), 500);
   }
 });
 

@@ -93,6 +93,16 @@ export async function getAdminMe(): Promise<{ user: AdminUser }> {
   return handleApiResponse<{ user: AdminUser }>(response);
 }
 
+export async function verifyAdminPassword(password: string): Promise<boolean> {
+  const response = await fetch(`${ADMIN_BASE_URL}/auth/verify-password`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ password }),
+  });
+  const result = await handleApiResponse<{ verified: boolean }>(response);
+  return result.verified;
+}
+
 export async function getAdminStats(): Promise<AdminStats> {
   const response = await fetch(`${ADMIN_BASE_URL}/stats`, {
     headers: getAuthHeaders(),
@@ -369,6 +379,41 @@ export async function triggerAdminMediaCleanup(): Promise<{
     headers: getAuthHeaders(),
   });
   return handleApiResponse<any>(res);
+}
+
+const MEDIA_API_URL = import.meta.env.VITE_MEDIA_API_URL || "/api/media";
+const WEDDING_API_URL = import.meta.env.VITE_WEDDINGS_API_URL || "/api/weddings";
+
+/**
+ * Completely purges a wedding:
+ * 1. Storage & Media: Deletes all S3/R2 files and media DB rows via Media Service
+ * 2. User & Tenant: Deletes tenant credentials & customizations via Tenant Service
+ * 3. Wedding: Deletes wedding entity via Wedding Service
+ */
+export async function purgeEntireWedding(weddingId: string): Promise<void> {
+  // 1. Delete all images & media files from S3/R2 and database
+  try {
+    await fetch(`${MEDIA_API_URL}/wedding/${encodeURIComponent(weddingId)}`, {
+      method: "DELETE",
+    });
+  } catch (err) {
+    console.warn("Failed to purge media during wedding deletion:", err);
+  }
+
+  // 2. Delete tenant account and customizations
+  try {
+    await fetch(`${TENANT_API_URL}/accounts/${encodeURIComponent(weddingId)}`, {
+      method: "DELETE",
+    });
+  } catch (err) {
+    console.warn("Failed to delete tenant account during wedding deletion:", err);
+  }
+
+  // 3. Delete wedding record
+  const res = await fetch(`${WEDDING_API_URL}/${encodeURIComponent(weddingId)}`, {
+    method: "DELETE",
+  });
+  await handleApiResponse<{ message: string }>(res);
 }
 
 
