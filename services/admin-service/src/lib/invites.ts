@@ -1,6 +1,7 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import crypto from "node:crypto";
+import { eq, desc, and } from "drizzle-orm";
+import { db } from "../db";
+import { tenantInvites, type TenantRegistrationDetails } from "../db/schema";
 
 export type SubscriptionTier =
   | "12h"
@@ -14,14 +15,7 @@ export type SubscriptionTier =
   | "vip"
   | (string & {});
 
-export interface TenantRegistrationDetails {
-  username: string;
-  email: string;
-  weddingId: string;
-  weddingSlug: string;
-  weddingName: string;
-  registeredAt: number;
-}
+export { type TenantRegistrationDetails };
 
 export interface InviteToken {
   id: string;
@@ -40,85 +34,79 @@ export type VerifyResult =
   | { valid: true; invite: InviteToken }
   | { valid: false; reason: "not_found" | "already_used" | "expired"; message: string };
 
-const DATA_DIR = path.resolve(import.meta.dirname, "../../data");
-const DATA_FILE = path.join(DATA_DIR, "invites.json");
-
-// Ensure data storage directory exists
-async function ensureDataFile(): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    try {
-      await fs.access(DATA_FILE);
-    } catch {
-      await fs.writeFile(DATA_FILE, JSON.stringify([], null, 2), "utf-8");
-    }
-  } catch (err) {
-    console.error("Failed to initialize invite data file:", err);
-  }
-}
-
-async function readAllInvites(): Promise<InviteToken[]> {
-  await ensureDataFile();
-  try {
-    const raw = await fs.readFile(DATA_FILE, "utf-8");
-    return JSON.parse(raw) as InviteToken[];
-  } catch (err) {
-    console.error("Failed to read invites:", err);
-    return [];
-  }
-}
-
-async function writeAllInvites(invites: InviteToken[]): Promise<void> {
-  await ensureDataFile();
-  await fs.writeFile(DATA_FILE, JSON.stringify(invites, null, 2), "utf-8");
+function mapInviteRow(row: typeof tenantInvites.$inferSelect): InviteToken {
+  return {
+    id: row.id,
+    token: row.token,
+    tier: row.tier as SubscriptionTier,
+    clientName: row.clientName || undefined,
+    notes: row.notes || undefined,
+    createdAt: row.createdAt ? new Date(row.createdAt).getTime() : Date.now(),
+    expiresAt: new Date(row.expiresAt).getTime(),
+    isUsed: row.isUsed,
+    usedAt: row.usedAt ? new Date(row.usedAt).getTime() : undefined,
+    registrationDetails: row.registrationDetails || undefined,
+  };
 }
 
 /**
- * Generate a new single-use invite token valid for strictly 24 hours.
+ * Generate a new single-use invite token valid for strictly 24 hours in PostgreSQL.
  */
 export async function createInviteToken(params: {
   tier: SubscriptionTier;
   clientName?: string;
   notes?: string;
 }): Promise<InviteToken> {
-  const now = Date.now();
-  const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
   // Generate a clean, secure random token (e.g. fki_a1b2c3...)
   const randomBytes = crypto.randomBytes(16).toString("hex");
   const token = `fki_${randomBytes}`;
 
-  const invite: InviteToken = {
-    id: crypto.randomUUID(),
-    token,
-    tier: params.tier,
-    clientName: params.clientName?.trim() || undefined,
-    notes: params.notes?.trim() || undefined,
-    createdAt: now,
-    expiresAt: now + TWENTY_FOUR_HOURS_MS,
-    isUsed: false,
-  };
+  const [created] = await db
+    .insert(tenantInvites)
+    .values({
+      token,
+      tier: params.tier,
+      clientName: params.clientName?.trim().toLowerCase() || null,
+      notes: params.notes?.trim() || null,
+      createdAt: now,
+      expiresAt,
+      isUsed: false,
+    })
+    .returning();
 
-  const all = await readAllInvites();
-  all.unshift(invite);
-  await writeAllInvites(all);
+  if (!created) {
+    throw new Error("Failed to insert tenant invite into database");
+  }
 
-  return invite;
+  return mapInviteRow(created);
 }
 
 /**
  * List all invites sorted by createdAt descending.
  */
 export async function listInvites(): Promise<InviteToken[]> {
-  return readAllInvites();
+  const rows = await db
+    .select()
+    .from(tenantInvites)
+    .orderBy(desc(tenantInvites.createdAt));
+
+  return rows.map(mapInviteRow);
 }
 
 /**
  * Find an invite by its token.
  */
 export async function getInviteByToken(token: string): Promise<InviteToken | null> {
-  const all = await readAllInvites();
-  return all.find((i) => i.token === token) || null;
+  const [row] = await db
+    .select()
+    .from(tenantInvites)
+    .where(eq(tenantInvites.token, token))
+    .limit(1);
+
+  return row ? mapInviteRow(row) : null;
 }
 
 /**
@@ -131,7 +119,7 @@ export async function verifyInviteToken(token: string): Promise<VerifyResult> {
     return {
       valid: false,
       reason: "not_found",
-      message: "Link jemputan pendaftaran tidak wujud atau tidak sah.",
+      message: "Registration link does not exist or is invalid.",
     };
   }
 
@@ -139,7 +127,7 @@ export async function verifyInviteToken(token: string): Promise<VerifyResult> {
     return {
       valid: false,
       reason: "already_used",
-      message: "Link ini telah pun digunakan untuk pendaftaran sebelum ini (Single-Use Token).",
+      message: "This registration link has already been used (Single-Use Token).",
     };
   }
 
@@ -147,7 +135,7 @@ export async function verifyInviteToken(token: string): Promise<VerifyResult> {
     return {
       valid: false,
       reason: "expired",
-      message: "Link pendaftaran ini telah tamat tempoh (sah selama 24 jam sahaja). Sila minta link baru.",
+      message: "This registration link has expired (strictly valid for 24 hours). Please contact admin.",
     };
   }
 
@@ -155,7 +143,7 @@ export async function verifyInviteToken(token: string): Promise<VerifyResult> {
 }
 
 /**
- * Redeem the invite token upon successful registration, making it single-use (burned).
+ * Redeem the invite token upon successful registration, making it single-use (burned) in PostgreSQL.
  */
 export async function redeemInviteToken(
   token: string,
@@ -167,53 +155,53 @@ export async function redeemInviteToken(
     weddingName: string;
   }
 ): Promise<InviteToken> {
-  const all = await readAllInvites();
-  const index = all.findIndex((i) => i.token === token);
-
-  if (index === -1) {
-    throw new Error("Link pendaftaran tidak dijumpai.");
+  const existing = await getInviteByToken(token);
+  if (!existing) {
+    throw new Error("Registration link not found.");
   }
 
-  const invite = all[index];
-  if (!invite) {
-    throw new Error("Link pendaftaran tidak dijumpai.");
+  if (existing.isUsed) {
+    throw new Error("This registration link has already been used (Single-Use Token).");
   }
 
-  if (invite.isUsed) {
-    throw new Error("Link ini telah pun digunakan (Single-Use Token).");
+  if (Date.now() > existing.expiresAt) {
+    throw new Error("This registration link has expired (exceeded 24 hours).");
   }
 
-  if (Date.now() > invite.expiresAt) {
-    throw new Error("Link pendaftaran ini telah tamat tempoh (melebihi 24 jam).");
-  }
-
-  const updatedInvite: InviteToken = {
-    ...invite,
-    isUsed: true,
-    usedAt: Date.now(),
-    registrationDetails: {
-      username: details.username.trim(),
-      email: details.email.trim(),
-      weddingId: details.weddingId,
-      weddingSlug: details.weddingSlug,
-      weddingName: details.weddingName,
-      registeredAt: Date.now(),
-    },
+  const registrationDetails: TenantRegistrationDetails = {
+    username: details.username.trim(),
+    email: details.email.trim(),
+    weddingId: details.weddingId,
+    weddingSlug: details.weddingSlug,
+    weddingName: details.weddingName,
+    registeredAt: Date.now(),
   };
 
-  all[index] = updatedInvite;
-  await writeAllInvites(all);
+  const [updated] = await db
+    .update(tenantInvites)
+    .set({
+      isUsed: true,
+      usedAt: new Date(),
+      registrationDetails,
+    })
+    .where(and(eq(tenantInvites.token, token), eq(tenantInvites.isUsed, false)))
+    .returning();
 
-  return updatedInvite;
+  if (!updated) {
+    throw new Error("Failed to redeem invite token. It may have been used concurrently.");
+  }
+
+  return mapInviteRow(updated);
 }
 
 /**
  * Delete an invite by id (admin revoking unused link).
  */
 export async function deleteInvite(id: string): Promise<boolean> {
-  const all = await readAllInvites();
-  const filtered = all.filter((i) => i.id !== id);
-  if (filtered.length === all.length) return false;
-  await writeAllInvites(filtered);
-  return true;
+  const deleted = await db
+    .delete(tenantInvites)
+    .where(eq(tenantInvites.id, id))
+    .returning({ id: tenantInvites.id });
+
+  return deleted.length > 0;
 }

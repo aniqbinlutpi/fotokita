@@ -52,7 +52,21 @@ export function useActiveWedding(params?: { slug?: string | null; weddingId?: st
           const wedding = await getWeddingBySlug(slug);
           if (wedding) return wedding;
         } catch (e) {
-          console.warn("Could not find wedding from slug param, falling back", e);
+          console.warn("Could not find wedding from slug param", e);
+        }
+
+        // Check if tenant-service knows this slug and can resolve to weddingId
+        try {
+          const res = await fetch(`/api/tenant/customization/${encodeURIComponent(slug)}`);
+          if (res.ok) {
+            const body = (await res.json()) as any;
+            if (body?.data?.weddingId) {
+              const wedding = await getWeddingById(body.data.weddingId);
+              if (wedding) return wedding;
+            }
+          }
+        } catch {
+          // ignore
         }
       }
 
@@ -66,7 +80,12 @@ export function useActiveWedding(params?: { slug?: string | null; weddingId?: st
         }
       }
 
-      // 3. Fallback to first existing wedding
+      // If a specific slug or weddingId was requested but neither matched, do NOT hijack with another couple's gallery!
+      if (slug || weddingId) {
+        throw new Error(`Wedding "${slug || weddingId}" not found`);
+      }
+
+      // 3. Fallback to first existing wedding only when viewing generic demo without slug
       const weddings = await getWeddings();
       if (weddings && weddings.length > 0) {
         return weddings[0];

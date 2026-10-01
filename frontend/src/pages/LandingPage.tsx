@@ -27,8 +27,10 @@ import {
   User,
   Phone,
   Loader2,
+  LogIn,
 } from "lucide-react";
 import { submitCustomerInquiry } from "@/api/admin";
+import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -53,7 +55,8 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 interface LandingPageProps {
   onNavigateToGallery?: () => void;
   onNavigateToDemo?: () => void;
-  onNavigateToRegister: (plan?: "standard" | "premium") => void;
+  onNavigateToRegister?: (plan?: "standard" | "premium") => void;
+  onNavigateToSubAdmin?: () => void;
 }
 
 interface FeedbackItem {
@@ -247,7 +250,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigateToGallery,
   onNavigateToDemo,
   onNavigateToRegister,
+  onNavigateToSubAdmin,
 }) => {
+  // Sub-Admin Login Modal State
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   // Interactive Product Simulator Active Tab
   const [activeStepTab, setActiveStepTab] = useState<
     "qr" | "guest" | "screen" | "vault"
@@ -615,7 +622,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Host your live wedding gallery with zero app installs & full HD resolution.
           </span>
           <button
-            onClick={() => onNavigateToRegister("standard")}
+            onClick={() => onNavigateToRegister?.("standard")}
             className="underline font-semibold text-accent hover:text-primary-foreground transition-colors ml-1 cursor-pointer"
           >
             Claim 20% Launch Offer &rarr;
@@ -770,11 +777,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => onNavigateToRegister("standard")}
-                className="cursor-pointer shadow-sm hover:shadow transition-all bg-foreground text-background hover:bg-foreground/90 font-medium"
+                onClick={() => {
+                  if (onNavigateToSubAdmin) {
+                    onNavigateToSubAdmin();
+                  } else {
+                    setIsLoginModalOpen(true);
+                  }
+                }}
+                className="cursor-pointer shadow-sm hover:shadow transition-all bg-foreground text-background hover:bg-foreground/90 font-medium gap-1.5"
               >
-                <span>Create Gallery</span>
-                <ArrowRight data-icon="inline-end" className="size-3.5" />
+                <span>Login</span>
+                <LogIn className="size-3.5" />
               </Button>
             </div>
           </div>
@@ -836,11 +849,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               <Button
                 size="lg"
-                onClick={() => onNavigateToRegister("standard")}
-                className="w-full sm:w-auto h-12 px-8 rounded-xl text-xs uppercase tracking-widest font-semibold cursor-pointer shadow-md hover:shadow-lg transition-all"
+                onClick={() => {
+                  if (onNavigateToSubAdmin) {
+                    onNavigateToSubAdmin();
+                  } else {
+                    setIsLoginModalOpen(true);
+                  }
+                }}
+                className="w-full sm:w-auto h-12 px-8 rounded-xl text-xs uppercase tracking-widest font-semibold cursor-pointer shadow-md hover:shadow-lg transition-all gap-2"
               >
-                <span>Create Wedding Gallery</span>
-                <ArrowRight data-icon="inline-end" className="size-4" />
+                <span>Sub-Admin Portal Login</span>
+                <LogIn className="size-4" />
               </Button>
 
               <a
@@ -2239,10 +2258,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 Live Demo
               </a>
               <button
-                onClick={() => onNavigateToRegister("standard")}
+                onClick={() => {
+                  if (onNavigateToSubAdmin) {
+                    onNavigateToSubAdmin();
+                  } else {
+                    setIsLoginModalOpen(true);
+                  }
+                }}
                 className="text-accent font-semibold hover:underline cursor-pointer"
               >
-                Create Gallery
+                Sub-Admin Login
               </button>
             </div>
 
@@ -2374,23 +2399,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 )}
               </Button>
 
-              {/* Optional: Already have token? */}
+              {/* Sub-Admin portal login shortcut */}
               <div className="text-center pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     setIsWhatsAppModalOpen(false);
-                    onNavigateToRegister();
+                    if (onNavigateToSubAdmin) {
+                      onNavigateToSubAdmin();
+                    } else {
+                      setIsLoginModalOpen(true);
+                    }
                   }}
                   className="text-[11px] text-muted-foreground hover:text-foreground transition-colors underline cursor-pointer"
                 >
-                  Already have a registration link from admin? Click here
+                  Already registered? Login to Sub-Admin Portal
                 </button>
               </div>
             </form>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Sub-Admin Login Modal */}
+      <SubAdminLoginModal
+        isOpen={isLoginModalOpen}
+        onOpenChange={setIsLoginModalOpen}
+        onSuccess={() => {
+          if (onNavigateToSubAdmin) {
+            onNavigateToSubAdmin();
+          } else {
+            window.location.href = "/subadmin";
+          }
+        }}
+      />
     </div>
   );
 };

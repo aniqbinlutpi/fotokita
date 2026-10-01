@@ -71,6 +71,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api\/admin/, "/admin"),
       },
+      "/api/tenant": {
+        target: "http://localhost:3004",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/tenant/, "/tenant"),
+      },
     },
   },
 })

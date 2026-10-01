@@ -11,9 +11,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { LandingPage } from "./pages/LandingPage";
 import { WeddingGalleryPage } from "./pages/WeddingGalleryPage";
 import { DemoGalleryPage } from "./pages/DemoGalleryPage";
-import { SubscriberRegisterPage } from "./pages/SubscriberRegisterPage";
 import { AdminControlPage } from "./pages/AdminControlPage";
-import type { Wedding } from "./types/wedding";
+import { SubAdminPortalPage } from "./pages/SubAdminPortalPage";
 
 // 1. Root Route
 const rootRoute = createRootRoute({
@@ -41,14 +40,22 @@ const indexRoute = createRoute({
     const page = urlParams.get("page");
     const slug = urlParams.get("slug");
     const weddingId = urlParams.get("weddingId");
-    const plan = (urlParams.get("plan") as "standard" | "premium") || undefined;
 
-    // Handle legacy query params (?page=admin, ?page=demo, etc.)
+    // Handle legacy query params (?page=admin, ?page=demo, ?page=subadmin etc.)
     if (page === "admin" || page === "adminfotokita") {
       return (
         <AdminControlPage
           onNavigateHome={() => navigate({ to: "/" } as any)}
-          onOpenGallery={(s) => openInNewTab(`/w/${s}`)}
+          onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
+        />
+      );
+    }
+
+    if (page === "subadmin" || page === "portal") {
+      return (
+        <SubAdminPortalPage
+          onNavigateHome={() => navigate({ to: "/" } as any)}
+          onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
         />
       );
     }
@@ -56,22 +63,17 @@ const indexRoute = createRoute({
     if (page === "demo") {
       return (
         <DemoGalleryPage
-          onOpenRegister={() => navigate({ to: "/register" } as any)}
+          onOpenRegister={() => navigate({ to: "/subadmin" } as any)}
           onNavigateToLanding={() => navigate({ to: "/" } as any)}
         />
       );
     }
 
-    if (page === "register") {
-      const token = urlParams.get("token") || undefined;
+    if (page === "register" || page === "login") {
       return (
-        <SubscriberRegisterPage
-          inviteToken={token}
-          initialPlan={plan || "standard"}
-          onSuccess={(wedding) => {
-            window.location.href = `/w/${encodeURIComponent(wedding.slug)}?login=subadmin`;
-          }}
-          onCancel={() => navigate({ to: "/" } as any)}
+        <SubAdminPortalPage
+          onNavigateHome={() => navigate({ to: "/" } as any)}
+          onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
         />
       );
     }
@@ -81,7 +83,7 @@ const indexRoute = createRoute({
         <WeddingGalleryPage
           slug={slug || undefined}
           weddingId={weddingId || undefined}
-          onOpenRegister={() => navigate({ to: "/register" } as any)}
+          onOpenRegister={() => navigate({ to: "/subadmin" } as any)}
           onNavigateToLanding={() => navigate({ to: "/" } as any)}
         />
       );
@@ -91,8 +93,11 @@ const indexRoute = createRoute({
       <LandingPage
         onNavigateToGallery={() => navigate({ to: "/gallery" } as any)}
         onNavigateToDemo={() => openInNewTab("/demo")}
+        onNavigateToSubAdmin={() => {
+          navigate({ to: "/subadmin" } as any);
+        }}
         onNavigateToRegister={() => {
-          navigate({ to: "/register" } as any);
+          navigate({ to: "/subadmin" } as any);
         }}
       />
     );
@@ -114,25 +119,44 @@ const demoRoute = createRoute({
   },
 });
 
-// 4. Register Route
-const registerRoute = createRoute({
+// 4. Sub-Admin Portal Route (/subadmin & /portal)
+const subAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/register",
-  component: function RegisterComponent() {
+  path: "/subadmin",
+  component: function SubAdminComponent() {
     const navigate = useNavigate();
-    const location = useLocation();
-    const urlParams = new URLSearchParams(location.searchStr || window.location.search);
-    const token = urlParams.get("token") || undefined;
-    const plan = (urlParams.get("plan") as any) || "standard";
-
     return (
-      <SubscriberRegisterPage
-        inviteToken={token}
-        initialPlan={plan}
-        onSuccess={(newWedding: Wedding) => {
-          window.location.href = `/w/${encodeURIComponent(newWedding.slug)}?login=subadmin`;
-        }}
-        onCancel={() => navigate({ to: "/" } as any)}
+      <SubAdminPortalPage
+        onNavigateHome={() => navigate({ to: "/" } as any)}
+        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
+      />
+    );
+  },
+});
+
+const portalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/portal",
+  component: function PortalComponent() {
+    const navigate = useNavigate();
+    return (
+      <SubAdminPortalPage
+        onNavigateHome={() => navigate({ to: "/" } as any)}
+        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
+      />
+    );
+  },
+});
+
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: function LoginComponent() {
+    const navigate = useNavigate();
+    return (
+      <SubAdminPortalPage
+        onNavigateHome={() => navigate({ to: "/" } as any)}
+        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
       />
     );
   },
@@ -147,7 +171,7 @@ const adminRoute = createRoute({
     return (
       <AdminControlPage
         onNavigateHome={() => navigate({ to: "/" } as any)}
-        onOpenGallery={(slug) => openInNewTab(`/w/${slug}`)}
+        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
       />
     );
   },
@@ -161,7 +185,7 @@ const adminFotokitaRoute = createRoute({
     return (
       <AdminControlPage
         onNavigateHome={() => navigate({ to: "/" } as any)}
-        onOpenGallery={(slug) => openInNewTab(`/w/${slug}`)}
+        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
       />
     );
   },
@@ -182,7 +206,7 @@ const galleryRoute = createRoute({
       <WeddingGalleryPage
         slug={slug}
         weddingId={weddingId}
-        onOpenRegister={() => navigate({ to: "/register" } as any)}
+        onOpenRegister={() => navigate({ to: "/subadmin" } as any)}
         onNavigateToLanding={() => navigate({ to: "/" } as any)}
       />
     );
@@ -200,7 +224,7 @@ const weddingSlugRoute = createRoute({
     return (
       <WeddingGalleryPage
         slug={slug}
-        onOpenRegister={() => navigate({ to: "/register" } as any)}
+        onOpenRegister={() => navigate({ to: "/subadmin" } as any)}
         onNavigateToLanding={() => navigate({ to: "/" } as any)}
       />
     );
@@ -211,7 +235,9 @@ const weddingSlugRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   demoRoute,
-  registerRoute,
+  subAdminRoute,
+  portalRoute,
+  loginRoute,
   adminRoute,
   adminFotokitaRoute,
   galleryRoute,

@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { deleteMedia } from "@/api/media";
+import { getTenantCustomization, type TenantCustomization } from "@/api/tenant";
 import { useActiveWedding, weddingKeys } from "@/hooks/queries/useWeddings";
 import { useMedia, useDeleteMedia } from "@/hooks/queries/useMedia";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,7 +42,19 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
   const {
     data: wedding,
     isLoading: isLoadingWedding,
+    error: weddingError,
   } = useActiveWedding({ slug: activeSlug, weddingId: activeWeddingId });
+
+  // Customization styling from tenant-service
+  const [customization, setCustomization] = useState<TenantCustomization | null>(null);
+
+  React.useEffect(() => {
+    const identifier = wedding?.id || activeSlug;
+    if (!identifier) return;
+    getTenantCustomization(identifier)
+      .then((data) => setCustomization(data))
+      .catch(() => {});
+  }, [wedding?.id, activeSlug]);
 
   // TanStack Query for Media
   const {
@@ -144,15 +157,6 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
               aria-label="Toggle dark / light mode"
             />
 
-            {onOpenRegister && (
-              <button
-                onClick={onOpenRegister}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] hover:border-[#A67C6B] text-[11px] uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors cursor-pointer"
-              >
-                <span>+ Create Wedding</span>
-              </button>
-            )}
-
             <button
               onClick={() => setIsUploadOpen(true)}
               className="text-xs uppercase tracking-widest text-[#A67C6B] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors duration-200 font-medium cursor-pointer"
@@ -165,7 +169,25 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {isLoadingWedding ? (
+        {weddingError ? (
+          <div className="pt-32 pb-24 text-center px-4 max-w-md mx-auto space-y-4">
+            <h2 className="font-serif text-3xl font-normal text-[#2F2926] dark:text-[#F5EFEB]">
+              Galeri Tidak Dijumpai
+            </h2>
+            <p className="text-xs text-[#7A7069] dark:text-[#A89F97] leading-relaxed">
+              Pautan galeri perkahwinan ini tidak wujud atau URL slug telah dikemas kini. Sila pastikan URL slug majlis adalah tepat.
+            </p>
+            {onNavigateToLanding && (
+              <button
+                type="button"
+                onClick={onNavigateToLanding}
+                className="mt-4 px-6 py-2.5 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] hover:border-[#2F2926] dark:hover:border-[#F5EFEB] text-xs font-medium cursor-pointer transition-colors"
+              >
+                Kembali ke Laman Utama
+              </button>
+            )}
+          </div>
+        ) : isLoadingWedding ? (
           <div className="pt-20 pb-16 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-[#7A7069] dark:text-[#A89F97] animate-pulse">
               Loading Wedding Archive...
@@ -176,6 +198,13 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
             wedding={wedding || null}
             photoCount={mediaList.length}
             onOpenUpload={() => setIsUploadOpen(true)}
+            partner1Name={customization?.partner1}
+            partner2Name={customization?.partner2}
+            customDate={customization?.weddingDate}
+            eyebrow={customization?.eyebrow}
+            tagline={customization?.tagline}
+            themePalette={customization?.themePalette}
+            fireworksEnabled={customization?.fireworksEnabled}
           />
         )}
 

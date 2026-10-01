@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { checkSlugAvailability, createWedding } from "@/api/wedding";
 import { verifyInviteToken, redeemInviteToken, type SubscriptionTier } from "@/api/admin";
+import { registerTenant } from "@/api/tenant";
 import { toast } from "sonner";
 import {
   Sparkles,
@@ -238,7 +239,21 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         date: new Date(weddingDate).toISOString(),
       });
 
-      // 2. If an invite token was used, redeem it in admin-service (Single-use token burned!)
+      // 2. Register Sub-Admin Tenant account in PostgreSQL tenant-service!
+      try {
+        await registerTenant({
+          username: username.trim(),
+          email: subscriberEmail.trim() || `${username.trim()}@fotokita.my`,
+          password: adminPin.trim(),
+          weddingId: newWedding.id,
+          weddingSlug: newWedding.slug,
+          weddingName: newWedding.name,
+        });
+      } catch (regErr: any) {
+        console.warn("Could not register tenant account in tenant-service:", regErr);
+      }
+
+      // 3. If an invite token was used, redeem it in admin-service (Single-use token burned!)
       if (token) {
         try {
           await redeemInviteToken({
@@ -254,12 +269,13 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         }
       }
 
-      // 3. Save admin PIN locally for sub-admin authentication
+      // 4. Save admin PIN locally for quick sub-admin convenience
       try {
-        localStorage.setItem(`fotokita_admin_pin_${newWedding.id}`, adminPin);
+        localStorage.setItem("fotokita_registered_username", username.trim());
+        localStorage.setItem(`fotokita_admin_pin_${newWedding.id}`, adminPin.trim());
         localStorage.setItem("fotokita_active_wedding_id", newWedding.id);
         if (subscriberEmail) {
-          localStorage.setItem(`fotokita_subscriber_${newWedding.id}`, subscriberEmail);
+          localStorage.setItem(`fotokita_subscriber_${newWedding.id}`, subscriberEmail.trim());
         }
         localStorage.setItem(`fotokita_subadmin_user_${newWedding.id}`, username.trim());
       } catch {

@@ -4,9 +4,15 @@ import authRoute from "./routes/auth";
 import dashboardRoute from "./routes/dashboard";
 import invitesRoute from "./routes/invites";
 import inquiriesRoute from "./routes/inquiries";
+import { initDb, client } from "./db";
 import { error } from "./lib/response";
 
 const app = new Hono();
+
+// Initialize PostgreSQL database tables on startup
+initDb().catch((err) => {
+  console.error("Failed to initialize database tables on startup:", err);
+});
 
 app.use("*", cors({
   origin: "*",
@@ -22,11 +28,19 @@ app.onError((err, c) => {
   );
 });
 
-app.get("/health", (c) => {
+app.get("/health", async (c) => {
+  let dbStatus = "connected";
+  try {
+    await client`SELECT 1`;
+  } catch {
+    dbStatus = "disconnected";
+  }
+
   return c.json({
     data: {
       status: "ok",
       service: "admin-service",
+      database: dbStatus,
     },
   });
 });

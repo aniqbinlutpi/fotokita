@@ -1,6 +1,6 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import crypto from "node:crypto";
+import { eq, desc } from "drizzle-orm";
+import { db } from "../db";
+import { customerInquiries } from "../db/schema";
 
 export interface CustomerInquiry {
   id: string;
@@ -14,37 +14,18 @@ export interface CustomerInquiry {
   notes?: string;
 }
 
-const DATA_DIR = path.resolve(import.meta.dirname, "../../data");
-const DATA_FILE = path.join(DATA_DIR, "inquiries.json");
-
-// Ensure data storage directory and file exist
-async function ensureDataFile(): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    try {
-      await fs.access(DATA_FILE);
-    } catch {
-      await fs.writeFile(DATA_FILE, JSON.stringify([], null, 2), "utf-8");
-    }
-  } catch (err) {
-    console.error("Failed to initialize inquiry data file:", err);
-  }
-}
-
-async function readAllInquiries(): Promise<CustomerInquiry[]> {
-  await ensureDataFile();
-  try {
-    const raw = await fs.readFile(DATA_FILE, "utf-8");
-    return JSON.parse(raw) as CustomerInquiry[];
-  } catch (err) {
-    console.error("Failed to read inquiries:", err);
-    return [];
-  }
-}
-
-async function writeAllInquiries(inquiries: CustomerInquiry[]): Promise<void> {
-  await ensureDataFile();
-  await fs.writeFile(DATA_FILE, JSON.stringify(inquiries, null, 2), "utf-8");
+function mapInquiryRow(row: typeof customerInquiries.$inferSelect): CustomerInquiry {
+  return {
+    id: row.id,
+    username: row.username,
+    phone: row.phone,
+    planId: row.planId,
+    planName: row.planName,
+    price: row.price,
+    status: row.status as "pending" | "contacted" | "converted",
+    createdAt: row.createdAt ? new Date(row.createdAt).getTime() : Date.now(),
+    notes: row.notes || undefined,
+  };
 }
 
 export async function createInquiry(params: {
@@ -55,27 +36,33 @@ export async function createInquiry(params: {
   price: string;
   notes?: string;
 }): Promise<CustomerInquiry> {
-  const inquiry: CustomerInquiry = {
-    id: crypto.randomUUID(),
-    username: params.username.trim(),
-    phone: params.phone.trim(),
-    planId: params.planId.trim(),
-    planName: params.planName.trim(),
-    price: params.price.trim(),
-    status: "pending",
-    createdAt: Date.now(),
-    notes: params.notes?.trim() || undefined,
-  };
+  const [created] = await db
+    .insert(customerInquiries)
+    .values({
+      username: params.username.trim().toLowerCase(),
+      phone: params.phone.trim(),
+      planId: params.planId.trim(),
+      planName: params.planName.trim(),
+      price: params.price.trim(),
+      status: "pending",
+      notes: params.notes?.trim() || null,
+    })
+    .returning();
 
-  const all = await readAllInquiries();
-  all.unshift(inquiry);
-  await writeAllInquiries(all);
+  if (!created) {
+    throw new Error("Failed to insert customer inquiry into database");
+  }
 
-  return inquiry;
+  return mapInquiryRow(created);
 }
 
 export async function listInquiries(): Promise<CustomerInquiry[]> {
-  return readAllInquiries();
+  const rows = await db
+    .select()
+    .from(customerInquiries)
+    .orderBy(desc(customerInquiries.createdAt));
+
+  return rows.map(mapInquiryRow);
 }
 
 export async function updateInquiryStatus(
@@ -83,27 +70,28 @@ export async function updateInquiryStatus(
   status: "pending" | "contacted" | "converted",
   notes?: string
 ): Promise<CustomerInquiry | null> {
-  const all = await readAllInquiries();
-  const index = all.findIndex((i) => i.id === id);
-  if (index === -1) return null;
-
-  const current = all[index];
-  if (!current) return null;
-
-  all[index] = {
-    ...current,
+  const updateValues: Partial<typeof customerInquiries.$inferInsert> = {
     status,
-    ...(notes !== undefined ? { notes } : {}),
   };
 
-  await writeAllInquiries(all);
-  return all[index];
+  if (notes !== undefined) {
+    updateValues.notes = notes;
+  }
+
+  const [updated] = await db
+    .update(customerInquiries)
+    .set(updateValues)
+    .where(eq(customerInquiries.id, id))
+    .returning();
+
+  return updated ? mapInquiryRow(updated) : null;
 }
 
 export async function deleteInquiry(id: string): Promise<boolean> {
-  const all = await readAllInquiries();
-  const filtered = all.filter((i) => i.id !== id);
-  if (filtered.length === all.length) return false;
-  await writeAllInquiries(filtered);
-  return true;
+  const deleted = await db
+    .delete(customerInquiries)
+    .where(eq(customerInquiries.id, id))
+    .returning({ id: customerInquiries.id });
+
+  return deleted.length > 0;
 }

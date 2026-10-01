@@ -7,24 +7,74 @@ import { UploadCloud, ChevronDown } from "lucide-react";
 import type { Wedding } from "@/types/wedding";
 import imgExpand from "@/assets/images/img-expand.png";
 
-const warmGoldChocolateBrickColors = {
-  brickA: "#1F1712", // Deep Dark Chocolate (sepadan dengan teks gelap & ampersand)
-  brickB: "#4A3728", // Rich Mocha Bronze
-  brickC: "#8C6D48", // Warm Antique Gold
-  brickD: "#C9AA7C", // Soft Champagne Gold
-  brickE: "#F5EADB", // Lustrous Silk Cream (highlight berkilau)
+const themePresets: Record<string, { orb: any; fireworks: string[] }> = {
+  warmGold: {
+    orb: {
+      brickA: "#1F1712",
+      brickB: "#4A3728",
+      brickC: "#8C6D48",
+      brickD: "#C9AA7C",
+      brickE: "#F5EADB",
+    },
+    fireworks: ["#D4AF37", "#C5A880", "#A67C6B", "#E5A988", "#8C624D", "#DFBA89"],
+  },
+  roseRomance: {
+    orb: {
+      brickA: "#280D16",
+      brickB: "#541C2C",
+      brickC: "#9C435A",
+      brickD: "#DFA4AF",
+      brickE: "#FDF2F4",
+    },
+    fireworks: ["#E8829C", "#D25D78", "#F5BAC7", "#FFDFE6", "#B0405C", "#FCD8DE"],
+  },
+  emerald: {
+    orb: {
+      brickA: "#0D211A",
+      brickB: "#1A4335",
+      brickC: "#3D7A65",
+      brickD: "#94C9B4",
+      brickE: "#E8F5F0",
+    },
+    fireworks: ["#2E8B57", "#50C878", "#98FF98", "#A3D9C9", "#20B2AA", "#E0FFF4"],
+  },
+  midnight: {
+    orb: {
+      brickA: "#0A0E17",
+      brickB: "#152238",
+      brickC: "#4F678F",
+      brickD: "#B2C4DF",
+      brickE: "#F0F4FA",
+    },
+    fireworks: ["#4B6984", "#82A7C9", "#C5D9EB", "#FFFFFF", "#6082A3", "#D0E1F9"],
+  },
 };
 
-interface WeddingHeroProps {
+export interface WeddingHeroProps {
   wedding: Wedding | null;
   photoCount: number;
   onOpenUpload: () => void;
+  // Sub-Admin customization options
+  partner1Name?: string;
+  partner2Name?: string;
+  customDate?: string;
+  eyebrow?: string;
+  tagline?: string;
+  themePalette?: string;
+  fireworksEnabled?: boolean;
 }
 
 export const WeddingHero: React.FC<WeddingHeroProps> = ({
   wedding,
   photoCount,
   onOpenUpload,
+  partner1Name,
+  partner2Name,
+  customDate,
+  eyebrow = "- WEDDING ARCHIVE -",
+  tagline = "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
+  themePalette = "warmGold",
+  fireworksEnabled = true,
 }) => {
   const [isMobile, setIsMobile] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -32,6 +82,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
     }
     return false;
   });
+
+  const activeTheme = useMemo(() => {
+    return themePresets[themePalette] || themePresets.warmGold!;
+  }, [themePalette]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -43,6 +97,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
   }, []);
 
   const [firstName, secondName] = useMemo(() => {
+    if (partner1Name || partner2Name) {
+      return [partner1Name || "Afiq", partner2Name || "Wieam"];
+    }
     if (!wedding?.name) return ["Afiq", "Wieam"];
     if (wedding.name.includes("&")) {
       const parts = wedding.name.split("&").map((s) => s.trim());
@@ -53,21 +110,23 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
       return [parts[0] || "Afiq", parts[1] || "Wieam"];
     }
     return [wedding.name, "Wieam"];
-  }, [wedding]);
+  }, [wedding, partner1Name, partner2Name]);
 
   const formattedDate = useMemo(() => {
-    if (!wedding?.date) return "20 December 2026";
+    const rawDate = customDate || wedding?.date;
+    if (!rawDate) return "20 December 2026";
     try {
-      const d = new Date(wedding.date);
+      const d = new Date(rawDate);
+      if (isNaN(d.getTime())) return rawDate;
       return d.toLocaleDateString("en-US", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
     } catch {
-      return "20 December 2026";
+      return rawDate;
     }
-  }, [wedding]);
+  }, [wedding, customDate]);
 
   return (
     <section className="relative w-full">
@@ -101,11 +160,11 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
               radius: 0.94,
               contrast: 1.05,
             }}
-            colors={warmGoldChocolateBrickColors}
+            colors={activeTheme.orb}
             stateColors={{
-              idle: warmGoldChocolateBrickColors,
-              thinking: warmGoldChocolateBrickColors,
-              speaking: warmGoldChocolateBrickColors,
+              idle: activeTheme.orb,
+              thinking: activeTheme.orb,
+              speaking: activeTheme.orb,
             }}
             statePresets={{
               idle: { spin: 0.3, gloss: 2.2, gap: 0.02 },
@@ -128,16 +187,16 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         }
         title={
           <div className="w-full flex flex-col items-center justify-center pointer-events-none select-none max-w-7xl mx-auto relative px-2 sm:px-8 md:px-16">
-            {/* Top Eyebrow: - WEDDING ARCHIVE - anchored gracefully above the ampersand & couple names */}
+            {/* Top Eyebrow: customizable */}
             <div className="absolute -top-20 sm:-top-32 md:-top-40 lg:-top-44 left-0 right-0 flex items-center justify-center">
               <span className="text-[11px] sm:text-xs md:text-base uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-sans font-medium whitespace-nowrap">
-                - WEDDING ARCHIVE -
+                {eyebrow}
               </span>
             </div>
 
-            {/* Middle Row: Afiq on Left, Orb in Center, Wieam on Right */}
+            {/* Middle Row: Partner 1 on Left, Orb in Center, Partner 2 on Right */}
             <div className="w-full flex items-center justify-between">
-              {/* Left Column: Afiq + Date */}
+              {/* Left Column: Partner 1 + Date */}
               <div className="flex-1 flex flex-col items-end text-right pr-5 sm:pr-16 md:pr-28 lg:pr-36 min-w-0">
                 <h1 className="font-serif text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap">
                   {firstName}
@@ -150,7 +209,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
               {/* Center Spacer accommodating the 3D Orb and & */}
               <div className="shrink-0 w-[96px] sm:w-[125px] md:w-[145px] lg:w-[165px] pointer-events-none" />
 
-              {/* Right Column: Wieam + Photo Count */}
+              {/* Right Column: Partner 2 + Photo Count */}
               <div className="flex-1 flex flex-col items-start text-left pl-9 sm:pl-16 md:pl-24 lg:pl-32 min-w-0">
                 <h1 className="font-serif text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap">
                   {secondName}
@@ -163,21 +222,16 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
           </div>
         }
         background={
-          <FireworksBackground
-            className="absolute inset-0 size-full pointer-events-auto"
-            population={1.2}
-            color={[
-              "#D4AF37",
-              "#C5A880",
-              "#A67C6B",
-              "#E5A988",
-              "#8C624D",
-              "#DFBA89",
-            ]}
-            fireworkSpeed={{ min: 3.5, max: 6.5 }}
-            particleSpeed={{ min: 1.5, max: 5 }}
-            particleSize={{ min: 1.2, max: 3.5 }}
-          />
+          fireworksEnabled ? (
+            <FireworksBackground
+              className="absolute inset-0 size-full pointer-events-auto"
+              population={1.2}
+              color={activeTheme.fireworks}
+              fireworkSpeed={{ min: 3.5, max: 6.5 }}
+              particleSpeed={{ min: 1.5, max: 5 }}
+              particleSize={{ min: 1.2, max: 3.5 }}
+            />
+          ) : undefined
         }
         scrollHint={
           <div className="inline-flex flex-col items-center gap-1 text-[11px] uppercase tracking-[0.25em] text-[#7A7069] dark:text-[#A89F97] drop-shadow-sm">
@@ -190,16 +244,16 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         <div className="flex flex-col items-center justify-center text-center max-w-2xl px-6 pointer-events-auto">
           <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.3em] text-[#E7DED5] mb-3 drop-shadow">
             <span className="w-8 h-px bg-[#E7DED5]/70" />
-            <span>Wedding Archive</span>
+            <span>{eyebrow.replace(/^-+|-+$/g, "").trim() || "Wedding Archive"}</span>
             <span className="w-8 h-px bg-[#E7DED5]/70" />
           </div>
 
           <h2 className="font-serif text-5xl sm:text-7xl md:text-8xl font-normal text-white tracking-tight leading-[1.05] mb-4 drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
-            {wedding?.name ?? "Afiq & Wieam"}
+            {`${firstName} & ${secondName}`}
           </h2>
 
           <p className="font-serif italic text-base sm:text-xl text-[#F8F5F0]/95 max-w-lg mx-auto mb-6 drop-shadow">
-            Every candid smile, every heartfelt celebration — preserved for a lifetime.
+            {tagline}
           </p>
 
           <div className="flex items-center justify-center gap-4">
