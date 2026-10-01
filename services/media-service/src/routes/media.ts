@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import {
   createMedia,
   deleteMedia,
+  deleteMediaByWeddingId,
   getMediaById,
   getMediaByWeddingId,
   getMediaUrl,
@@ -228,6 +229,21 @@ mediaRoutes.delete("/:id", async (c) => {
   }
 
   return c.json(success(result.data));
+});
+
+mediaRoutes.delete("/wedding/:weddingId", async (c) => {
+  const weddingId = c.req.param("weddingId");
+  if (!weddingId) {
+    return c.json(error("VALIDATION_ERROR", "Wedding ID is required"), 400);
+  }
+
+  try {
+    const result = await deleteMediaByWeddingId(weddingId);
+    return c.json(success(result));
+  } catch (err: any) {
+    console.error(`Failed to batch delete media for wedding ${weddingId}:`, err);
+    return c.json(error("CLEANUP_FAILED", "Failed to delete wedding media files"), 500);
+  }
 });
 
 export default mediaRoutes;

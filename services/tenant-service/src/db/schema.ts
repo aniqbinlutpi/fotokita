@@ -14,6 +14,12 @@ export const tenantAccounts = pgTable("tenant_accounts", {
   weddingId: text("wedding_id").notNull(),
   weddingSlug: text("wedding_slug").notNull(),
   weddingName: text("wedding_name").notNull(),
+  planTier: text("plan_tier").notNull().default("1day"),
+  planExpiresAt: timestamp("plan_expires_at"),
+  mediaExpiresAt: timestamp("media_expires_at"),
+  preserveMedia: boolean("preserve_media").notNull().default(false),
+  status: text("status").notNull().default("active"), // 'active' | 'plan_expired' | 'archived'
+  mediaCleanedUp: boolean("media_cleaned_up").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

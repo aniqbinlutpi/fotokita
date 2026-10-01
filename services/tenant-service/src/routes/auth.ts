@@ -5,6 +5,7 @@ import { createTenantToken, verifyTenantToken, type TenantPayload } from "../lib
 import { success, error } from "../lib/response";
 import { db } from "../db";
 import { tenantAccounts, tenantCustomizations } from "../db/schema";
+import { calculatePlanDates } from "../utils/duration";
 
 type Env = {
   Variables: {
@@ -26,6 +27,7 @@ const registerSchema = z.object({
   weddingId: z.string().min(1, "Wedding ID diperlukan"),
   weddingSlug: z.string().min(1, "Wedding slug diperlukan"),
   weddingName: z.string().min(1, "Wedding name diperlukan"),
+  planTier: z.string().optional().default("1day"),
 });
 
 export const requireTenantAuth = async (c: any, next: () => Promise<void>) => {
@@ -80,6 +82,8 @@ authRoute.post("/register", async (c) => {
   const cleanUsername = username.trim().toLowerCase();
   const cleanEmail = (email || `${cleanUsername}@fotokita.my`).trim().toLowerCase();
   const cleanPassword = password.trim();
+  const planTier = (parsed.data.planTier || "1day").trim().toLowerCase();
+  const { planExpiresAt, mediaExpiresAt } = calculatePlanDates(planTier);
 
   // Check if username or email is already registered to a DIFFERENT wedding
   try {
@@ -124,6 +128,12 @@ authRoute.post("/register", async (c) => {
         weddingId,
         weddingSlug: weddingSlug.trim().toLowerCase(),
         weddingName: weddingName.trim(),
+        planTier,
+        planExpiresAt,
+        mediaExpiresAt,
+        preserveMedia: false,
+        status: "active",
+        mediaCleanedUp: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -135,6 +145,10 @@ authRoute.post("/register", async (c) => {
           weddingId,
           weddingSlug: weddingSlug.trim().toLowerCase(),
           weddingName: weddingName.trim(),
+          planTier,
+          planExpiresAt,
+          mediaExpiresAt,
+          status: "active",
           updatedAt: new Date(),
         },
       })
@@ -200,6 +214,11 @@ authRoute.post("/register", async (c) => {
         weddingId: registeredAccount.weddingId,
         weddingSlug: registeredAccount.weddingSlug,
         weddingName: registeredAccount.weddingName,
+        planTier: registeredAccount.planTier,
+        planExpiresAt: registeredAccount.planExpiresAt,
+        mediaExpiresAt: registeredAccount.mediaExpiresAt,
+        preserveMedia: registeredAccount.preserveMedia,
+        status: registeredAccount.status,
       },
     }),
     201
@@ -266,6 +285,38 @@ authRoute.post("/login", async (c) => {
     );
   }
 
+  // Enforce subscription plan expiry check
+  const now = new Date();
+  const isExpired = tenant.planExpiresAt && now.getTime() > new Date(tenant.planExpiresAt).getTime();
+  if (isExpired) {
+    if (tenant.status === "active") {
+      try {
+        await db
+          .update(tenantAccounts)
+          .set({ status: "plan_expired", updatedAt: new Date() })
+          .where(eq(tenantAccounts.id, tenant.id));
+      } catch (statusErr) {
+        console.warn("Failed to mark tenant status as plan_expired:", statusErr);
+      }
+    }
+
+    const expiryFormatted = tenant.planExpiresAt
+      ? new Date(tenant.planExpiresAt).toLocaleDateString("ms-MY", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "baru-baru ini";
+
+    return c.json(
+      error(
+        "PLAN_EXPIRED",
+        `Tempoh pelan langganan Sub-Admin anda telah tamat pada ${expiryFormatted}. Galeri anda disimpan selama 3 hari. Sila hubungi Super Admin untuk menyambung akses portal.`
+      ),
+      403
+    );
+  }
+
   const weddingId = tenant.weddingId;
   let weddingSlug = tenant.weddingSlug;
   let weddingName = tenant.weddingName;
@@ -308,6 +359,11 @@ authRoute.post("/login", async (c) => {
         weddingId,
         weddingSlug,
         weddingName,
+        planTier: tenant.planTier,
+        planExpiresAt: tenant.planExpiresAt,
+        mediaExpiresAt: tenant.mediaExpiresAt,
+        preserveMedia: tenant.preserveMedia,
+        status: tenant.status,
       },
     })
   );
@@ -350,6 +406,12 @@ authRoute.get("/me", requireTenantAuth, async (c) => {
         weddingSlug: liveWedding.slug,
         weddingName: liveWedding.name,
         role: tokenTenant.role,
+        planTier: tenant?.planTier || "1day",
+        planExpiresAt: tenant?.planExpiresAt || null,
+        mediaExpiresAt: tenant?.mediaExpiresAt || null,
+        preserveMedia: tenant?.preserveMedia ?? false,
+        status: tenant?.status || "active",
+        mediaCleanedUp: tenant?.mediaCleanedUp ?? false,
       },
     })
   );

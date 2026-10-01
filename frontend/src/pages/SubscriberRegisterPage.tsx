@@ -248,6 +248,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
           weddingId: newWedding.id,
           weddingSlug: newWedding.slug,
           weddingName: newWedding.name,
+          planTier: selectedPlan,
         });
       } catch (regErr: any) {
         console.warn("Could not register tenant account in tenant-service:", regErr);

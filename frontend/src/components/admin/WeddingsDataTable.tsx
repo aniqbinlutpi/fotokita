@@ -20,23 +20,32 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import type { Wedding } from "@/types/wedding";
+import type { AdminTenantAccount } from "@/api/admin";
+import { Badge } from "@/components/ui/badge";
+import { formatTierLabel } from "@/pages/admin/utils";
 
 interface WeddingsDataTableProps {
   data: Wedding[];
+  tenantAccounts?: Record<string, AdminTenantAccount>;
   copiedId: string | null;
   onCopyLink: (slug: string, id: string) => void;
   onViewGallery: (slug: string) => void;
   onDelete: (wedding: Wedding) => void;
+  onTogglePreserveMedia?: (weddingId: string, currentVal: boolean) => Promise<void>;
 }
 
 export const WeddingsDataTable: React.FC<WeddingsDataTableProps> = ({
   data,
+  tenantAccounts = {},
   copiedId,
   onCopyLink,
   onViewGallery,
   onDelete,
+  onTogglePreserveMedia,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<"name" | "date">("date");
@@ -120,6 +129,8 @@ export const WeddingsDataTable: React.FC<WeddingsDataTableProps> = ({
                 </Button>
               </TableHead>
               <TableHead>URL Slug</TableHead>
+              <TableHead>Subscription Plan</TableHead>
+              <TableHead>Media Retention</TableHead>
               <TableHead>
                 <Button
                   variant="ghost"
@@ -131,39 +142,116 @@ export const WeddingsDataTable: React.FC<WeddingsDataTableProps> = ({
                   <ArrowUpDown className="size-3" />
                 </Button>
               </TableHead>
-              <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                   No weddings match your search criteria.
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((wedding) => (
-                <TableRow key={wedding.id}>
-                  <TableCell className="font-semibold text-sm">
-                    {wedding.name}
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-xs px-2 py-0.5 rounded bg-muted/80 text-foreground">
-                      /{wedding.slug}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="size-3.5 text-muted-foreground" />
-                      {new Date(wedding.date).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </TableCell>
+              paginatedData.map((wedding) => {
+                const tenant = tenantAccounts[wedding.id];
+                const now = Date.now();
+                const isPlanExpired = tenant?.planExpiresAt
+                  ? new Date(tenant.planExpiresAt).getTime() <= now
+                  : false;
+
+                return (
+                  <TableRow key={wedding.id}>
+                    <TableCell className="font-semibold text-sm">
+                      {wedding.name}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono text-xs px-2 py-0.5 rounded bg-muted/80 text-foreground">
+                        /{wedding.slug}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {tenant ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-xs text-foreground">
+                              {formatTierLabel(tenant.planTier)}
+                            </span>
+                            {tenant.status === "archived" || tenant.mediaCleanedUp ? (
+                              <Badge variant="outline" className="text-[10px] py-0 h-4 border-muted text-muted-foreground">
+                                Archived
+                              </Badge>
+                            ) : isPlanExpired ? (
+                              <Badge variant="outline" className="text-[10px] py-0 h-4 bg-amber-500/10 text-amber-600 border-amber-500/20">
+                                Expired
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] py-0 h-4 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                                Active
+                              </Badge>
+                            )}
+                          </div>
+                          {tenant.planExpiresAt && (
+                            <span className="text-[11px] text-muted-foreground">
+                              Ends: {new Date(tenant.planExpiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Standard</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {tenant ? (
+                        <div className="flex flex-col gap-1 items-start">
+                          {tenant.preserveMedia ? (
+                            <Button
+                              variant="outline"
+                              size="xs"
+                              onClick={() => onTogglePreserveMedia?.(wedding.id, true)}
+                              className="h-6 gap-1 px-2 text-[11px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20 cursor-pointer"
+                              title="Auto-delete disabled (Friend/VIP). Click to revert to standard 3-day deletion."
+                            >
+                              <ShieldCheck className="size-3 text-amber-600 dark:text-amber-400" />
+                              <span>Preserved (No Delete)</span>
+                            </Button>
+                          ) : tenant.mediaCleanedUp ? (
+                            <Badge variant="outline" className="text-[10px] py-0 h-4 text-muted-foreground border-muted">
+                              Media Purged
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="xs"
+                              onClick={() => onTogglePreserveMedia?.(wedding.id, false)}
+                              className="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-amber-600 hover:border-amber-500/30 hover:bg-amber-500/5 cursor-pointer"
+                              title="Auto-delete after 3 days. Click to PRESERVE FOREVER (friend/VIP)."
+                            >
+                              <ShieldAlert className="size-3 text-muted-foreground" />
+                              <span>Auto-Purge (3d)</span>
+                            </Button>
+                          )}
+                          {tenant.mediaExpiresAt && !tenant.mediaCleanedUp && !tenant.preserveMedia && (
+                            <span className="text-[10px] text-muted-foreground">
+                              Purge: {new Date(tenant.mediaExpiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="size-3.5 text-muted-foreground" />
+                        {new Date(wedding.date).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {wedding.createdAt
                       ? new Date(wedding.createdAt).toLocaleDateString("en-US")
@@ -212,8 +300,9 @@ export const WeddingsDataTable: React.FC<WeddingsDataTableProps> = ({
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+              );
+            })
+          )}
           </TableBody>
         </Table>
       </Card>

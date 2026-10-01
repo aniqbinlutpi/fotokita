@@ -10,6 +10,12 @@ export interface TenantAccount {
   weddingSlug: string;
   weddingName: string;
   role?: string;
+  planTier?: string;
+  planExpiresAt?: string | null;
+  mediaExpiresAt?: string | null;
+  preserveMedia?: boolean;
+  status?: string;
+  mediaCleanedUp?: boolean;
 }
 
 export interface TenantCustomization {
@@ -60,6 +66,7 @@ export interface RegisterTenantInput {
   weddingId: string;
   weddingSlug: string;
   weddingName: string;
+  planTier?: string;
 }
 
 /**

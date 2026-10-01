@@ -299,3 +299,76 @@ export async function deleteAdminInquiry(id: string): Promise<{ message: string 
   return handleApiResponse<{ message: string }>(response);
 }
 
+// -------------------------------------------------------------
+// TENANT SUBSCRIBER MANAGEMENT & RETENTION CONTROLS
+// -------------------------------------------------------------
+
+export interface AdminTenantAccount {
+  id: string;
+  username: string;
+  email: string;
+  weddingId: string;
+  weddingSlug: string;
+  weddingName: string;
+  planTier: string;
+  planExpiresAt: string | null;
+  mediaExpiresAt: string | null;
+  preserveMedia: boolean;
+  status: "active" | "plan_expired" | "archived";
+  mediaCleanedUp: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminSubscriptionStats {
+  totalSubscribers: number;
+  activeSubscribers: number;
+  planExpired: number;
+  archived: number;
+  preservedCount: number;
+}
+
+const TENANT_API_URL = import.meta.env.VITE_TENANT_API_URL || "/api/tenant";
+
+export async function getAdminTenantAccounts(): Promise<AdminTenantAccount[]> {
+  const res = await fetch(`${TENANT_API_URL}/accounts`, {
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<AdminTenantAccount[]>(res);
+}
+
+export async function getAdminSubscriptionStats(): Promise<AdminSubscriptionStats> {
+  const res = await fetch(`${TENANT_API_URL}/maintenance/stats`, {
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<AdminSubscriptionStats>(res);
+}
+
+export async function toggleAdminPreserveMedia(
+  weddingId: string,
+  preserveMedia: boolean
+): Promise<{ weddingId: string; preserveMedia: boolean; message: string }> {
+  const res = await fetch(`${TENANT_API_URL}/accounts/${encodeURIComponent(weddingId)}/preserve-media`, {
+    method: "PATCH",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ preserveMedia }),
+  });
+  return handleApiResponse<{ weddingId: string; preserveMedia: boolean; message: string }>(res);
+}
+
+export async function triggerAdminMediaCleanup(): Promise<{
+  processedCount: number;
+  cleanedTenants: any[];
+  errors: any[];
+}> {
+  const res = await fetch(`${TENANT_API_URL}/maintenance/cleanup`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<any>(res);
+}
+
+

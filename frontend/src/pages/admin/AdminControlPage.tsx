@@ -43,11 +43,15 @@ import {
   getAdminInquiries,
   updateAdminInquiryStatus,
   deleteAdminInquiry,
+  getAdminTenantAccounts,
+  toggleAdminPreserveMedia,
+  triggerAdminMediaCleanup,
   type AdminUser,
   type AdminStats,
   type AdminInvite,
   type SubscriptionTier,
   type CustomerInquiry,
+  type AdminTenantAccount,
 } from "@/api/admin";
 import {
   getWeddings,
@@ -113,6 +117,10 @@ export function AdminControlPage({
   // Copied link indicator
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Tenant Accounts & Media Retention
+  const [tenantAccounts, setTenantAccounts] = useState<Record<string, AdminTenantAccount>>({});
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+
   // System diagnostic pings
   const [systemPings, setSystemPings] = useState<{
     weddingService: "checking" | "online" | "offline";
@@ -167,7 +175,19 @@ export function AdminControlPage({
       console.warn("Could not fetch customer inquiries:", err);
     }
 
-    // 5. Ping services directly
+    // 5. Fetch tenant accounts from tenant-service
+    try {
+      const accounts = await getAdminTenantAccounts();
+      const mapped: Record<string, AdminTenantAccount> = {};
+      accounts.forEach((acc) => {
+        mapped[acc.weddingId] = acc;
+      });
+      setTenantAccounts(mapped);
+    } catch (err) {
+      console.warn("Could not fetch tenant accounts:", err);
+    }
+
+    // 6. Ping services directly
     await checkAllServices();
 
     setIsRefreshing(false);
@@ -400,6 +420,52 @@ export function AdminControlPage({
     }
   };
 
+  const handleTogglePreserveMedia = async (weddingId: string, currentVal: boolean) => {
+    try {
+      const nextVal = !currentVal;
+      await toggleAdminPreserveMedia(weddingId, nextVal);
+      setTenantAccounts((prev) => {
+        if (!prev[weddingId]) return prev;
+        return {
+          ...prev,
+          [weddingId]: {
+            ...prev[weddingId],
+            preserveMedia: nextVal,
+          },
+        };
+      });
+      toast.success(
+        nextVal
+          ? "Media preserved! Auto-delete disabled for this wedding."
+          : "Standard retention restored (3-day auto-purge enabled)."
+      );
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update retention setting");
+    }
+  };
+
+  const handleTriggerCleanup = async () => {
+    setIsCleaningUp(true);
+    try {
+      const res = await triggerAdminMediaCleanup();
+      const count = res.data?.cleanedTenants?.length || 0;
+      toast.success(
+        `Retention cleanup complete: ${count} expired wedding galleries processed.`
+      );
+      // Refresh tenant accounts
+      const accounts = await getAdminTenantAccounts();
+      const mapped: Record<string, AdminTenantAccount> = {};
+      accounts.forEach((acc) => {
+        mapped[acc.weddingId] = acc;
+      });
+      setTenantAccounts(mapped);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to run retention cleanup");
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
+
   // If not authenticated, render login page
   if (!adminUser) {
     return (
@@ -548,11 +614,15 @@ export function AdminControlPage({
             {activeTab === "weddings" && (
               <AdminWeddings
                 weddings={weddings}
+                tenantAccounts={tenantAccounts}
                 copiedId={copiedId}
                 onCopyLink={handleCopyLink}
                 onViewGallery={handleViewGallery}
                 onDeleteWedding={(w) => setWeddingToDelete(w)}
                 onOpenCreateWedding={() => setIsCreateOpen(true)}
+                onTogglePreserveMedia={handleTogglePreserveMedia}
+                onTriggerCleanup={handleTriggerCleanup}
+                isCleaningUp={isCleaningUp}
               />
             )}
 

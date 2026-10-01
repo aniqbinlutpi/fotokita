@@ -61,9 +61,19 @@ export async function deleteFromS3(key: string) {
   );
 }
 
+export async function deleteObjectsFromS3(keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  const BATCH_SIZE = 20;
+  for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+    const batch = keys.slice(i, i + BATCH_SIZE);
+    await Promise.allSettled(batch.map((key) => deleteFromS3(key)));
+  }
+}
+
 // Cloudflare R2 Aliases
 export const r2 = s3;
 export const uploadToR2 = uploadToS3;
 export const deleteFromR2 = deleteFromS3;
+export const deleteObjectsFromR2 = deleteObjectsFromS3;
 export const generateR2PresignedUrl = generatePresignedUrl;
 
