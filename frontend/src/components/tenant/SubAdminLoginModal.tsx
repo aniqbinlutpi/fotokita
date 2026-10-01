@@ -49,7 +49,7 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim() || !password.trim()) {
-      setErrorMessage("Sila masukkan email/username dan kata laluan.");
+      setErrorMessage("Please enter your email/username and password.");
       return;
     }
 
@@ -62,8 +62,8 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
         password: password.trim(),
       });
 
-      toast.success("Log masuk berjaya!", {
-        description: `Selamat kembali ke portal galeri ${result.tenant.weddingName}.`,
+      toast.success("Login successful!", {
+        description: `Welcome back to the ${result.tenant.weddingName} gallery portal.`,
       });
 
       onOpenChange(false);
@@ -71,17 +71,11 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
     } catch (err: any) {
       console.error("Sub-Admin login failed:", err);
       setErrorMessage(
-        err?.message || "Email/username atau kata laluan tidak tepat. Sila semak semula."
+        err?.message || "Invalid email/username or password. Please try again."
       );
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFillDemo = () => {
-    setIdentifier("aina1");
-    setPassword("password123");
-    setErrorMessage(null);
   };
 
   return (
@@ -92,10 +86,10 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
             <Lock className="size-6 text-foreground" />
           </div>
           <DialogTitle className="font-serif text-2xl font-normal text-foreground">
-            Portal Sub-Admin Log Masuk
+            Sub-Admin Portal Login
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground max-w-xs mx-auto">
-            Sila masukkan username atau emel berserta kata laluan yang telah anda daftarkan.
+            Please enter your registered username or email and password.
           </DialogDescription>
         </DialogHeader>
 
@@ -109,7 +103,7 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="space-y-1.5">
             <label htmlFor="tenant-id" className="text-xs font-medium">
-              Email atau Username
+              Email or Username
             </label>
             <div className="relative">
               <User className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -119,7 +113,7 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
                 autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="e.g. aina1 atau nama@email.com"
+                placeholder="e.g. aina1 or name@email.com"
                 className="pl-9 h-10 text-sm"
                 required
               />
@@ -129,7 +123,7 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="tenant-password" className="text-xs font-medium">
-                Kata Laluan / PIN
+                Password / PIN
               </label>
             </div>
             <div className="relative">
@@ -147,32 +141,21 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
             </div>
           </div>
 
-          <div className="pt-2 space-y-2">
+          <div className="pt-2">
             <Button
               type="submit"
               disabled={isLoading}
               className="w-full h-11 text-xs uppercase tracking-wider font-semibold shadow-md cursor-pointer"
             >
               {isLoading ? (
-                <span>Sedang Memproses...</span>
+                <span>Signing In...</span>
               ) : (
                 <>
-                  <span>Log Masuk Sub-Admin</span>
+                  <span>Sign In as Sub-Admin</span>
                   <LogIn className="size-4 ml-1.5" />
                 </>
               )}
             </Button>
-
-            {/* Quick Demo Credentials Helper */}
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={handleFillDemo}
-                className="text-[11px] text-muted-foreground hover:text-foreground underline transition-colors cursor-pointer"
-              >
-                Gunakan akaun demo (aina1 / password123)
-              </button>
-            </div>
           </div>
         </form>
       </DialogContent>
