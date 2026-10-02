@@ -105,6 +105,8 @@ export const PARTNER_SIZE_CONFIG: NumericSizeConfig = { min: 10, max: 200, step:
 export const EYEBROW_SIZE_CONFIG: NumericSizeConfig = { min: 6, max: 60, step: 1, defaultValue: 12 };
 export const DATE_SIZE_CONFIG: NumericSizeConfig = { min: 6, max: 60, step: 1, defaultValue: 13 };
 export const QUOTE_SIZE_CONFIG: NumericSizeConfig = { min: 8, max: 100, step: 1, defaultValue: 18 };
+export const AMPERSAND_SIZE_CONFIG: NumericSizeConfig = { min: 40, max: 800, step: 10, defaultValue: 380 };
+export const ORB_SIZE_CONFIG: NumericSizeConfig = { min: 30, max: 400, step: 5, defaultValue: 130 };
 
 // Parsers with backward-compatibility for legacy presets ("sm", "normal", "lg", "xl")
 export function parsePartnerSize(sizeStr?: string): number {
@@ -145,6 +147,20 @@ export function parseQuoteSize(sizeStr?: string): number {
   return 18;
 }
 
+export function parseAmpersandSize(sizeStr?: string): number {
+  if (!sizeStr) return 380;
+  const num = parseInt(sizeStr, 10);
+  if (!isNaN(num) && num > 0) return num;
+  return 380;
+}
+
+export function parseOrbSize(sizeStr?: string): number {
+  if (!sizeStr) return 130;
+  const num = parseInt(sizeStr, 10);
+  if (!isNaN(num) && num > 0) return num;
+  return 130;
+}
+
 // Dynamic CSS style generators ensuring typography matches user setting exactly across F12, real mobile, and preview
 export function getPartnerFontSizeStyle(
   sizeStr?: string,
@@ -177,3 +193,12 @@ export function getQuoteFontSizeStyle(
   const base = parseQuoteSize(sizeStr);
   return { fontSize: `${base}px` };
 }
+
+export function getAmpersandFontSizeStyle(
+  sizeStr?: string,
+  _deviceView?: "full" | "mobile" | "tablet"
+): { fontSize: string } {
+  const base = parseAmpersandSize(sizeStr);
+  return { fontSize: `${base}px` };
+}
+

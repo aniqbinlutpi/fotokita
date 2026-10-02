@@ -39,6 +39,8 @@ export interface TenantCustomization {
   dateSize?: string;
   quoteFont?: string;
   quoteSize?: string;
+  ampersandSize?: string;
+  orbSize?: string;
   textPositions?: TextPositionMap | null;
   slug?: string;
 }

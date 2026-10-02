@@ -44,6 +44,8 @@ export const tenantCustomizations = pgTable("tenant_customizations", {
   dateSize: text("date_size").notNull().default("13"),
   quoteFont: text("quote_font").notNull().default("cormorant"),
   quoteSize: text("quote_size").notNull().default("18"),
+  ampersandSize: text("ampersand_size").notNull().default("380"),
+  orbSize: text("orb_size").notNull().default("130"),
   textPositions: text("text_positions"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

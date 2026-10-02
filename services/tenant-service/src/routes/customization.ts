@@ -26,6 +26,8 @@ const updateCustomizationSchema = z.object({
   dateSize: z.string().optional(),
   quoteFont: z.string().optional(),
   quoteSize: z.string().optional(),
+  ampersandSize: z.string().optional(),
+  orbSize: z.string().optional(),
   textPositions: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
   slug: z.string().optional(),
 });
@@ -159,6 +161,8 @@ customizationRoute.get("/:identifier", async (c) => {
           dateSize: "13",
           quoteFont: "cormorant",
           quoteSize: "18",
+          ampersandSize: "380",
+          orbSize: "130",
         })
         .returning();
 
@@ -185,6 +189,8 @@ customizationRoute.get("/:identifier", async (c) => {
         dateSize: "13",
         quoteFont: "cormorant",
         quoteSize: "18",
+        ampersandSize: "380",
+        orbSize: "130",
         textPositions: null as string | null,
         updatedAt: new Date(),
       };
@@ -210,6 +216,8 @@ customizationRoute.get("/:identifier", async (c) => {
     dateSize: "13",
     quoteFont: "cormorant",
     quoteSize: "18",
+    ampersandSize: "380",
+    orbSize: "130",
     textPositions: null as string | null,
   };
 
@@ -233,6 +241,8 @@ customizationRoute.get("/:identifier", async (c) => {
       dateSize: active.dateSize || "13",
       quoteFont: active.quoteFont || "cormorant",
       quoteSize: active.quoteSize || "18",
+      ampersandSize: active.ampersandSize || "380",
+      orbSize: active.orbSize || "130",
       textPositions: active.textPositions
         ? typeof active.textPositions === "string"
           ? (() => {
@@ -345,6 +355,8 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
       dateSize: data.dateSize ?? "13",
       quoteFont: data.quoteFont ?? "cormorant",
       quoteSize: data.quoteSize ?? "18",
+      ampersandSize: data.ampersandSize ?? "380",
+      orbSize: data.orbSize ?? "130",
       updatedAt: new Date(),
     };
     if (textPositionsStr !== undefined) {
@@ -369,6 +381,8 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
       dateSize: data.dateSize,
       quoteFont: data.quoteFont,
       quoteSize: data.quoteSize,
+      ampersandSize: data.ampersandSize,
+      orbSize: data.orbSize,
       updatedAt: new Date(),
     };
     if (textPositionsStr !== undefined) {
@@ -414,6 +428,8 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
       dateSize: savedCustomization.dateSize,
       quoteFont: savedCustomization.quoteFont,
       quoteSize: savedCustomization.quoteSize,
+      ampersandSize: savedCustomization.ampersandSize || "380",
+      orbSize: savedCustomization.orbSize || "130",
       textPositions: savedCustomization.textPositions
         ? typeof savedCustomization.textPositions === "string"
           ? (() => {

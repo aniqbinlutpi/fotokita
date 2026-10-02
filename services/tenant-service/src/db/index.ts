@@ -72,6 +72,8 @@ export async function initDb(): Promise<void> {
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS date_size TEXT NOT NULL DEFAULT 'normal';`;
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS quote_font TEXT NOT NULL DEFAULT 'cormorant';`;
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS quote_size TEXT NOT NULL DEFAULT 'normal';`;
+    await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS ampersand_size TEXT NOT NULL DEFAULT '380';`;
+    await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS orb_size TEXT NOT NULL DEFAULT '130';`;
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS text_positions TEXT;`;
 
     // Index for cleanup query performance

@@ -38,10 +38,14 @@ import {
   EYEBROW_SIZE_CONFIG,
   DATE_SIZE_CONFIG,
   QUOTE_SIZE_CONFIG,
+  AMPERSAND_SIZE_CONFIG,
+  ORB_SIZE_CONFIG,
   parsePartnerSize,
   parseEyebrowSize,
   parseDateSize,
   parseQuoteSize,
+  parseAmpersandSize,
+  parseOrbSize,
 } from "@/lib/typography";
 
 interface SubAdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -229,6 +233,137 @@ const TypographyControl: React.FC<TypographyControlProps> = ({
             onClick={() => handleNumChange(currentNum + step)}
             className="size-8 flex items-center justify-center rounded-md border border-input bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-sm select-none shrink-0 font-medium"
             title="Increase font size"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {position && (position.x !== 0 || position.y !== 0) && (
+        <div className="flex items-center justify-between text-[10px] text-accent-foreground bg-accent/15 px-2 py-1 rounded-md border border-accent/30 animate-in fade-in-50">
+          <span className="flex items-center gap-1 font-mono">
+            <Move className="size-2.5 text-accent" />
+            Position: {position.x > 0 ? `+${position.x}` : position.x}px, {position.y > 0 ? `+${position.y}` : position.y}px
+          </span>
+          {onResetPosition && (
+            <button
+              type="button"
+              onClick={onResetPosition}
+              className="text-[9px] hover:underline flex items-center gap-0.5 cursor-pointer text-muted-foreground hover:text-foreground"
+              title="Reset position to default"
+            >
+              <RotateCcw className="size-2.5" />
+              Reset
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface ElementSizeControlProps {
+  label: string;
+  icon?: React.ReactNode;
+  subtitle?: string;
+  sizeValue?: string;
+  defaultSize: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  parseValue: (val?: string) => number;
+  onSizeChange: (newSize: string) => void;
+  position?: { x: number; y: number };
+  onResetPosition?: () => void;
+}
+
+const ElementSizeControl: React.FC<ElementSizeControlProps> = ({
+  label,
+  icon,
+  subtitle,
+  sizeValue,
+  defaultSize,
+  min = 1,
+  max,
+  step = 1,
+  unit = "px",
+  parseValue,
+  onSizeChange,
+  position,
+  onResetPosition,
+}) => {
+  const currentNum = sizeValue ? parseValue(sizeValue) : defaultSize;
+  const [typedValue, setTypedValue] = React.useState<string | null>(null);
+
+  const handleNumChange = (newVal: number) => {
+    let safeVal = Math.max(min, Math.round(newVal));
+    if (max !== undefined) safeVal = Math.min(max, safeVal);
+    setTypedValue(null);
+    onSizeChange(String(safeVal));
+  };
+
+  return (
+    <div className="p-2.5 rounded-lg bg-sidebar-accent/30 border border-sidebar-border space-y-2.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
+          {icon || <Sliders className="size-3 text-accent" />}
+          {label}
+        </span>
+        {subtitle && (
+          <span className="text-[10px] text-muted-foreground truncate max-w-[125px]">
+            {subtitle}
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-[10px] text-muted-foreground block">Element Size</label>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleNumChange(currentNum - step)}
+            disabled={currentNum <= min}
+            className="size-8 flex items-center justify-center rounded-md border border-input bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors cursor-pointer text-sm select-none shrink-0 font-medium"
+            title="Decrease size"
+          >
+            -
+          </button>
+
+          <div className="relative flex-1">
+            <input
+              type="number"
+              min={min}
+              max={max}
+              value={typedValue !== null ? typedValue : currentNum}
+              onChange={(e) => {
+                const str = e.target.value;
+                setTypedValue(str);
+                const val = parseInt(str, 10);
+                if (!isNaN(val) && val >= min) {
+                  onSizeChange(String(max !== undefined ? Math.min(max, val) : val));
+                }
+              }}
+              onBlur={() => {
+                setTypedValue(null);
+                if (!sizeValue || isNaN(Number(sizeValue)) || Number(sizeValue) < min) {
+                  onSizeChange(String(defaultSize));
+                }
+              }}
+              placeholder={String(defaultSize)}
+              className="w-full h-8 rounded-md border border-input bg-background px-3 pr-8 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <span className="absolute right-2.5 top-2 text-[11px] text-muted-foreground select-none pointer-events-none font-sans">
+              {unit}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleNumChange(currentNum + step)}
+            disabled={max !== undefined && currentNum >= max}
+            className="size-8 flex items-center justify-center rounded-md border border-input bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors cursor-pointer text-sm select-none shrink-0 font-medium"
+            title="Increase size"
           >
             +
           </button>
@@ -596,7 +731,56 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Section 3: Decoration & Color Theme */}
+        {/* Section 3: Center Elements (& Symbol and 3D Orb) */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 font-medium">
+            <Sparkles className="size-3.5" />
+            <span>Center Elements (& and 3D Orb)</span>
+          </SidebarGroupLabel>
+          <SidebarGroupContent className="space-y-3 pt-2">
+            {/* & Symbol Control */}
+            <ElementSizeControl
+              label="& Symbol (Ampersand)"
+              icon={<Type className="size-3 text-accent" />}
+              subtitle="Hero Centerpiece"
+              sizeValue={customization.ampersandSize}
+              defaultSize={AMPERSAND_SIZE_CONFIG.defaultValue}
+              min={AMPERSAND_SIZE_CONFIG.min}
+              max={AMPERSAND_SIZE_CONFIG.max}
+              step={AMPERSAND_SIZE_CONFIG.step}
+              parseValue={parseAmpersandSize}
+              onSizeChange={(sizeStr) => onChangeCustomization({ ampersandSize: sizeStr })}
+              position={customization.textPositions?.ampersand}
+              onResetPosition={() => {
+                const next = { ...(customization.textPositions || {}) };
+                delete next.ampersand;
+                onChangeCustomization({ textPositions: next });
+              }}
+            />
+
+            {/* 3D Orb Control */}
+            <ElementSizeControl
+              label="3D Interactive Orb"
+              icon={<Sparkles className="size-3 text-accent" />}
+              subtitle="Brick Sphere"
+              sizeValue={customization.orbSize}
+              defaultSize={ORB_SIZE_CONFIG.defaultValue}
+              min={ORB_SIZE_CONFIG.min}
+              max={ORB_SIZE_CONFIG.max}
+              step={ORB_SIZE_CONFIG.step}
+              parseValue={parseOrbSize}
+              onSizeChange={(sizeStr) => onChangeCustomization({ orbSize: sizeStr })}
+              position={customization.textPositions?.orb}
+              onResetPosition={() => {
+                const next = { ...(customization.textPositions || {}) };
+                delete next.orb;
+                onChangeCustomization({ textPositions: next });
+              }}
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Section 4: Decoration & Color Theme */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 font-medium">
             <Palette className="size-3.5" />

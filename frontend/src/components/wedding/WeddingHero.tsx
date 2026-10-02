@@ -12,6 +12,8 @@ import {
   getEyebrowFontSizeStyle,
   getDateFontSizeStyle,
   getQuoteFontSizeStyle,
+  getAmpersandFontSizeStyle,
+  parseOrbSize,
 } from "@/lib/typography";
 import { DraggableHeroItem, type Position } from "./DraggableHeroItem";
 import {
@@ -83,6 +85,8 @@ export interface WeddingHeroProps {
   dateSize?: string;
   quoteFont?: string;
   quoteSize?: string;
+  ampersandSize?: string;
+  orbSize?: string;
   deviceView?: "full" | "mobile" | "tablet";
   textPositions?: Record<string, { x: number; y: number }> | null;
   isEditor?: boolean;
@@ -110,6 +114,8 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
   dateSize = "normal",
   quoteFont = "cormorant",
   quoteSize = "normal",
+  ampersandSize = "380",
+  orbSize,
   deviceView,
   textPositions,
   isEditor = false,
@@ -269,6 +275,8 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         eyebrow: "Eyebrow",
         photoCount: "Photograph Count",
         quote: "Tagline Quote",
+        ampersand: "& Symbol",
+        orb: "3D Orb",
       };
 
       setGuideState({
@@ -370,8 +378,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         useWindowScroll={true}
         shape="circle"
         circleSize={isMobile ? 0.20 : isTablet ? 0.18 : 0.16}
-        orbSize={isMobile ? 54 : isTablet ? 90 : 130}
+        orbSize={orbSize ? parseOrbSize(orbSize) : (isMobile ? 54 : isTablet ? 90 : 130)}
         orbOffset={isMobile ? { x: 40, y: -38 } : isTablet ? { x: 70, y: -65 } : { x: 112, y: -98 }}
+        orbShift={textPositions?.orb}
         startRadius={9999}
         endRadius={0}
         mediaZoom={1.28}
@@ -380,51 +389,70 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         smoothing={0.08}
         overlayScrim={0.45}
         orb={
-          <Shdr12
-            className="size-full"
-            state="idle"
-            params={{
-              spin: 0.32,
-              tilt: 0.45,
-              studs: 24,
-              gloss: 2.2,
-              gap: 0.02,
-              patch: 0.65,
-              gain: 1.05,
-              radius: 0.94,
-              contrast: 1.05,
-            }}
-            colors={activeTheme.orb}
-            stateColors={{
-              idle: activeTheme.orb,
-              thinking: activeTheme.orb,
-              speaking: activeTheme.orb,
-            }}
-            statePresets={{
-              idle: { spin: 0.3, gloss: 2.2, gap: 0.02 },
-              thinking: { spin: 0.1, gloss: 1.5, gap: 0.15 },
-              speaking: { spin: 0.5, gloss: 2.4, gap: 0 },
-            }}
-            wrapper="none"
-            paused={false}
-            pauseOffscreen
-            maxDpr={1.5}
-            ariaLabel="Warm Gold and Chocolate 3D Brick Orb"
-          />
+          <DraggableHeroItem
+            id="orb"
+            label="3D Orb"
+            position={textPositions?.orb}
+            isEditor={isEditor}
+            isOutsideMobile={outsideMobileIds.has("orb")}
+            onPositionChange={onTextPositionChange}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            className="size-full flex items-center justify-center pointer-events-auto"
+          >
+            <Shdr12
+              className="size-full"
+              state="idle"
+              params={{
+                spin: 0.32,
+                tilt: 0.45,
+                studs: 24,
+                gloss: 2.2,
+                gap: 0.02,
+                patch: 0.65,
+                gain: 1.05,
+                radius: 0.94,
+                contrast: 1.05,
+              }}
+              colors={activeTheme.orb}
+              stateColors={{
+                idle: activeTheme.orb,
+                thinking: activeTheme.orb,
+                speaking: activeTheme.orb,
+              }}
+              statePresets={{
+                idle: { spin: 0.3, gloss: 2.2, gap: 0.02 },
+                thinking: { spin: 0.1, gloss: 1.5, gap: 0.15 },
+                speaking: { spin: 0.5, gloss: 2.4, gap: 0 },
+              }}
+              wrapper="none"
+              paused={false}
+              pauseOffscreen
+              maxDpr={1.5}
+              ariaLabel="Warm Gold and Chocolate 3D Brick Orb"
+            />
+          </DraggableHeroItem>
         }
         behindOrb={
           <div className="flex items-center justify-center pointer-events-none select-none">
-            <span
-              className={`font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none translate-y-[-2%] select-none ${
-                deviceView === "mobile"
-                  ? "text-[200px]"
-                  : deviceView === "tablet"
-                  ? "text-[380px]"
-                  : "text-[200px] sm:text-[380px] md:text-[480px] lg:text-[560px]"
-              }`}
+            <DraggableHeroItem
+              id="ampersand"
+              label="& Symbol"
+              position={textPositions?.ampersand}
+              isEditor={isEditor}
+              isOutsideMobile={outsideMobileIds.has("ampersand")}
+              onPositionChange={onTextPositionChange}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+              className="pointer-events-auto"
             >
-              &
-            </span>
+              <span
+                style={getAmpersandFontSizeStyle(ampersandSize, deviceView)}
+                className="font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none translate-y-[-2%] select-none block"
+              >
+                &
+              </span>
+            </DraggableHeroItem>
           </div>
         }
         title={

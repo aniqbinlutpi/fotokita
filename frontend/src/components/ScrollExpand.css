@@ -64,6 +64,7 @@
   will-change: clip-path;
   background-color: transparent;
   z-index: 2;
+  pointer-events: none;
 }
 
 .scroll-expand__media {

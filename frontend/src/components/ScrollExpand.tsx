@@ -20,6 +20,7 @@ export interface ScrollExpandProps extends Omit<React.HTMLAttributes<HTMLDivElem
   orb?: React.ReactNode;
   orbSize?: number | string;
   orbOffset?: { x?: number; y?: number };
+  orbShift?: { x?: number; y?: number };
   orbBlendMode?: 'normal' | 'screen' | 'overlay';
   shape?: 'rect' | 'circle';
   circleSize?: number;
@@ -51,6 +52,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
   orb,
   orbSize,
   orbOffset,
+  orbShift,
   orbBlendMode = 'normal',
   shape = 'rect',
   circleSize,
@@ -89,6 +91,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     circleSize,
     orbSize,
     orbOffset,
+    orbShift,
     startWidth,
     startHeight,
     startRadius,
@@ -129,8 +132,8 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
         D = Math.min(stageW, stageH) * fraction;
       }
 
-      const ox = c.orbOffset?.x ?? 0;
-      const oy = c.orbOffset?.y ?? 0;
+      const ox = (c.orbOffset?.x ?? 0) + (c.orbShift?.x ?? 0);
+      const oy = (c.orbOffset?.y ?? 0) + (c.orbShift?.y ?? 0);
 
       const r0 = D / 2;
       const originX = stageW / 2 + ox;
@@ -189,7 +192,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       const out = smoothstep(0.12, 0.65, p);
       behindOrbRef.current.style.opacity = `${1 - out}`;
       behindOrbRef.current.style.transform = `translate3d(0, ${-24 * out}px, 0) scale(${1 + 0.05 * out})`;
-      behindOrbRef.current.style.pointerEvents = 'none';
+      behindOrbRef.current.style.pointerEvents = out > 0.4 ? 'none' : 'auto';
     }
 
     if (titleRef.current) {
@@ -230,6 +233,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       circleSize,
       orbSize,
       orbOffset,
+      orbShift,
       startWidth,
       startHeight,
       startRadius,
@@ -249,6 +253,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     circleSize,
     orbSize,
     orbOffset,
+    orbShift,
     startWidth,
     startHeight,
     startRadius,
@@ -427,8 +432,8 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       const fraction = circleSize ?? (isMobile ? 0.82 : 0.52);
       D = Math.min(stageW, stageH) * fraction;
     }
-    const ox = orbOffset?.x ?? 0;
-    const oy = orbOffset?.y ?? 0;
+    const ox = (orbOffset?.x ?? 0) + (orbShift?.x ?? 0);
+    const oy = (orbOffset?.y ?? 0) + (orbShift?.y ?? 0);
     if (typeof window !== 'undefined') {
       const stageW = window.innerWidth;
       const stageH = window.innerHeight;

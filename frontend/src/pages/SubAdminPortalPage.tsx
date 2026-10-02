@@ -238,6 +238,8 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     dateSize: "13",
     quoteFont: "cormorant",
     quoteSize: "18",
+    ampersandSize: "380",
+    orbSize: "130",
     textPositions: null,
     slug: activeSlug || tenant?.weddingSlug || "",
   }));
@@ -296,6 +298,8 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             dateSize: data.dateSize || prev.dateSize || "13",
             quoteFont: data.quoteFont || prev.quoteFont || "cormorant",
             quoteSize: data.quoteSize || prev.quoteSize || "18",
+            ampersandSize: data.ampersandSize || prev.ampersandSize || "380",
+            orbSize: data.orbSize || prev.orbSize || "130",
             textPositions: data.textPositions || prev.textPositions || null,
             slug: data.slug || dbWedding?.slug || activeSlug || tenant?.weddingSlug || prev.slug,
           };
