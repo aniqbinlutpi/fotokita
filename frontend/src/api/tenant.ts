@@ -84,7 +84,6 @@ export async function registerTenant(
   });
 
   const body = await handleApiResponse<{ token: string; tenant: TenantAccount }>(res);
-  setStoredTenantSession(body.token, body.tenant);
   return body;
 }
 

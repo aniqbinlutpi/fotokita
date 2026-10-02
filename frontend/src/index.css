@@ -143,3 +143,16 @@
 html[data-magicui-theme-vt="active"]::view-transition-new(root) {
   clip-path: var(--magicui-theme-vt-clip-from);
 }
+
+/* Sonner Toast Description Contrast */
+[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground) !important;
+  opacity: 1 !important;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+[data-sonner-toast] [data-title] {
+  color: var(--foreground) !important;
+  font-weight: 500;
+}

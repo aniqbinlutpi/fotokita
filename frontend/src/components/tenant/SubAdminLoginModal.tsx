@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Lock, User, LogIn, AlertCircle } from "lucide-react";
+import { Lock, User, LogIn, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { loginTenant, type TenantAccount } from "@/api/tenant";
 import { toast } from "sonner";
 
@@ -25,26 +25,18 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
 }) => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Auto-fill username if tenant recently registered
-  React.useEffect(() => {
-    if (isOpen) {
-      const activeWeddingId = localStorage.getItem("fotokita_active_wedding_id");
-      const savedUser =
-        localStorage.getItem("fotokita_registered_username") ||
-        (activeWeddingId ? localStorage.getItem(`fotokita_subadmin_user_${activeWeddingId}`) : null) ||
-        "";
-      if (savedUser && !identifier) {
-        setIdentifier(savedUser);
-      }
-      const savedPin = activeWeddingId ? localStorage.getItem(`fotokita_admin_pin_${activeWeddingId}`) : null;
-      if (savedPin && !password) {
-        setPassword(savedPin);
-      }
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setIdentifier("");
+      setPassword("");
+      setErrorMessage(null);
     }
-  }, [isOpen]);
+    onOpenChange(open);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +58,6 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
         description: `Welcome back to the ${result.tenant.weddingName} gallery portal.`,
       });
 
-      onOpenChange(false);
       onSuccess(result.tenant);
     } catch (err: any) {
       console.error("Sub-Admin login failed:", err);
@@ -79,7 +70,7 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-card border-border shadow-2xl p-6">
         <DialogHeader className="space-y-2 text-center items-center">
           <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-1">
@@ -123,21 +114,33 @@ export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="tenant-password" className="text-xs font-medium">
-                Password / PIN
+                Password
               </label>
             </div>
             <div className="relative">
               <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
               <Input
                 id="tenant-password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="pl-9 h-10 text-sm"
+                placeholder="Enter your password"
+                className="pl-9 pr-10 h-10 text-sm"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-2.5 top-2.5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-4 text-accent" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </button>
             </div>
           </div>
 

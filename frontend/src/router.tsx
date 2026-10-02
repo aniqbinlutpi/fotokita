@@ -177,6 +177,7 @@ const loginRoute = createRoute({
     return (
       <SubAdminPortalPage
         onNavigateHome={() => navigate({ to: "/" } as any)}
+        onLoginSuccess={() => navigate({ to: "/subadmin" } as any)}
         onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
       />
     );
@@ -195,7 +196,7 @@ const registerRoute = createRoute({
     return (
       <SubscriberRegisterPage
         inviteToken={token}
-        onSuccess={() => navigate({ to: "/subadmin" } as any)}
+        onSuccess={() => navigate({ to: "/login" } as any)}
         onCancel={() => navigate({ to: "/" } as any)}
       />
     );

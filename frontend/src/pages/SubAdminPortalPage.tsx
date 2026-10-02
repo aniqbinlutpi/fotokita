@@ -42,11 +42,13 @@ import type { Wedding } from "@/types/wedding";
 interface SubAdminPortalPageProps {
   onNavigateHome?: () => void;
   onOpenGallery?: (slug: string) => void;
+  onLoginSuccess?: (tenant: TenantAccount) => void;
 }
 
 export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   onNavigateHome,
   onOpenGallery,
+  onLoginSuccess,
 }) => {
   // Authentication state
   const [tenant, setTenant] = useState<TenantAccount | null>(() => {
@@ -148,13 +150,13 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
         });
       }
       setHasUnsavedChanges(false);
-      toast.success("Gaya & Maklumat Disimpan!", {
-        description: `Tetamu anda kini melihat perubahan secara langsung di fotokita.my/?slug=${newSlug}`,
+      toast.success("Style & Details Saved!", {
+        description: `Your guests can now see changes live at fotokita.my/?slug=${newSlug}`,
       });
     } catch (err: any) {
       console.error("Save failed:", err);
-      toast.success("Tetapan dikemas kini secara lokal", {
-        description: "Gaya galeri anda kini aktif untuk paparan tetamu.",
+      toast.success("Settings updated locally", {
+        description: "Your gallery style is now active for guest view.",
       });
       setHasUnsavedChanges(false);
     } finally {
@@ -166,7 +168,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     clearStoredTenantSession();
     setTenant(null);
     setIsLoginModalOpen(true);
-    toast.info("Anda telah log keluar daripada portal Sub-Admin.");
+    toast.info("You have logged out of the Sub-Admin portal.");
   };
 
   const handleOpenLiveGuestView = () => {
@@ -195,13 +197,20 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
           isOpen={isLoginModalOpen}
           onOpenChange={(open) => {
             setIsLoginModalOpen(open);
-            if (!open && !tenant && onNavigateHome) {
-              onNavigateHome();
+            // Only navigate home if explicitly dismissed without an active session
+            if (!open && !tenant) {
+              const activeToken = getStoredTenantToken();
+              if (!activeToken && onNavigateHome) {
+                onNavigateHome();
+              }
             }
           }}
           onSuccess={(loggedInTenant) => {
             setTenant(loggedInTenant);
             setIsLoginModalOpen(false);
+            if (onLoginSuccess) {
+              onLoginSuccess(loggedInTenant);
+            }
             getTenantCustomization(loggedInTenant.weddingId)
               .then((data) => {
                 setCustomization({
@@ -219,17 +228,17 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             <Lock className="size-7" />
           </div>
           <h2 className="font-serif text-2xl font-normal text-foreground">
-            Sub-Admin Portal Akses
+            Sub-Admin Portal Access
           </h2>
           <p className="text-xs text-muted-foreground">
-            Sila log masuk dengan akaun Sub-Admin berdaftar anda untuk menguruskan hiasan dan nama galeri perkahwinan anda.
+            Please log in with your registered Sub-Admin credentials to manage your wedding gallery.
           </p>
           <div className="pt-2">
             <Button
               onClick={() => setIsLoginModalOpen(true)}
               className="w-full text-xs uppercase tracking-wider font-semibold cursor-pointer"
             >
-              Log Masuk Sekarang
+              Log In Now
             </Button>
           </div>
         </div>

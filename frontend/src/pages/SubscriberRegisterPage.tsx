@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { checkSlugAvailability, createWedding } from "@/api/wedding";
 import { verifyInviteToken, redeemInviteToken, type SubscriptionTier } from "@/api/admin";
-import { registerTenant, updateTenantCustomization } from "@/api/tenant";
+import { registerTenant, updateTenantCustomization, clearStoredTenantSession } from "@/api/tenant";
 import { toast } from "sonner";
 import {
   Sparkles,
@@ -304,18 +304,19 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         }
       }
 
-      // 5. Save credentials & names locally for quick sub-admin convenience
+      // 5. Ensure NO session or credentials are saved so user must key in all credentials explicitly
       try {
-        localStorage.setItem("fotokita_registered_username", username.trim());
-        localStorage.setItem(`fotokita_admin_pin_${newWedding.id}`, adminPassword.trim());
-        localStorage.setItem(`fotokita_admin_password_${newWedding.id}`, adminPassword.trim());
+        clearStoredTenantSession();
+        localStorage.removeItem("fotokita_registered_username");
+        localStorage.removeItem(`fotokita_admin_pin_${newWedding.id}`);
+        localStorage.removeItem(`fotokita_admin_password_${newWedding.id}`);
+        localStorage.removeItem(`fotokita_subadmin_user_${newWedding.id}`);
         localStorage.setItem(`fotokita_partner1_${newWedding.id}`, groomName.trim());
         localStorage.setItem(`fotokita_partner2_${newWedding.id}`, brideName.trim());
         localStorage.setItem("fotokita_active_wedding_id", newWedding.id);
         if (subscriberEmail) {
           localStorage.setItem(`fotokita_subscriber_${newWedding.id}`, subscriberEmail.trim());
         }
-        localStorage.setItem(`fotokita_subadmin_user_${newWedding.id}`, username.trim());
       } catch {
         // ignore
       }
