@@ -15,9 +15,10 @@ import {
   Phone,
   Loader2,
   CheckCircle2,
+  XCircle,
   ArrowLeft,
 } from "lucide-react";
-import { submitCustomerInquiry } from "@/api/admin";
+import { submitCustomerInquiry, checkInquiryAvailability } from "@/api/admin";
 import { toast } from "sonner";
 
 export interface WhatsAppInquiryPlan {
@@ -49,14 +50,124 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inquiryError, setInquiryError] = useState("");
 
+  // Real-time username availability states
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<{
+    checked: boolean;
+    available: boolean;
+    message?: string;
+  } | null>(null);
+
+  // Real-time phone uniqueness states
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false);
+  const [phoneStatus, setPhoneStatus] = useState<{
+    checked: boolean;
+    available: boolean;
+    message?: string;
+  } | null>(null);
+
   useEffect(() => {
     if (!isOpen) {
       setUsername("");
       setPhone("");
       setInquiryError("");
       setIsSubmitting(false);
+      setUsernameStatus(null);
+      setIsCheckingUsername(false);
+      setPhoneStatus(null);
+      setIsCheckingPhone(false);
     }
   }, [isOpen]);
+
+  // Real-time debounced username availability check
+  useEffect(() => {
+    let active = true;
+    const trimmed = username.trim().toLowerCase();
+
+    if (!trimmed || trimmed.length < 3) {
+      setUsernameStatus(null);
+      setIsCheckingUsername(false);
+      return;
+    }
+
+    if (!/^[a-z0-9_.]+$/.test(trimmed)) {
+      setUsernameStatus({
+        checked: true,
+        available: false,
+        message:
+          "Username can only contain lowercase letters, numbers, underscores (_), and dots (.). No spaces.",
+      });
+      setIsCheckingUsername(false);
+      return;
+    }
+
+    setIsCheckingUsername(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await checkInquiryAvailability({ username: trimmed });
+        if (active && res.username) {
+          setUsernameStatus({
+            checked: true,
+            available: res.username.available,
+            message: res.username.message,
+          });
+        }
+      } catch (err: any) {
+        if (active) {
+          console.warn("Failed to check username availability:", err);
+        }
+      } finally {
+        if (active) {
+          setIsCheckingUsername(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [username]);
+
+  // Real-time debounced phone uniqueness check
+  useEffect(() => {
+    let active = true;
+    const trimmed = phone.trim();
+    const digits = trimmed.replace(/\D/g, "");
+
+    if (!digits || digits.length < 8) {
+      setPhoneStatus(null);
+      setIsCheckingPhone(false);
+      return;
+    }
+
+    setIsCheckingPhone(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await checkInquiryAvailability({ phone: digits });
+        if (active && res.phone) {
+          setPhoneStatus({
+            checked: true,
+            available: res.phone.available,
+            message: res.phone.message,
+          });
+        }
+      } catch (err: any) {
+        if (active) {
+          console.warn("Failed to check phone availability:", err);
+        }
+      } finally {
+        if (active) {
+          setIsCheckingPhone(false);
+        }
+      }
+    }, 450);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [phone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,9 +188,21 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
       return;
     }
 
+    // Verify username availability before proceeding
+    if (usernameStatus?.checked && !usernameStatus.available) {
+      setInquiryError(usernameStatus.message || "Username is already taken. Please choose another.");
+      return;
+    }
+
     const sanitizedDigits = trimmedPhone.replace(/\D/g, "");
     if (sanitizedDigits.length < 8) {
       setInquiryError("Please enter a valid phone number (at least 8 digits).");
+      return;
+    }
+
+    // Verify phone uniqueness before proceeding
+    if (phoneStatus?.checked && !phoneStatus.available) {
+      setInquiryError(phoneStatus.message || "This phone number has already submitted an inquiry.");
       return;
     }
 
@@ -158,6 +281,7 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
 
             {/* Input Fields */}
             <div className="space-y-3">
+              {/* Username Field */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
@@ -168,44 +292,116 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
                     Letters, numbers, _ and .
                   </span>
                 </div>
-                <Input
-                  type="text"
-                  required
-                  placeholder="e.g. ainafarhana"
-                  value={username}
-                  onChange={(e) => {
-                    const cleaned = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, "");
-                    setUsername(cleaned);
-                    if (inquiryError) setInquiryError("");
-                  }}
-                  className="h-10 text-sm font-mono"
-                  disabled={isSubmitting}
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck="false"
-                />
+                <div className="relative flex items-center">
+                  <Input
+                    type="text"
+                    required
+                    placeholder="e.g. ainafarhana"
+                    value={username}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, "");
+                      setUsername(cleaned);
+                      if (inquiryError) setInquiryError("");
+                    }}
+                    className={`h-10 text-sm font-mono pr-9 transition-colors ${
+                      usernameStatus?.checked
+                        ? usernameStatus.available
+                          ? "border-emerald-500/70 focus-visible:ring-emerald-500/30"
+                          : "border-destructive/80 focus-visible:ring-destructive/30"
+                        : ""
+                    }`}
+                    disabled={isSubmitting}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
+                  />
+                  <div className="absolute right-3 top-3 flex items-center pointer-events-none">
+                    {isCheckingUsername ? (
+                      <Loader2 className="size-4 text-accent animate-spin" />
+                    ) : usernameStatus?.checked ? (
+                      usernameStatus.available ? (
+                        <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <XCircle className="size-4 text-destructive" />
+                      )
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Direct Username Availability Feedback */}
+                {usernameStatus?.checked && (
+                  <div
+                    className={`text-[11px] flex items-center gap-1.5 transition-all ${
+                      usernameStatus.available
+                        ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                        : "text-destructive font-medium"
+                    }`}
+                  >
+                    {usernameStatus.available ? (
+                      <CheckCircle2 className="size-3.5 shrink-0" />
+                    ) : (
+                      <XCircle className="size-3.5 shrink-0" />
+                    )}
+                    <span>
+                      {usernameStatus.message ||
+                        (usernameStatus.available
+                          ? "Username is available!"
+                          : "Username is already taken. Please choose another.")}
+                    </span>
+                  </div>
+                )}
+
                 <p className="text-[11px] text-muted-foreground">
                   This username will be locked and assigned to your registration link.
                 </p>
               </div>
 
+              {/* Phone Field */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
                   <Phone className="size-3.5 text-muted-foreground" />
                   <span>WhatsApp Phone Number</span>
                 </label>
-                <Input
-                  type="tel"
-                  required
-                  placeholder="e.g. 012-3456789"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    if (inquiryError) setInquiryError("");
-                  }}
-                  className="h-10 text-sm"
-                  disabled={isSubmitting}
-                />
+                <div className="relative flex items-center">
+                  <Input
+                    type="tel"
+                    required
+                    placeholder="e.g. 012-3456789"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (inquiryError) setInquiryError("");
+                    }}
+                    className={`h-10 text-sm pr-9 transition-colors ${
+                      phoneStatus?.checked && !phoneStatus.available
+                        ? "border-destructive/80 focus-visible:ring-destructive/30"
+                        : ""
+                    }`}
+                    disabled={isSubmitting}
+                  />
+                  <div className="absolute right-3 top-3 flex items-center pointer-events-none">
+                    {isCheckingPhone ? (
+                      <Loader2 className="size-4 text-accent animate-spin" />
+                    ) : phoneStatus?.checked ? (
+                      phoneStatus.available ? (
+                        <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <XCircle className="size-4 text-destructive" />
+                      )
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Direct Phone Duplication Feedback */}
+                {phoneStatus?.checked && !phoneStatus.available && (
+                  <div className="text-[11px] flex items-center gap-1.5 text-destructive font-medium">
+                    <XCircle className="size-3.5 shrink-0" />
+                    <span>
+                      {phoneStatus.message || "This phone number has already submitted an inquiry."}
+                    </span>
+                  </div>
+                )}
+
                 <p className="text-[11px] text-muted-foreground">
                   Used to identify your order and connect with you on WhatsApp.
                 </p>
@@ -229,13 +425,28 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
             {/* Direct WhatsApp Action Button */}
             <Button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-widest transition-all shadow-md hover:shadow-lg cursor-pointer select-none gap-2"
+              disabled={
+                isSubmitting ||
+                isCheckingUsername ||
+                (usernameStatus?.checked && !usernameStatus.available) ||
+                (phoneStatus?.checked && !phoneStatus.available)
+              }
+              className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-widest transition-all shadow-md hover:shadow-lg cursor-pointer select-none gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
                   <span>Submitting Inquiry...</span>
+                </>
+              ) : usernameStatus?.checked && !usernameStatus.available ? (
+                <>
+                  <XCircle className="size-4" />
+                  <span>Username Already Taken</span>
+                </>
+              ) : phoneStatus?.checked && !phoneStatus.available ? (
+                <>
+                  <XCircle className="size-4" />
+                  <span>Phone Already Registered</span>
                 </>
               ) : (
                 <>

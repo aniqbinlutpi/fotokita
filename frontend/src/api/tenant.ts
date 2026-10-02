@@ -18,7 +18,14 @@ export interface TenantAccount {
   mediaCleanedUp?: boolean;
 }
 
-export type TextPositionMap = Record<string, { x: number; y: number }>;
+export interface ElementPosition {
+  x: number;
+  y: number;
+  zIndex?: number;
+  locked?: boolean;
+}
+
+export type TextPositionMap = Record<string, ElementPosition>;
 
 export interface TenantCustomization {
   weddingId: string;

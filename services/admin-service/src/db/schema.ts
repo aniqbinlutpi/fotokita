@@ -18,8 +18,8 @@ export interface TenantRegistrationDetails {
 
 export const customerInquiries = pgTable("customer_inquiries", {
   id: uuid("id").defaultRandom().primaryKey(),
-  username: text("username").notNull(),
-  phone: text("phone").notNull(),
+  username: text("username").notNull().unique(),
+  phone: text("phone").notNull().unique(),
   planId: text("plan_id").notNull(),
   planName: text("plan_name").notNull(),
   price: text("price").notNull(),

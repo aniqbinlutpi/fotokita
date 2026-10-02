@@ -120,10 +120,15 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  const handleHeroPositionChange = (id: string, pos: { x: number; y: number }) => {
+  const handleHeroPositionChange = (
+    id: string,
+    pos: { x: number; y: number; zIndex?: number; locked?: boolean }
+  ) => {
+    const current = customization?.textPositions?.[id] || { x: 0, y: 0 };
+    const mergedPos = { ...current, ...pos };
     const updatedPositions = {
       ...(customization?.textPositions || {}),
-      [id]: pos,
+      [id]: mergedPos,
     };
     setCustomization((prev) => (prev ? { ...prev, textPositions: updatedPositions } : null));
 

@@ -22,6 +22,9 @@ export interface ScrollExpandProps extends Omit<React.HTMLAttributes<HTMLDivElem
   orbOffset?: { x?: number; y?: number };
   orbShift?: { x?: number; y?: number };
   orbBlendMode?: 'normal' | 'screen' | 'overlay';
+  behindOrbZIndex?: number;
+  orbZIndex?: number;
+  titleZIndex?: number;
   shape?: 'rect' | 'circle';
   circleSize?: number;
   startWidth?: number;
@@ -54,6 +57,9 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
   orbOffset,
   orbShift,
   orbBlendMode = 'normal',
+  behindOrbZIndex,
+  orbZIndex,
+  titleZIndex,
   shape = 'rect',
   circleSize,
   startWidth = 42,
@@ -180,7 +186,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
         orbRef.current.style.opacity = `${1 - orbOut}`;
         orbRef.current.style.transform = `translate3d(${ox}px, ${oy}px, 0) scale(${orbScale.toFixed(3)})`;
         orbRef.current.style.display = p >= 0.52 ? 'none' : 'flex';
-        orbRef.current.style.pointerEvents = orbOut > 0.5 ? 'none' : 'auto';
+        orbRef.current.style.pointerEvents = 'none';
       }
     } else {
       media.style.opacity = '1';
@@ -192,14 +198,16 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       const out = smoothstep(0.12, 0.65, p);
       behindOrbRef.current.style.opacity = `${1 - out}`;
       behindOrbRef.current.style.transform = `translate3d(0, ${-24 * out}px, 0) scale(${1 + 0.05 * out})`;
-      behindOrbRef.current.style.pointerEvents = out > 0.4 ? 'none' : 'auto';
+      behindOrbRef.current.style.display = p >= 0.65 ? 'none' : 'flex';
+      behindOrbRef.current.style.pointerEvents = 'none';
     }
 
     if (titleRef.current) {
       const out = smoothstep(0.12, 0.65, p);
       titleRef.current.style.opacity = `${1 - out}`;
       titleRef.current.style.transform = `translate3d(0, ${-24 * out}px, 0) scale(${1 + 0.06 * out})`;
-      titleRef.current.style.pointerEvents = out > 0.4 ? 'none' : 'auto';
+      titleRef.current.style.display = p >= 0.65 ? 'none' : 'flex';
+      titleRef.current.style.pointerEvents = 'none';
     }
 
     if (hintRef.current) {
@@ -458,7 +466,11 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
             </div>
           ) : null}
           {behindOrb ? (
-            <div ref={behindOrbRef} className="scroll-expand__behind-orb">
+            <div
+              ref={behindOrbRef}
+              className="scroll-expand__behind-orb"
+              style={{ zIndex: behindOrbZIndex ?? 1 }}
+            >
               {behindOrb}
             </div>
           ) : null}
@@ -484,6 +496,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
               style={{
                 mixBlendMode: orbBlendMode,
                 transform: `translate3d(${orbOffset?.x ?? 0}px, ${orbOffset?.y ?? 0}px, 0)`,
+                zIndex: orbZIndex ?? 5,
               }}
             >
               <div
@@ -502,7 +515,11 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
             </div>
           ) : null}
           {title ? (
-            <div ref={titleRef} className="scroll-expand__title">
+            <div
+              ref={titleRef}
+              className="scroll-expand__title"
+              style={{ zIndex: titleZIndex ?? 20 }}
+            >
               {title}
             </div>
           ) : null}

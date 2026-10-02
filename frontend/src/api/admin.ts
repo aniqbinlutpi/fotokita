@@ -286,6 +286,31 @@ export interface CustomerInquiry {
   notes?: string;
 }
 
+export interface InquiryAvailabilityCheck {
+  username?: {
+    available: boolean;
+    message: string;
+  };
+  phone?: {
+    available: boolean;
+    message: string;
+  };
+}
+
+export async function checkInquiryAvailability(params: {
+  username?: string;
+  phone?: string;
+}): Promise<InquiryAvailabilityCheck> {
+  const query = new URLSearchParams();
+  if (params.username) query.set("username", params.username);
+  if (params.phone) query.set("phone", params.phone);
+
+  const response = await fetch(
+    `${ADMIN_BASE_URL}/inquiries/check-availability?${query.toString()}`
+  );
+  return handleApiResponse<InquiryAvailabilityCheck>(response);
+}
+
 export async function submitCustomerInquiry(data: {
   username: string;
   phone: string;

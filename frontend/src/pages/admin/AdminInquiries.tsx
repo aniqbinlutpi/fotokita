@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   MessageSquare,
   Clock,
@@ -26,6 +28,7 @@ import {
   User,
   Phone,
   Trash2,
+  Search,
 } from "lucide-react";
 import type { CustomerInquiry } from "@/api/admin";
 import { getCustomerWhatsAppDirectUrl } from "./utils";
@@ -55,9 +58,19 @@ export function AdminInquiries({
   isRefreshing,
   onOpenCreateInvite,
 }: AdminInquiriesProps) {
-  const filteredInquiries = inquiries.filter(
-    (inq) => inquiryFilter === "all" || inq.status === inquiryFilter
-  );
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredInquiries = inquiries.filter((inq) => {
+    const matchesFilter = inquiryFilter === "all" || inq.status === inquiryFilter;
+    if (!matchesFilter) return false;
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      inq.username.toLowerCase().includes(query) ||
+      inq.phone.toLowerCase().includes(query) ||
+      inq.planName.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -165,7 +178,7 @@ export function AdminInquiries({
 
       {/* Filter and Table Card */}
       <Card className="shadow-xs">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-4">
           <div>
             <CardTitle className="text-base font-semibold">
               Inquiries Directory
@@ -175,40 +188,54 @@ export function AdminInquiries({
             </CardDescription>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Button
-              size="sm"
-              variant={inquiryFilter === "all" ? "default" : "outline"}
-              className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-              onClick={() => onFilterChange("all")}
-            >
-              All ({inquiries.length})
-            </Button>
-            <Button
-              size="sm"
-              variant={inquiryFilter === "pending" ? "default" : "outline"}
-              className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-              onClick={() => onFilterChange("pending")}
-            >
-              Pending ({inquiries.filter((i) => i.status === "pending").length})
-            </Button>
-            <Button
-              size="sm"
-              variant={inquiryFilter === "contacted" ? "default" : "outline"}
-              className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-              onClick={() => onFilterChange("contacted")}
-            >
-              Contacted ({inquiries.filter((i) => i.status === "contacted").length})
-            </Button>
-            <Button
-              size="sm"
-              variant={inquiryFilter === "converted" ? "default" : "outline"}
-              className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-              onClick={() => onFilterChange("converted")}
-            >
-              Converted ({inquiries.filter((i) => i.status === "converted").length})
-            </Button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-56">
+              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Search user or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 pl-8 pr-2 text-xs bg-background"
+              />
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Button
+                size="sm"
+                variant={inquiryFilter === "all" ? "default" : "outline"}
+                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
+                onClick={() => onFilterChange("all")}
+              >
+                All ({inquiries.length})
+              </Button>
+              <Button
+                size="sm"
+                variant={inquiryFilter === "pending" ? "default" : "outline"}
+                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
+                onClick={() => onFilterChange("pending")}
+              >
+                Pending ({inquiries.filter((i) => i.status === "pending").length})
+              </Button>
+              <Button
+                size="sm"
+                variant={inquiryFilter === "contacted" ? "default" : "outline"}
+                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
+                onClick={() => onFilterChange("contacted")}
+              >
+                Contacted ({inquiries.filter((i) => i.status === "contacted").length})
+              </Button>
+              <Button
+                size="sm"
+                variant={inquiryFilter === "converted" ? "default" : "outline"}
+                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
+                onClick={() => onFilterChange("converted")}
+              >
+                Converted ({inquiries.filter((i) => i.status === "converted").length})
+              </Button>
+            </div>
           </div>
         </CardHeader>
 

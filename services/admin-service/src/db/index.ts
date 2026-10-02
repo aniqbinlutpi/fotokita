@@ -59,6 +59,44 @@ export async function initDb(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_customer_inquiries_created_at ON customer_inquiries (created_at DESC);
     `;
 
+    // Deduplicate any existing duplicate username records before applying unique constraint (keep most recent)
+    await client`
+      DELETE FROM customer_inquiries
+      WHERE id NOT IN (
+        SELECT DISTINCT ON (LOWER(username)) id
+        FROM customer_inquiries
+        ORDER BY LOWER(username), created_at DESC
+      );
+    `;
+
+    // Deduplicate any existing duplicate phone records before applying unique constraint (keep most recent)
+    await client`
+      DELETE FROM customer_inquiries
+      WHERE id NOT IN (
+        SELECT DISTINCT ON (translate(phone, ' -()+.', '')) id
+        FROM customer_inquiries
+        ORDER BY translate(phone, ' -()+.', ''), created_at DESC
+      );
+    `;
+
+    // Ensure unique index on lowercase username
+    await client`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_customer_inquiries_username_lower
+      ON customer_inquiries (LOWER(username));
+    `;
+
+    // Ensure unique index on phone
+    await client`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_customer_inquiries_phone
+      ON customer_inquiries (phone);
+    `;
+
+    // Ensure unique index on normalized phone digits
+    await client`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_customer_inquiries_phone_digits
+      ON customer_inquiries (translate(phone, ' -()+.', ''));
+    `;
+
     console.log("✅ Admin database tables initialized successfully in PostgreSQL");
   } catch (err) {
     console.error("⚠️ Failed to initialize admin database tables:", err);

@@ -1,9 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { GripVertical, RotateCcw } from "lucide-react";
+import {
+  GripVertical,
+  RotateCcw,
+  Lock,
+  Unlock,
+  BringToFront,
+  SendToBack,
+} from "lucide-react";
 
 export interface Position {
   x: number;
   y: number;
+  zIndex?: number;
+  locked?: boolean;
 }
 
 export interface DraggableHeroItemProps {
@@ -14,6 +23,9 @@ export interface DraggableHeroItemProps {
   /** When true, shows a persistent amber warning ring — element is outside mobile safe zone */
   isOutsideMobile?: boolean;
   onPositionChange?: (id: string, pos: Position) => void;
+  onLockToggle?: (id: string, locked: boolean) => void;
+  onBringToFront?: (id: string) => void;
+  onSendToBack?: (id: string) => void;
   onDragStart?: (id: string, initialPos: Position, rect?: DOMRect) => void;
   onDragMove?: (id: string, rawOffset: Position, initialPos: Position, rect?: DOMRect) => Position | void;
   /** finalRect is the element's DOMRect at the moment of pointer-up */
@@ -30,6 +42,9 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
   isEditor = false,
   isOutsideMobile = false,
   onPositionChange,
+  onLockToggle,
+  onBringToFront,
+  onSendToBack,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -39,6 +54,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
 }) => {
   const domRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const isLocked = Boolean(position?.locked);
   const [liveOffset, setLiveOffset] = useState<Position>({
     x: position?.x ?? 0,
     y: position?.y ?? 0,
@@ -73,7 +89,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!isEditor) return;
+      if (!isEditor || isLocked) return;
       // Only drag on primary mouse button or touch
       if (e.button !== 0) return;
 
@@ -128,7 +144,11 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
 
         setIsDragging(false);
 
-        const finalPos = latestOffsetRef.current;
+        const finalPos = {
+          ...latestOffsetRef.current,
+          zIndex: position?.zIndex,
+          locked: position?.locked,
+        };
         const finalRect = domRef.current?.getBoundingClientRect();
 
         if (onDragEnd) {
@@ -144,7 +164,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("pointercancel", handlePointerUp);
     },
-    [isEditor, liveOffset.x, liveOffset.y, id, onPositionChange, onDragStart, onDragMove, onDragEnd]
+    [isEditor, isLocked, liveOffset.x, liveOffset.y, id, position?.zIndex, position?.locked, onPositionChange, onDragStart, onDragMove, onDragEnd]
   );
 
   const handleResetPosition = (e: React.MouseEvent) => {
@@ -152,15 +172,22 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
     e.preventDefault();
     setLiveOffset({ x: 0, y: 0 });
     if (onPositionChange) {
-      onPositionChange(id, { x: 0, y: 0 });
+      onPositionChange(id, {
+        x: 0,
+        y: 0,
+        zIndex: position?.zIndex,
+        locked: position?.locked,
+      });
     }
   };
 
   const isShifted = liveOffset.x !== 0 || liveOffset.y !== 0;
 
-  // Transform translation style
+  // Transform translation & layer z-index style
+  const currentZIndex = position?.zIndex;
   const transformStyle: React.CSSProperties = {
     ...style,
+    zIndex: isDragging ? 999 : currentZIndex !== undefined ? currentZIndex : style.zIndex,
     transform:
       isShifted || isDragging
         ? `translate3d(${liveOffset.x}px, ${liveOffset.y}px, 0)`
@@ -189,14 +216,26 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       className={`group relative pointer-events-auto select-none transition-shadow ${
         isDragging
           ? "z-50 cursor-grabbing ring-2 ring-primary/80 shadow-2xl rounded-xl bg-background/30 backdrop-blur-xs scale-[1.02]"
+          : isLocked
+          ? "cursor-default hover:outline hover:outline-1 hover:outline-dashed hover:outline-amber-500/70 hover:bg-amber-500/[0.04] rounded-xl"
           : isOutsideMobile && !isDragging
           ? "cursor-grab outline outline-1 outline-dashed outline-amber-500/80 rounded-xl"
           : "cursor-grab hover:outline hover:outline-1 hover:outline-dashed hover:outline-primary/70 hover:bg-primary/[0.04] rounded-xl"
       } ${className}`}
       style={transformStyle}
-      title={`${label} — Click & drag to place anywhere`}
+      title={isLocked ? `${label} (Locked) — click Unlock to move` : `${label} — Click & drag to place anywhere`}
     >
-      {/* Floating Drag Label & Reset Control (visible on hover or while dragging) */}
+      {/* Persistent mini lock badge in corner when locked */}
+      {isLocked && !isDragging && (
+        <div
+          className="absolute -top-2 -right-2 z-40 p-0.5 rounded-full bg-amber-500 text-white shadow-xs pointer-events-none"
+          title="Position locked from dragging"
+        >
+          <Lock className="size-2.5" />
+        </div>
+      )}
+
+      {/* Floating Drag Label, Layer Order & Lock Controls */}
       <div
         className={`absolute -top-7 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-sans font-medium whitespace-nowrap shadow-md pointer-events-auto transition-opacity duration-150 ${
           isDragging
@@ -204,22 +243,87 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
             : "opacity-0 group-hover:opacity-100 bg-foreground/90 text-background backdrop-blur-md"
         }`}
       >
-        <GripVertical className="size-3 opacity-70 shrink-0" />
-        <span>{label}</span>
+        {isLocked ? (
+          <div className="flex items-center gap-1 text-amber-400 font-semibold" title="Element locked from dragging">
+            <Lock className="size-3 shrink-0" />
+            <span>{label}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            <GripVertical className="size-3 opacity-70 shrink-0" />
+            <span>{label}</span>
+          </div>
+        )}
+
         {isShifted && (
-          <>
-            <span className="text-[9px] opacity-75 font-mono ml-0.5">
-              ({liveOffset.x > 0 ? `+${liveOffset.x}` : liveOffset.x}, {liveOffset.y > 0 ? `+${liveOffset.y}` : liveOffset.y})
-            </span>
+          <span className="text-[9px] opacity-75 font-mono ml-0.5">
+            ({liveOffset.x > 0 ? `+${liveOffset.x}` : liveOffset.x}, {liveOffset.y > 0 ? `+${liveOffset.y}` : liveOffset.y})
+          </span>
+        )}
+
+        {/* Layer Order controls: Front / Back */}
+        <div className="flex items-center gap-0.5 ml-1 pl-1 border-l border-white/20">
+          {onBringToFront && (
             <button
               type="button"
-              onClick={handleResetPosition}
-              className="ml-1 p-0.5 rounded-full hover:bg-background/20 text-background cursor-pointer"
-              title="Reset to default position"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onBringToFront(id);
+              }}
+              className="p-0.5 px-1 rounded-sm hover:bg-background/25 text-background cursor-pointer flex items-center gap-0.5 text-[9px]"
+              title="Bring to Front (Bawa ke Hadapan Sekali)"
             >
-              <RotateCcw className="size-2.5" />
+              <BringToFront className="size-2.5" />
+              <span className="hidden sm:inline">Front</span>
             </button>
-          </>
+          )}
+          {onSendToBack && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onSendToBack(id);
+              }}
+              className="p-0.5 px-1 rounded-sm hover:bg-background/25 text-background cursor-pointer flex items-center gap-0.5 text-[9px]"
+              title="Send to Back (Hantar ke Belakang Sekali)"
+            >
+              <SendToBack className="size-2.5" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+          )}
+        </div>
+
+        {/* Lock / Unlock Toggle Button */}
+        {onLockToggle && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onLockToggle(id, !isLocked);
+            }}
+            className={`p-0.5 px-1 rounded-sm hover:bg-background/25 cursor-pointer flex items-center gap-0.5 text-[9px] ${
+              isLocked ? "text-amber-400 bg-amber-500/25 font-semibold" : "text-background"
+            }`}
+            title={isLocked ? "Unlock dragging" : "Lock position to prevent accidental dragging"}
+          >
+            {isLocked ? <Unlock className="size-2.5" /> : <Lock className="size-2.5" />}
+            <span>{isLocked ? "Unlock" : "Lock"}</span>
+          </button>
+        )}
+
+        {/* Reset Position Button */}
+        {isShifted && !isLocked && (
+          <button
+            type="button"
+            onClick={handleResetPosition}
+            className="ml-0.5 p-0.5 rounded-full hover:bg-background/20 text-background cursor-pointer"
+            title="Reset position to default (0, 0)"
+          >
+            <RotateCcw className="size-2.5" />
+          </button>
         )}
       </div>
 

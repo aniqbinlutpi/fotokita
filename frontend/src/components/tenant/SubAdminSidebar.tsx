@@ -27,7 +27,13 @@ import {
   Move,
   RotateCcw,
   Smartphone,
+  Lock,
+  Unlock,
+  BringToFront,
+  SendToBack,
+  Layers,
 } from "lucide-react";
+import { calculateBringToFront, calculateSendToBack } from "@/lib/layers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -103,8 +109,12 @@ interface TypographyControlProps {
   parseValue: (val?: string) => number;
   onSizeChange: (sizeStr: string) => void;
   filterCategories?: ("serif" | "script" | "sans")[];
-  position?: { x: number; y: number };
+  position?: { x: number; y: number; zIndex?: number; locked?: boolean };
   onResetPosition?: () => void;
+  isLocked?: boolean;
+  onLockToggle?: () => void;
+  onBringToFront?: () => void;
+  onSendToBack?: () => void;
 }
 
 const TypographyControl: React.FC<TypographyControlProps> = ({
@@ -122,6 +132,10 @@ const TypographyControl: React.FC<TypographyControlProps> = ({
   filterCategories,
   position,
   onResetPosition,
+  isLocked,
+  onLockToggle,
+  onBringToFront,
+  onSendToBack,
 }) => {
   const activeFontId = fontValue || defaultFont;
   const currentNum = sizeValue ? parseValue(sizeValue) : defaultSize;
@@ -245,7 +259,7 @@ const TypographyControl: React.FC<TypographyControlProps> = ({
             <Move className="size-2.5 text-accent" />
             Position: {position.x > 0 ? `+${position.x}` : position.x}px, {position.y > 0 ? `+${position.y}` : position.y}px
           </span>
-          {onResetPosition && (
+          {onResetPosition && !isLocked && (
             <button
               type="button"
               onClick={onResetPosition}
@@ -254,6 +268,56 @@ const TypographyControl: React.FC<TypographyControlProps> = ({
             >
               <RotateCcw className="size-2.5" />
               Reset
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Layer Order (Z-Index) & Drag Lock Bar */}
+      {(onBringToFront || onSendToBack || onLockToggle) && (
+        <div className="pt-2 flex items-center justify-between border-t border-sidebar-border/60 text-[10px]">
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+              <Layers className="size-2.5 text-muted-foreground" />
+              Layer:
+            </span>
+            {onBringToFront && (
+              <button
+                type="button"
+                onClick={onBringToFront}
+                className="px-1.5 py-0.5 rounded text-[9px] border border-input bg-background/80 hover:bg-background text-foreground flex items-center gap-0.5 cursor-pointer transition-colors"
+                title="Bring to Front (Bawa ke Hadapan Sekali)"
+              >
+                <BringToFront className="size-2.5" />
+                Front
+              </button>
+            )}
+            {onSendToBack && (
+              <button
+                type="button"
+                onClick={onSendToBack}
+                className="px-1.5 py-0.5 rounded text-[9px] border border-input bg-background/80 hover:bg-background text-foreground flex items-center gap-0.5 cursor-pointer transition-colors"
+                title="Send to Back (Hantar ke Belakang Sekali)"
+              >
+                <SendToBack className="size-2.5" />
+                Back
+              </button>
+            )}
+          </div>
+
+          {onLockToggle && (
+            <button
+              type="button"
+              onClick={onLockToggle}
+              className={`px-1.5 py-0.5 rounded text-[9px] border flex items-center gap-1 cursor-pointer transition-colors ${
+                isLocked
+                  ? "border-amber-500/40 bg-amber-500/15 text-amber-500 font-medium"
+                  : "border-input bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground"
+              }`}
+              title={isLocked ? "Unlock dragging" : "Lock position to prevent accidental dragging"}
+            >
+              {isLocked ? <Lock className="size-2.5" /> : <Unlock className="size-2.5" />}
+              <span>{isLocked ? "Locked" : "Lock"}</span>
             </button>
           )}
         </div>
@@ -274,8 +338,12 @@ interface ElementSizeControlProps {
   unit?: string;
   parseValue: (val?: string) => number;
   onSizeChange: (newSize: string) => void;
-  position?: { x: number; y: number };
+  position?: { x: number; y: number; zIndex?: number; locked?: boolean };
   onResetPosition?: () => void;
+  isLocked?: boolean;
+  onLockToggle?: () => void;
+  onBringToFront?: () => void;
+  onSendToBack?: () => void;
 }
 
 const ElementSizeControl: React.FC<ElementSizeControlProps> = ({
@@ -292,6 +360,10 @@ const ElementSizeControl: React.FC<ElementSizeControlProps> = ({
   onSizeChange,
   position,
   onResetPosition,
+  isLocked,
+  onLockToggle,
+  onBringToFront,
+  onSendToBack,
 }) => {
   const currentNum = sizeValue ? parseValue(sizeValue) : defaultSize;
   const [typedValue, setTypedValue] = React.useState<string | null>(null);
@@ -376,7 +448,7 @@ const ElementSizeControl: React.FC<ElementSizeControlProps> = ({
             <Move className="size-2.5 text-accent" />
             Position: {position.x > 0 ? `+${position.x}` : position.x}px, {position.y > 0 ? `+${position.y}` : position.y}px
           </span>
-          {onResetPosition && (
+          {onResetPosition && !isLocked && (
             <button
               type="button"
               onClick={onResetPosition}
@@ -385,6 +457,56 @@ const ElementSizeControl: React.FC<ElementSizeControlProps> = ({
             >
               <RotateCcw className="size-2.5" />
               Reset
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Layer Order (Z-Index) & Drag Lock Bar */}
+      {(onBringToFront || onSendToBack || onLockToggle) && (
+        <div className="pt-2 flex items-center justify-between border-t border-sidebar-border/60 text-[10px]">
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+              <Layers className="size-2.5 text-muted-foreground" />
+              Layer:
+            </span>
+            {onBringToFront && (
+              <button
+                type="button"
+                onClick={onBringToFront}
+                className="px-1.5 py-0.5 rounded text-[9px] border border-input bg-background/80 hover:bg-background text-foreground flex items-center gap-0.5 cursor-pointer transition-colors"
+                title="Bring to Front (Bawa ke Hadapan Sekali)"
+              >
+                <BringToFront className="size-2.5" />
+                Front
+              </button>
+            )}
+            {onSendToBack && (
+              <button
+                type="button"
+                onClick={onSendToBack}
+                className="px-1.5 py-0.5 rounded text-[9px] border border-input bg-background/80 hover:bg-background text-foreground flex items-center gap-0.5 cursor-pointer transition-colors"
+                title="Send to Back (Hantar ke Belakang Sekali)"
+              >
+                <SendToBack className="size-2.5" />
+                Back
+              </button>
+            )}
+          </div>
+
+          {onLockToggle && (
+            <button
+              type="button"
+              onClick={onLockToggle}
+              className={`px-1.5 py-0.5 rounded text-[9px] border flex items-center gap-1 cursor-pointer transition-colors ${
+                isLocked
+                  ? "border-amber-500/40 bg-amber-500/15 text-amber-500 font-medium"
+                  : "border-input bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground"
+              }`}
+              title={isLocked ? "Unlock dragging" : "Lock position to prevent accidental dragging"}
+            >
+              {isLocked ? <Lock className="size-2.5" /> : <Unlock className="size-2.5" />}
+              <span>{isLocked ? "Locked" : "Lock"}</span>
             </button>
           )}
         </div>
@@ -595,6 +717,56 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               parseValue={parsePartnerSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ partnerSize: sizeStr })}
               position={customization.textPositions?.partner1 || customization.textPositions?.partner2}
+              isLocked={Boolean(customization.textPositions?.partner1?.locked || customization.textPositions?.partner2?.locked)}
+              onLockToggle={() => {
+                const isCurrentlyLocked = Boolean(customization.textPositions?.partner1?.locked || customization.textPositions?.partner2?.locked);
+                const nextLocked = !isCurrentlyLocked;
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    partner1: {
+                      ...(customization.textPositions?.partner1 || { x: 0, y: 0 }),
+                      locked: nextLocked,
+                    },
+                    partner2: {
+                      ...(customization.textPositions?.partner2 || { x: 0, y: 0 }),
+                      locked: nextLocked,
+                    },
+                  },
+                });
+              }}
+              onBringToFront={() => {
+                const newZ = calculateBringToFront("partner1", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    partner1: {
+                      ...(customization.textPositions?.partner1 || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                    partner2: {
+                      ...(customization.textPositions?.partner2 || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
+              onSendToBack={() => {
+                const newZ = calculateSendToBack("partner1", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    partner1: {
+                      ...(customization.textPositions?.partner1 || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                    partner2: {
+                      ...(customization.textPositions?.partner2 || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
               onResetPosition={() => {
                 const next = { ...(customization.textPositions || {}) };
                 delete next.partner1;
@@ -630,6 +802,43 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               parseValue={parseDateSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ dateSize: sizeStr })}
               position={customization.textPositions?.date}
+              isLocked={Boolean(customization.textPositions?.date?.locked)}
+              onLockToggle={() => {
+                const isCurrentlyLocked = Boolean(customization.textPositions?.date?.locked);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    date: {
+                      ...(customization.textPositions?.date || { x: 0, y: 0 }),
+                      locked: !isCurrentlyLocked,
+                    },
+                  },
+                });
+              }}
+              onBringToFront={() => {
+                const newZ = calculateBringToFront("date", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    date: {
+                      ...(customization.textPositions?.date || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
+              onSendToBack={() => {
+                const newZ = calculateSendToBack("date", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    date: {
+                      ...(customization.textPositions?.date || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
               onResetPosition={() => {
                 const next = { ...(customization.textPositions || {}) };
                 delete next.date;
@@ -690,6 +899,43 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               parseValue={parseEyebrowSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ eyebrowSize: sizeStr })}
               position={customization.textPositions?.eyebrow}
+              isLocked={Boolean(customization.textPositions?.eyebrow?.locked)}
+              onLockToggle={() => {
+                const isCurrentlyLocked = Boolean(customization.textPositions?.eyebrow?.locked);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    eyebrow: {
+                      ...(customization.textPositions?.eyebrow || { x: 0, y: 0 }),
+                      locked: !isCurrentlyLocked,
+                    },
+                  },
+                });
+              }}
+              onBringToFront={() => {
+                const newZ = calculateBringToFront("eyebrow", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    eyebrow: {
+                      ...(customization.textPositions?.eyebrow || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
+              onSendToBack={() => {
+                const newZ = calculateSendToBack("eyebrow", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    eyebrow: {
+                      ...(customization.textPositions?.eyebrow || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
               onResetPosition={() => {
                 const next = { ...(customization.textPositions || {}) };
                 delete next.eyebrow;
@@ -722,6 +968,43 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               parseValue={parseQuoteSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ quoteSize: sizeStr })}
               position={customization.textPositions?.quote}
+              isLocked={Boolean(customization.textPositions?.quote?.locked)}
+              onLockToggle={() => {
+                const isCurrentlyLocked = Boolean(customization.textPositions?.quote?.locked);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    quote: {
+                      ...(customization.textPositions?.quote || { x: 0, y: 0 }),
+                      locked: !isCurrentlyLocked,
+                    },
+                  },
+                });
+              }}
+              onBringToFront={() => {
+                const newZ = calculateBringToFront("quote", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    quote: {
+                      ...(customization.textPositions?.quote || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
+              onSendToBack={() => {
+                const newZ = calculateSendToBack("quote", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    quote: {
+                      ...(customization.textPositions?.quote || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
               onResetPosition={() => {
                 const next = { ...(customization.textPositions || {}) };
                 delete next.quote;
@@ -751,6 +1034,43 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               parseValue={parseAmpersandSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ ampersandSize: sizeStr })}
               position={customization.textPositions?.ampersand}
+              isLocked={Boolean(customization.textPositions?.ampersand?.locked)}
+              onLockToggle={() => {
+                const isCurrentlyLocked = Boolean(customization.textPositions?.ampersand?.locked);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    ampersand: {
+                      ...(customization.textPositions?.ampersand || { x: 0, y: 0 }),
+                      locked: !isCurrentlyLocked,
+                    },
+                  },
+                });
+              }}
+              onBringToFront={() => {
+                const newZ = calculateBringToFront("ampersand", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    ampersand: {
+                      ...(customization.textPositions?.ampersand || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
+              onSendToBack={() => {
+                const newZ = calculateSendToBack("ampersand", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    ampersand: {
+                      ...(customization.textPositions?.ampersand || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
               onResetPosition={() => {
                 const next = { ...(customization.textPositions || {}) };
                 delete next.ampersand;
@@ -771,6 +1091,43 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               parseValue={parseOrbSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ orbSize: sizeStr })}
               position={customization.textPositions?.orb}
+              isLocked={Boolean(customization.textPositions?.orb?.locked)}
+              onLockToggle={() => {
+                const isCurrentlyLocked = Boolean(customization.textPositions?.orb?.locked);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    orb: {
+                      ...(customization.textPositions?.orb || { x: 0, y: 0 }),
+                      locked: !isCurrentlyLocked,
+                    },
+                  },
+                });
+              }}
+              onBringToFront={() => {
+                const newZ = calculateBringToFront("orb", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    orb: {
+                      ...(customization.textPositions?.orb || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
+              onSendToBack={() => {
+                const newZ = calculateSendToBack("orb", customization.textPositions);
+                onChangeCustomization({
+                  textPositions: {
+                    ...(customization.textPositions || {}),
+                    orb: {
+                      ...(customization.textPositions?.orb || { x: 0, y: 0 }),
+                      zIndex: newZ,
+                    },
+                  },
+                });
+              }}
               onResetPosition={() => {
                 const next = { ...(customization.textPositions || {}) };
                 delete next.orb;

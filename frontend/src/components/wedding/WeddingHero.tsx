@@ -17,6 +17,13 @@ import {
 } from "@/lib/typography";
 import { DraggableHeroItem, type Position } from "./DraggableHeroItem";
 import {
+  calculateBringToFront,
+  calculateSendToBack,
+  getElementZIndex,
+  DEFAULT_Z_INDEX,
+  type TextPositionMap,
+} from "@/lib/layers";
+import {
   CanvasAlignmentGuides,
   type AlignmentGuideState,
   DESKTOP_MOBILE_GUIDE_WIDTH,
@@ -88,9 +95,9 @@ export interface WeddingHeroProps {
   ampersandSize?: string;
   orbSize?: string;
   deviceView?: "full" | "mobile" | "tablet";
-  textPositions?: Record<string, { x: number; y: number }> | null;
+  textPositions?: TextPositionMap | null;
   isEditor?: boolean;
-  onTextPositionChange?: (id: string, pos: { x: number; y: number }) => void;
+  onTextPositionChange?: (id: string, pos: Position) => void;
   showAlignmentGuides?: boolean;
   showMobileBoundary?: boolean;
 }
@@ -370,6 +377,52 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
     }
   }, [wedding, customDate]);
 
+  const handleLockToggle = useCallback(
+    (id: string, locked: boolean) => {
+      const currentPos = textPositions?.[id] || { x: 0, y: 0 };
+      onTextPositionChange?.(id, {
+        ...currentPos,
+        locked,
+      });
+    },
+    [textPositions, onTextPositionChange]
+  );
+
+  const handleBringToFront = useCallback(
+    (id: string) => {
+      const newZ = calculateBringToFront(id, textPositions);
+      const currentPos = textPositions?.[id] || { x: 0, y: 0 };
+      onTextPositionChange?.(id, {
+        ...currentPos,
+        zIndex: newZ,
+      });
+    },
+    [textPositions, onTextPositionChange]
+  );
+
+  const handleSendToBack = useCallback(
+    (id: string) => {
+      const newZ = calculateSendToBack(id, textPositions);
+      const currentPos = textPositions?.[id] || { x: 0, y: 0 };
+      onTextPositionChange?.(id, {
+        ...currentPos,
+        zIndex: newZ,
+      });
+    },
+    [textPositions, onTextPositionChange]
+  );
+
+  const ampersandZ = getElementZIndex("ampersand", textPositions);
+  const orbZ = getElementZIndex("orb", textPositions);
+  const titleZ = Math.max(
+    getElementZIndex("partner1", textPositions),
+    getElementZIndex("partner2", textPositions),
+    getElementZIndex("date", textPositions),
+    getElementZIndex("eyebrow", textPositions),
+    getElementZIndex("photoCount", textPositions),
+    DEFAULT_Z_INDEX.partner1 ?? 30
+  );
+
   return (
     <section className="relative w-full">
       <ScrollExpand
@@ -381,6 +434,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         orbSize={orbSize ? parseOrbSize(orbSize) : (isMobile ? 54 : isTablet ? 90 : 130)}
         orbOffset={isMobile ? { x: 40, y: -38 } : isTablet ? { x: 70, y: -65 } : { x: 112, y: -98 }}
         orbShift={textPositions?.orb}
+        behindOrbZIndex={ampersandZ}
+        orbZIndex={orbZ}
+        titleZIndex={titleZ}
         startRadius={9999}
         endRadius={0}
         mediaZoom={1.28}
@@ -396,12 +452,15 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             isEditor={isEditor}
             isOutsideMobile={outsideMobileIds.has("orb")}
             onPositionChange={onTextPositionChange}
+            onLockToggle={handleLockToggle}
+            onBringToFront={handleBringToFront}
+            onSendToBack={handleSendToBack}
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
             className="size-full flex items-center justify-center pointer-events-auto"
           >
             <Shdr12
-              className="size-full"
+              className="size-full pointer-events-none"
               state="idle"
               params={{
                 spin: 0.32,
@@ -442,13 +501,16 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
               isEditor={isEditor}
               isOutsideMobile={outsideMobileIds.has("ampersand")}
               onPositionChange={onTextPositionChange}
+              onLockToggle={handleLockToggle}
+              onBringToFront={handleBringToFront}
+              onSendToBack={handleSendToBack}
               onDragMove={handleDragMove}
               onDragEnd={handleDragEnd}
               className="pointer-events-auto"
             >
               <span
                 style={getAmpersandFontSizeStyle(ampersandSize, deviceView)}
-                className="font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none translate-y-[-2%] select-none block"
+                className="font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none translate-y-[-2%] select-none block pointer-events-none"
               >
                 &
               </span>
@@ -493,6 +555,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 isEditor={isEditor}
                 isOutsideMobile={outsideMobileIds.has("eyebrow")}
                 onPositionChange={onTextPositionChange}
+                onLockToggle={handleLockToggle}
+                onBringToFront={handleBringToFront}
+                onSendToBack={handleSendToBack}
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
               >
@@ -527,6 +592,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   isEditor={isEditor}
                   isOutsideMobile={outsideMobileIds.has("partner1")}
                   onPositionChange={onTextPositionChange}
+                  onLockToggle={handleLockToggle}
+                  onBringToFront={handleBringToFront}
+                  onSendToBack={handleSendToBack}
                   onDragMove={handleDragMove}
                   onDragEnd={handleDragEnd}
                 >
@@ -548,6 +616,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   isEditor={isEditor}
                   isOutsideMobile={outsideMobileIds.has("date")}
                   onPositionChange={onTextPositionChange}
+                  onLockToggle={handleLockToggle}
+                  onBringToFront={handleBringToFront}
+                  onSendToBack={handleSendToBack}
                   onDragMove={handleDragMove}
                   onDragEnd={handleDragEnd}
                   className="mt-1.5 sm:mt-2.5"
@@ -592,6 +663,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   isEditor={isEditor}
                   isOutsideMobile={outsideMobileIds.has("partner2")}
                   onPositionChange={onTextPositionChange}
+                  onLockToggle={handleLockToggle}
+                  onBringToFront={handleBringToFront}
+                  onSendToBack={handleSendToBack}
                   onDragMove={handleDragMove}
                   onDragEnd={handleDragEnd}
                 >
@@ -613,6 +687,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   isEditor={isEditor}
                   isOutsideMobile={outsideMobileIds.has("photoCount")}
                   onPositionChange={onTextPositionChange}
+                  onLockToggle={handleLockToggle}
+                  onBringToFront={handleBringToFront}
+                  onSendToBack={handleSendToBack}
                   onDragMove={handleDragMove}
                   onDragEnd={handleDragEnd}
                   className={
@@ -690,6 +767,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             isEditor={isEditor}
             isOutsideMobile={outsideMobileIds.has("quote")}
             onPositionChange={onTextPositionChange}
+            onLockToggle={handleLockToggle}
+            onBringToFront={handleBringToFront}
+            onSendToBack={handleSendToBack}
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
             className="mb-6"

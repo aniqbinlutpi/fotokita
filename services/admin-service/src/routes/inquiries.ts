@@ -5,11 +5,28 @@ import {
   listInquiries,
   updateInquiryStatus,
   deleteInquiry,
+  checkInquiryAvailability,
 } from "../lib/inquiries";
 import { requireAdminAuth } from "./auth";
 import { success, error } from "../lib/response";
 
 const inquiriesRoute = new Hono();
+
+// PUBLIC ENDPOINT: Check username and/or phone availability before submitting
+inquiriesRoute.get("/check-availability", async (c) => {
+  const username = c.req.query("username");
+  const phone = c.req.query("phone");
+
+  try {
+    const result = await checkInquiryAvailability({
+      username: username || undefined,
+      phone: phone || undefined,
+    });
+    return c.json(success(result));
+  } catch (err: any) {
+    return c.json(error("INTERNAL_ERROR", err?.message || "Failed to check availability"), 500);
+  }
+});
 
 const createInquirySchema = z.object({
   username: z
@@ -44,6 +61,15 @@ inquiriesRoute.post("/", async (c) => {
     const inquiry = await createInquiry(parsed.data);
     return c.json(success({ inquiry, message: "Inquiry saved successfully" }), 201);
   } catch (err: any) {
+    if (err?.code === "USERNAME_TAKEN") {
+      return c.json(error("USERNAME_TAKEN", err.message || "This username is already taken."), 409);
+    }
+    if (err?.code === "PHONE_TAKEN") {
+      return c.json(error("PHONE_TAKEN", err.message || "This phone number has already submitted an inquiry."), 409);
+    }
+    if (err?.code === "DUPLICATE_ENTRY") {
+      return c.json(error("DUPLICATE_ENTRY", err.message || "An inquiry with these details already exists."), 409);
+    }
     return c.json(error("INTERNAL_ERROR", err?.message || "Failed to save inquiry"), 500);
   }
 });
