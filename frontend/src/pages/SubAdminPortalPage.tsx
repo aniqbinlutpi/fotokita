@@ -146,7 +146,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(!tenant);
 
   // View Mode: 'desktop' | 'mobile'
-  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("mobile");
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [selectedPhoneId, setSelectedPhoneId] = useState<string>("iphone-16-pro");
   const [zoomLevel, setZoomLevel] = useState<"fit" | "100" | "85" | "75" | "65">("fit");
   const [windowHeight, setWindowHeight] = useState<number>(() =>
