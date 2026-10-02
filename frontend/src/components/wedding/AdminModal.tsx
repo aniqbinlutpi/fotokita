@@ -287,23 +287,23 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <span className="text-[11px] text-[#7A7069] dark:text-[#A89F97] block mb-1">Partner 1 (Left)</span>
-                    <input
-                      type="text"
+                    <textarea
                       value={partner1}
                       onChange={(e) => setPartner1(e.target.value)}
                       placeholder="e.g. Afiq"
                       required
-                      className="w-full bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] rounded-none px-3.5 py-2 text-sm text-[#2F2926] dark:text-[#F5EFEB] placeholder-[#B5AAA2] dark:placeholder-[#6E635B] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
+                      rows={partner1.includes("\n") ? 2 : 1}
+                      className="w-full bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] rounded-none px-3.5 py-2 text-sm text-[#2F2926] dark:text-[#F5EFEB] placeholder-[#B5AAA2] dark:placeholder-[#6E635B] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors resize-none font-sans"
                     />
                   </div>
                   <div>
                     <span className="text-[11px] text-[#7A7069] dark:text-[#A89F97] block mb-1">Partner 2 (Right)</span>
-                    <input
-                      type="text"
+                    <textarea
                       value={partner2}
                       onChange={(e) => setPartner2(e.target.value)}
                       placeholder="e.g. Wieam"
-                      className="w-full bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] rounded-none px-3.5 py-2 text-sm text-[#2F2926] dark:text-[#F5EFEB] placeholder-[#B5AAA2] dark:placeholder-[#6E635B] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors"
+                      rows={partner2.includes("\n") ? 2 : 1}
+                      className="w-full bg-[#F8F5F0] dark:bg-[#12100E] border border-[#E7DED5] dark:border-[#332B25] rounded-none px-3.5 py-2 text-sm text-[#2F2926] dark:text-[#F5EFEB] placeholder-[#B5AAA2] dark:placeholder-[#6E635B] focus:outline-none focus:border-[#A67C6B] focus:ring-1 focus:ring-[#A67C6B] transition-colors resize-none font-sans"
                     />
                   </div>
                 </div>

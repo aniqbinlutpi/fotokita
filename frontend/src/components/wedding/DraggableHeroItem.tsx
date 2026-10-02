@@ -6,6 +6,9 @@ import {
   Unlock,
   BringToFront,
   SendToBack,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from "lucide-react";
 
 export interface Position {
@@ -13,6 +16,9 @@ export interface Position {
   y: number;
   zIndex?: number;
   locked?: boolean;
+  width?: number;
+  fontSize?: number;
+  textAlign?: "left" | "center" | "right";
 }
 
 export interface DraggableHeroItemProps {
@@ -54,13 +60,25 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
 }) => {
   const domRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
+  const [isResizingWidth, setIsResizingWidth] = useState(false);
+  const [isResizingFont, setIsResizingFont] = useState(false);
+  const [resizeIndicator, setResizeIndicator] = useState<{
+    type: "width" | "font";
+    value: string;
+  } | null>(null);
+
   const isLocked = Boolean(position?.locked);
   const [liveOffset, setLiveOffset] = useState<Position>({
     x: position?.x ?? 0,
     y: position?.y ?? 0,
   });
 
-  // Keep live offset in sync when position prop changes externally
+  const [liveWidth, setLiveWidth] = useState<number | undefined>(position?.width);
+  const [liveFontSize, setLiveFontSize] = useState<number | undefined>(position?.fontSize);
+  const [liveTextAlign, setLiveTextAlign] = useState<"left" | "center" | "right" | undefined>(position?.textAlign);
+
+  // Keep live offset and dimensions in sync when position prop changes externally
   useEffect(() => {
     if (!isDragging) {
       setLiveOffset({
@@ -69,6 +87,34 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       });
     }
   }, [position?.x, position?.y, isDragging]);
+
+  useEffect(() => {
+    if (!isResizingWidth) {
+      setLiveWidth(position?.width);
+    }
+  }, [position?.width, isResizingWidth]);
+
+  useEffect(() => {
+    if (!isResizingFont) {
+      setLiveFontSize(position?.fontSize);
+    }
+  }, [position?.fontSize, isResizingFont]);
+
+  useEffect(() => {
+    setLiveTextAlign(position?.textAlign);
+  }, [position?.textAlign]);
+
+  // Click outside to deselect
+  useEffect(() => {
+    if (!isEditor || !isSelected) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (domRef.current && !domRef.current.contains(e.target as Node)) {
+        setIsSelected(false);
+      }
+    };
+    window.addEventListener("pointerdown", handleOutsideClick);
+    return () => window.removeEventListener("pointerdown", handleOutsideClick);
+  }, [isEditor, isSelected]);
 
   const dragStartRef = useRef<{
     startX: number;
@@ -87,9 +133,12 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
   const latestOffsetRef = useRef<Position>(liveOffset);
   latestOffsetRef.current = liveOffset;
 
+  // Main dragging handler for moving element around canvas
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!isEditor || isLocked) return;
+      if (!isEditor) return;
+      setIsSelected(true);
+      if (isLocked) return;
       // Only drag on primary mouse button or touch
       if (e.button !== 0) return;
 
@@ -132,7 +181,9 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           ? onDragMove(id, { x: rawX, y: rawY }, { x: initialX, y: initialY }, currentRect)
           : undefined;
 
-        const effectivePos = snapped || { x: rawX, y: rawY };
+        const effectivePos = snapped
+          ? { x: Math.round(snapped.x), y: Math.round(snapped.y) }
+          : { x: rawX, y: rawY };
         latestOffsetRef.current = effectivePos;
         setLiveOffset(effectivePos);
       };
@@ -144,10 +195,15 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
 
         setIsDragging(false);
 
-        const finalPos = {
+        const finalPos: Position = {
           ...latestOffsetRef.current,
+          x: Math.round(latestOffsetRef.current.x),
+          y: Math.round(latestOffsetRef.current.y),
           zIndex: position?.zIndex,
           locked: position?.locked,
+          width: liveWidth,
+          fontSize: liveFontSize,
+          textAlign: liveTextAlign ?? position?.textAlign,
         };
         const finalRect = domRef.current?.getBoundingClientRect();
 
@@ -164,8 +220,150 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("pointercancel", handlePointerUp);
     },
-    [isEditor, isLocked, liveOffset.x, liveOffset.y, id, position?.zIndex, position?.locked, onPositionChange, onDragStart, onDragMove, onDragEnd]
+    [
+      isEditor,
+      isLocked,
+      liveOffset.x,
+      liveOffset.y,
+      id,
+      position?.zIndex,
+      position?.locked,
+      liveWidth,
+      liveFontSize,
+      liveTextAlign,
+      onPositionChange,
+      onDragStart,
+      onDragMove,
+      onDragEnd,
+    ]
   );
+
+  // Canva-style Side Handle Resizing (Adjusts Bounding Box Width & Wraps Text)
+  const handleSideResizeStart = (e: React.PointerEvent, side: "left" | "right") => {
+    if (!isEditor || isLocked) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const startX = e.clientX;
+    const currentDomWidth = domRef.current?.getBoundingClientRect().width ?? 200;
+    const initialWidth = liveWidth ?? Math.round(currentDomWidth);
+
+    setIsResizingWidth(true);
+    setResizeIndicator({ type: "width", value: `${initialWidth}px` });
+
+    let latestW = initialWidth;
+
+    const handlePointerMove = (moveEvt: PointerEvent) => {
+      const deltaX = moveEvt.clientX - startX;
+      // Right handle: moving right expands width; Left handle: moving left expands width
+      const change = side === "right" ? deltaX : -deltaX;
+      const computed = Math.max(50, Math.min(1400, Math.round(initialWidth + change)));
+      latestW = computed;
+      setLiveWidth(computed);
+      setResizeIndicator({ type: "width", value: `${computed}px` });
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+
+      setIsResizingWidth(false);
+      setResizeIndicator(null);
+
+      if (onPositionChange) {
+        onPositionChange(id, {
+          ...latestOffsetRef.current,
+          x: Math.round(latestOffsetRef.current.x),
+          y: Math.round(latestOffsetRef.current.y),
+          zIndex: position?.zIndex,
+          locked: position?.locked,
+          fontSize: liveFontSize,
+          width: latestW,
+          textAlign: liveTextAlign ?? position?.textAlign,
+        });
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+  };
+
+  // Canva-style Corner Handle Resizing (Scales Font Size Proportionally)
+  const handleCornerResizeStart = (
+    e: React.PointerEvent,
+    corner: "top-left" | "top-right" | "bottom-left" | "bottom-right"
+  ) => {
+    if (!isEditor || isLocked) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+
+    let measuredFs = 72;
+    if (domRef.current) {
+      const textEl = domRef.current.querySelector("h1, h2, p, span, blockquote");
+      if (textEl) {
+        const computed = parseFloat(window.getComputedStyle(textEl).fontSize);
+        if (!isNaN(computed) && computed > 0) measuredFs = Math.round(computed);
+      }
+    }
+    const initialFs = liveFontSize ?? measuredFs;
+
+    setIsResizingFont(true);
+    setResizeIndicator({ type: "font", value: `${initialFs}px` });
+
+    let latestFs = initialFs;
+
+    const handlePointerMove = (moveEvt: PointerEvent) => {
+      const deltaX = moveEvt.clientX - startX;
+      const deltaY = moveEvt.clientY - startY;
+
+      let directionDelta = 0;
+      if (corner === "bottom-right") {
+        directionDelta = (deltaX + deltaY) / 2;
+      } else if (corner === "bottom-left") {
+        directionDelta = (-deltaX + deltaY) / 2;
+      } else if (corner === "top-right") {
+        directionDelta = (deltaX - deltaY) / 2;
+      } else if (corner === "top-left") {
+        directionDelta = (-deltaX - deltaY) / 2;
+      }
+
+      const computed = Math.max(12, Math.min(260, Math.round(initialFs + directionDelta * 0.45)));
+      latestFs = computed;
+      setLiveFontSize(computed);
+      setResizeIndicator({ type: "font", value: `${computed}px` });
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+
+      setIsResizingFont(false);
+      setResizeIndicator(null);
+
+      if (onPositionChange) {
+        onPositionChange(id, {
+          ...latestOffsetRef.current,
+          x: Math.round(latestOffsetRef.current.x),
+          y: Math.round(latestOffsetRef.current.y),
+          zIndex: position?.zIndex,
+          locked: position?.locked,
+          width: liveWidth,
+          fontSize: latestFs,
+          textAlign: liveTextAlign ?? position?.textAlign,
+        });
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+  };
 
   const handleResetPosition = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -177,21 +375,77 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
         y: 0,
         zIndex: position?.zIndex,
         locked: position?.locked,
+        width: liveWidth,
+        fontSize: liveFontSize,
+        textAlign: liveTextAlign ?? position?.textAlign,
       });
     }
   };
 
-  const isShifted = liveOffset.x !== 0 || liveOffset.y !== 0;
+  const handleResetWidth = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setLiveWidth(undefined);
+    if (onPositionChange) {
+      onPositionChange(id, {
+        ...latestOffsetRef.current,
+        zIndex: position?.zIndex,
+        locked: position?.locked,
+        fontSize: liveFontSize,
+        width: undefined,
+        textAlign: liveTextAlign ?? position?.textAlign,
+      });
+    }
+  };
+
+  const handleResetFontSize = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setLiveFontSize(undefined);
+    if (onPositionChange) {
+      onPositionChange(id, {
+        ...latestOffsetRef.current,
+        zIndex: position?.zIndex,
+        locked: position?.locked,
+        width: liveWidth,
+        fontSize: undefined,
+        textAlign: liveTextAlign ?? position?.textAlign,
+      });
+    }
+  };
+
+  const handleSetTextAlign = (align: "left" | "center" | "right") => {
+    setLiveTextAlign(align);
+    if (onPositionChange) {
+      onPositionChange(id, {
+        ...latestOffsetRef.current,
+        zIndex: position?.zIndex,
+        locked: position?.locked,
+        width: liveWidth,
+        fontSize: liveFontSize,
+        textAlign: align,
+      });
+    }
+  };
+
+  const isShifted = Math.round(liveOffset.x) !== 0 || Math.round(liveOffset.y) !== 0;
+  const currentZIndex = position?.zIndex;
+  const effectiveWidth = liveWidth ?? position?.width;
+  const effectiveFontSize = liveFontSize ?? position?.fontSize;
+  const effectiveTextAlign = liveTextAlign ?? position?.textAlign;
 
   // Transform translation & layer z-index style
-  const currentZIndex = position?.zIndex;
   const transformStyle: React.CSSProperties = {
     ...style,
     zIndex: isDragging ? 999 : currentZIndex !== undefined ? currentZIndex : style.zIndex,
     transform:
       isShifted || isDragging
-        ? `translate3d(${liveOffset.x}px, ${liveOffset.y}px, 0)`
+        ? `translate3d(${Math.round(liveOffset.x)}px, ${Math.round(liveOffset.y)}px, 0)`
         : style.transform,
+    width: effectiveWidth ? `${effectiveWidth}px` : undefined,
+    maxWidth: "100%",
+    textAlign: effectiveTextAlign,
+    ...(effectiveFontSize ? ({ "--custom-font-size": `${effectiveFontSize}px` } as React.CSSProperties) : {}),
   };
 
   if (!isEditor) {
@@ -209,21 +463,29 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
     );
   }
 
+  const showHandles = !isLocked && (isSelected || isDragging || isResizingWidth || isResizingFont);
+
   return (
     <div
       ref={domRef}
       onPointerDown={handlePointerDown}
       className={`group relative pointer-events-auto select-none transition-shadow ${
         isDragging
-          ? "z-50 cursor-grabbing ring-2 ring-primary/80 shadow-2xl rounded-xl bg-background/30 backdrop-blur-xs scale-[1.02]"
+          ? "z-50 cursor-grabbing ring-2 ring-primary/90 shadow-2xl rounded-lg bg-background/20 backdrop-blur-xs scale-[1.01]"
           : isLocked
-          ? "cursor-default hover:outline hover:outline-1 hover:outline-dashed hover:outline-amber-500/70 hover:bg-amber-500/[0.04] rounded-xl"
+          ? "cursor-default hover:outline hover:outline-1 hover:outline-dashed hover:outline-amber-500/70 hover:bg-amber-500/[0.04] rounded-lg"
+          : isSelected || isResizingWidth || isResizingFont
+          ? "outline outline-1.5 outline-primary/80 outline-dashed bg-primary/[0.03] rounded-lg shadow-sm"
           : isOutsideMobile && !isDragging
-          ? "cursor-grab outline outline-1 outline-dashed outline-amber-500/80 rounded-xl"
-          : "cursor-grab hover:outline hover:outline-1 hover:outline-dashed hover:outline-primary/70 hover:bg-primary/[0.04] rounded-xl"
+          ? "cursor-grab outline outline-1 outline-dashed outline-amber-500/80 rounded-lg"
+          : "cursor-grab hover:outline hover:outline-1 hover:outline-dashed hover:outline-primary/70 hover:bg-primary/[0.03] rounded-lg"
       } ${className}`}
       style={transformStyle}
-      title={isLocked ? `${label} (Locked) — click Unlock to move` : `${label} — Click & drag to place anywhere`}
+      title={
+        isLocked
+          ? `${label} (Locked) — click Unlock to edit`
+          : `${label} — Drag to move, side handles to wrap/expand width, corner handles to scale font size`
+      }
     >
       {/* Persistent mini lock badge in corner when locked */}
       {isLocked && !isDragging && (
@@ -235,10 +497,10 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
         </div>
       )}
 
-      {/* Floating Drag Label, Layer Order & Lock Controls */}
+      {/* Floating Drag Label, Layer Order, Dimensions & Lock Controls */}
       <div
         className={`absolute -top-7 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-sans font-medium whitespace-nowrap shadow-md pointer-events-auto transition-opacity duration-150 ${
-          isDragging
+          isDragging || isSelected || isResizingWidth || isResizingFont
             ? "opacity-100 bg-primary text-primary-foreground scale-105"
             : "opacity-0 group-hover:opacity-100 bg-foreground/90 text-background backdrop-blur-md"
         }`}
@@ -256,9 +518,34 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
         )}
 
         {isShifted && (
-          <span className="text-[9px] opacity-75 font-mono ml-0.5">
-            ({liveOffset.x > 0 ? `+${liveOffset.x}` : liveOffset.x}, {liveOffset.y > 0 ? `+${liveOffset.y}` : liveOffset.y})
+          <span className="text-[9px] opacity-80 font-mono ml-0.5">
+            ({Math.round(liveOffset.x) > 0 ? `+${Math.round(liveOffset.x)}` : Math.round(liveOffset.x)},{" "}
+            {Math.round(liveOffset.y) > 0 ? `+${Math.round(liveOffset.y)}` : Math.round(liveOffset.y)})
           </span>
+        )}
+
+        {/* Custom Width Badge with Reset */}
+        {effectiveWidth && !isLocked && (
+          <button
+            type="button"
+            onClick={handleResetWidth}
+            className="text-[9px] font-mono bg-white/20 hover:bg-white/30 text-inherit px-1 py-0.2 rounded cursor-pointer"
+            title="Custom width applied. Click to reset width to auto (1 line)"
+          >
+            W:{effectiveWidth}px ✕
+          </button>
+        )}
+
+        {/* Custom Font Size Badge with Reset */}
+        {effectiveFontSize && !isLocked && (
+          <button
+            type="button"
+            onClick={handleResetFontSize}
+            className="text-[9px] font-mono bg-white/20 hover:bg-white/30 text-inherit px-1 py-0.2 rounded cursor-pointer"
+            title="Custom font size applied. Click to reset font size to default"
+          >
+            Font:{effectiveFontSize}px ✕
+          </button>
         )}
 
         {/* Layer Order controls: Front / Back */}
@@ -295,6 +582,58 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           )}
         </div>
 
+        {/* Alignment Controls: Left / Center / Right */}
+        <div className="flex items-center gap-0.5 ml-1 pl-1 border-l border-white/20">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleSetTextAlign("left");
+            }}
+            className={`p-0.5 px-1 rounded-sm cursor-pointer flex items-center justify-center text-[9px] ${
+              effectiveTextAlign === "left"
+                ? "bg-white/30 text-white font-bold"
+                : "hover:bg-background/25 text-background/80"
+            }`}
+            title="Align Left (Rata Kiri)"
+          >
+            <AlignLeft className="size-2.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleSetTextAlign("center");
+            }}
+            className={`p-0.5 px-1 rounded-sm cursor-pointer flex items-center justify-center text-[9px] ${
+              effectiveTextAlign === "center"
+                ? "bg-white/30 text-white font-bold"
+                : "hover:bg-background/25 text-background/80"
+            }`}
+            title="Align Center (Rata Tengah)"
+          >
+            <AlignCenter className="size-2.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleSetTextAlign("right");
+            }}
+            className={`p-0.5 px-1 rounded-sm cursor-pointer flex items-center justify-center text-[9px] ${
+              effectiveTextAlign === "right"
+                ? "bg-white/30 text-white font-bold"
+                : "hover:bg-background/25 text-background/80"
+            }`}
+            title="Align Right (Rata Kanan)"
+          >
+            <AlignRight className="size-2.5" />
+          </button>
+        </div>
+
         {/* Lock / Unlock Toggle Button */}
         {onLockToggle && (
           <button
@@ -326,6 +665,73 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           </button>
         )}
       </div>
+
+      {/* Canva-style Resize Tooltip (shows live px during width or corner drag) */}
+      {resizeIndicator && (
+        <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 z-50 px-2 py-0.5 rounded-md bg-black/85 text-white text-[10px] font-mono shadow-lg flex items-center gap-1 pointer-events-none whitespace-nowrap animate-in fade-in-50">
+          <span className="text-muted-foreground uppercase text-[8px] font-sans">
+            {resizeIndicator.type === "width" ? "Width:" : "Font Size:"}
+          </span>
+          <span className="font-semibold text-emerald-400">{resizeIndicator.value}</span>
+        </div>
+      )}
+
+      {/* ── Canva-style Border Handles ─────────────────────────────────────── */}
+      {showHandles && (
+        <>
+          {/* 1. Left Side Handle (Pill - Width / Expand / Wrap) */}
+          <div
+            onPointerDown={(e) => handleSideResizeStart(e, "left")}
+            onDoubleClick={handleResetWidth}
+            className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-2 h-5 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-ew-resize z-50 transition-transform flex items-center justify-center"
+            title="Drag to expand / shrink width (wrap text to 2 lines). Double click to reset."
+          >
+            <span className="w-0.5 h-2 bg-primary/70 rounded-full" />
+          </div>
+
+          {/* 2. Right Side Handle (Pill - Width / Expand / Wrap) */}
+          <div
+            onPointerDown={(e) => handleSideResizeStart(e, "right")}
+            onDoubleClick={handleResetWidth}
+            className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-2 h-5 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-ew-resize z-50 transition-transform flex items-center justify-center"
+            title="Drag to expand / shrink width (wrap text to 2 lines). Double click to reset."
+          >
+            <span className="w-0.5 h-2 bg-primary/70 rounded-full" />
+          </div>
+
+          {/* 3. Top-Left Corner Handle (Circle - Font Size Scale) */}
+          <div
+            onPointerDown={(e) => handleCornerResizeStart(e, "top-left")}
+            onDoubleClick={handleResetFontSize}
+            className="absolute -top-1.5 -left-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nwse-resize z-50 transition-transform"
+            title="Drag to scale font size bigger / smaller. Double click to reset."
+          />
+
+          {/* 4. Top-Right Corner Handle (Circle - Font Size Scale) */}
+          <div
+            onPointerDown={(e) => handleCornerResizeStart(e, "top-right")}
+            onDoubleClick={handleResetFontSize}
+            className="absolute -top-1.5 -right-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nesw-resize z-50 transition-transform"
+            title="Drag to scale font size bigger / smaller. Double click to reset."
+          />
+
+          {/* 5. Bottom-Left Corner Handle (Circle - Font Size Scale) */}
+          <div
+            onPointerDown={(e) => handleCornerResizeStart(e, "bottom-left")}
+            onDoubleClick={handleResetFontSize}
+            className="absolute -bottom-1.5 -left-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nesw-resize z-50 transition-transform"
+            title="Drag to scale font size bigger / smaller. Double click to reset."
+          />
+
+          {/* 6. Bottom-Right Corner Handle (Circle - Font Size Scale) */}
+          <div
+            onPointerDown={(e) => handleCornerResizeStart(e, "bottom-right")}
+            onDoubleClick={handleResetFontSize}
+            className="absolute -bottom-1.5 -right-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nwse-resize z-50 transition-transform"
+            title="Drag to scale font size bigger / smaller. Double click to reset."
+          />
+        </>
+      )}
 
       {/* Persistent "outside mobile" warning badge */}
       {isOutsideMobile && !isDragging && (

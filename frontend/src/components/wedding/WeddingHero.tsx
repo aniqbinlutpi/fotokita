@@ -301,7 +301,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         distanceToMobileEdge,
       });
 
-      return { x: snappedX, y: snappedY };
+      return { x: Math.round(snappedX), y: Math.round(snappedY) };
     },
     [textPositions, isMobile, deviceView]
   );
@@ -431,7 +431,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         useWindowScroll={true}
         shape="circle"
         circleSize={isMobile ? 0.20 : isTablet ? 0.18 : 0.16}
-        orbSize={orbSize ? parseOrbSize(orbSize) : (isMobile ? 54 : isTablet ? 90 : 130)}
+        orbSize={textPositions?.orb?.width || (orbSize ? parseOrbSize(orbSize) : (isMobile ? 54 : isTablet ? 90 : 130))}
         orbOffset={isMobile ? { x: 40, y: -38 } : isTablet ? { x: 70, y: -65 } : { x: 112, y: -98 }}
         orbShift={textPositions?.orb}
         behindOrbZIndex={ampersandZ}
@@ -509,7 +509,13 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
               className="pointer-events-auto"
             >
               <span
-                style={getAmpersandFontSizeStyle(ampersandSize, deviceView)}
+                style={{
+                  fontSize: `var(--custom-font-size, ${
+                    textPositions?.ampersand?.fontSize
+                      ? `${textPositions.ampersand.fontSize}px`
+                      : getAmpersandFontSizeStyle(ampersandSize, deviceView).fontSize
+                  })`,
+                }}
                 className="font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none translate-y-[-2%] select-none block pointer-events-none"
               >
                 &
@@ -564,9 +570,14 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 <span
                   style={{
                     fontFamily: getFontFamilyCss(eyebrowFont, "'Inter', sans-serif"),
-                    ...getEyebrowFontSizeStyle(eyebrowSize, deviceView),
+                    fontSize: `var(--custom-font-size, ${
+                      textPositions?.eyebrow?.fontSize
+                        ? `${textPositions.eyebrow.fontSize}px`
+                        : getEyebrowFontSizeStyle(eyebrowSize, deviceView).fontSize
+                    })`,
+                    textAlign: textPositions?.eyebrow?.textAlign || "center",
                   }}
-                  className="uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-medium whitespace-nowrap block"
+                  className="uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-medium break-words whitespace-pre-wrap block"
                 >
                   {eyebrow}
                 </span>
@@ -601,9 +612,14 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   <h1
                     style={{
                       fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
-                      ...getPartnerFontSizeStyle(partnerSize, deviceView),
+                      fontSize: `var(--custom-font-size, ${
+                        textPositions?.partner1?.fontSize
+                          ? `${textPositions.partner1.fontSize}px`
+                          : getPartnerFontSizeStyle(partnerSize, deviceView).fontSize
+                      })`,
+                      textAlign: textPositions?.partner1?.textAlign || "right",
                     }}
-                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap"
+                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-sm break-words whitespace-pre-wrap"
                   >
                     {firstName}
                   </h1>
@@ -626,9 +642,14 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   <p
                     style={{
                       fontFamily: getFontFamilyCss(dateFont, "'Inter', sans-serif"),
-                      ...getDateFontSizeStyle(dateSize, deviceView),
+                      fontSize: `var(--custom-font-size, ${
+                        textPositions?.date?.fontSize
+                          ? `${textPositions.date.fontSize}px`
+                          : getDateFontSizeStyle(dateSize, deviceView).fontSize
+                      })`,
+                      textAlign: textPositions?.date?.textAlign || "right",
                     }}
-                    className="text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap"
+                    className="text-[#2F2926]/75 dark:text-[#F5EFEB]/75 break-words whitespace-pre-wrap"
                   >
                     {formattedDate}
                   </p>
@@ -672,9 +693,14 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   <h1
                     style={{
                       fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
-                      ...getPartnerFontSizeStyle(partnerSize, deviceView),
+                      fontSize: `var(--custom-font-size, ${
+                        textPositions?.partner2?.fontSize
+                          ? `${textPositions.partner2.fontSize}px`
+                          : getPartnerFontSizeStyle(partnerSize, deviceView).fontSize
+                      })`,
+                      textAlign: textPositions?.partner2?.textAlign || "left",
                     }}
-                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap"
+                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-sm break-words whitespace-pre-wrap"
                   >
                     {secondName}
                   </h1>
@@ -777,9 +803,14 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             <p
               style={{
                 fontFamily: getFontFamilyCss(quoteFont, "'Cormorant Garamond', Georgia, serif"),
-                ...getQuoteFontSizeStyle(quoteSize, deviceView),
+                fontSize: `var(--custom-font-size, ${
+                  textPositions?.quote?.fontSize
+                    ? `${textPositions.quote.fontSize}px`
+                    : getQuoteFontSizeStyle(quoteSize, deviceView).fontSize
+                })`,
+                textAlign: textPositions?.quote?.textAlign || "center",
               }}
-              className="italic text-[#F8F5F0]/95 max-w-lg mx-auto drop-shadow"
+              className="italic text-[#F8F5F0]/95 max-w-lg mx-auto drop-shadow break-words whitespace-pre-wrap"
             >
               {tagline}
             </p>

@@ -32,10 +32,14 @@ import {
   BringToFront,
   SendToBack,
   Layers,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from "lucide-react";
 import { calculateBringToFront, calculateSendToBack } from "@/lib/layers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import type { TenantAccount, TenantCustomization } from "@/api/tenant";
 import {
@@ -684,23 +688,104 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
           </SidebarGroupLabel>
           <SidebarGroupContent className="space-y-3 pt-2">
             <div className="space-y-1.5">
-              <label className="text-[11px] text-muted-foreground font-sans block">Partner 1 (Groom / Bride)</label>
-              <Input
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] text-muted-foreground font-sans block">Partner 1 (Groom / Bride)</label>
+                <span className="text-[9px] text-muted-foreground/80 font-mono">Enter = 2 baris</span>
+              </div>
+              <Textarea
                 value={customization.partner1}
                 onChange={(e) => onChangeCustomization({ partner1: e.target.value })}
-                placeholder="e.g. Wan"
-                className="h-8 text-xs bg-sidebar-accent/30"
+                placeholder="e.g. Wan (tekan Enter untuk 2 baris)"
+                rows={customization.partner1?.includes("\n") ? 2 : 1}
+                className="min-h-[36px] py-1.5 text-xs bg-sidebar-accent/30 resize-none font-sans"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] text-muted-foreground font-sans block">Partner 2 (Bride / Groom)</label>
-              <Input
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] text-muted-foreground font-sans block">Partner 2 (Bride / Groom)</label>
+                <span className="text-[9px] text-muted-foreground/80 font-mono">Enter = 2 baris</span>
+              </div>
+              <Textarea
                 value={customization.partner2}
                 onChange={(e) => onChangeCustomization({ partner2: e.target.value })}
-                placeholder="e.g. Three"
-                className="h-8 text-xs bg-sidebar-accent/30"
+                placeholder="e.g. Three (tekan Enter untuk 2 baris)"
+                rows={customization.partner2?.includes("\n") ? 2 : 1}
+                className="min-h-[36px] py-1.5 text-xs bg-sidebar-accent/30 resize-none font-sans"
               />
+            </div>
+
+            <p className="text-[10px] text-muted-foreground/80 leading-relaxed bg-primary/5 p-2 rounded border border-primary/10">
+              💡 <strong>Tip Canva:</strong> Anda boleh tekan <em>Enter</em> di sini, atau drag pemegang tepi (kiri/kanan) di kanvas untuk mengecilkan border sehingga perkataan terbalut ke 2 baris. Drag sudut untuk besarkan font!
+            </p>
+
+            {/* Text Alignment Controls for Partner 1 & 2 */}
+            <div className="grid grid-cols-2 gap-2 pt-1 pb-1 border-t border-sidebar-border/50">
+              <div className="space-y-1">
+                <span className="text-[10px] text-muted-foreground font-sans block">Align Partner 1</span>
+                <div className="flex items-center gap-0.5 bg-sidebar-accent/50 p-0.5 rounded border border-sidebar-border">
+                  {(["left", "center", "right"] as const).map((align) => (
+                    <button
+                      key={align}
+                      type="button"
+                      onClick={() => {
+                        onChangeCustomization({
+                          textPositions: {
+                            ...(customization.textPositions || {}),
+                            partner1: {
+                              ...(customization.textPositions?.partner1 || { x: 0, y: 0 }),
+                              textAlign: align,
+                            },
+                          },
+                        });
+                      }}
+                      className={`flex-1 py-1 rounded flex items-center justify-center cursor-pointer transition-colors ${
+                        (customization.textPositions?.partner1?.textAlign || "right") === align
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title={`Partner 1 Align ${align}`}
+                    >
+                      {align === "left" && <AlignLeft className="size-3" />}
+                      {align === "center" && <AlignCenter className="size-3" />}
+                      {align === "right" && <AlignRight className="size-3" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] text-muted-foreground font-sans block">Align Partner 2</span>
+                <div className="flex items-center gap-0.5 bg-sidebar-accent/50 p-0.5 rounded border border-sidebar-border">
+                  {(["left", "center", "right"] as const).map((align) => (
+                    <button
+                      key={align}
+                      type="button"
+                      onClick={() => {
+                        onChangeCustomization({
+                          textPositions: {
+                            ...(customization.textPositions || {}),
+                            partner2: {
+                              ...(customization.textPositions?.partner2 || { x: 0, y: 0 }),
+                              textAlign: align,
+                            },
+                          },
+                        });
+                      }}
+                      className={`flex-1 py-1 rounded flex items-center justify-center cursor-pointer transition-colors ${
+                        (customization.textPositions?.partner2?.textAlign || "left") === align
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title={`Partner 2 Align ${align}`}
+                    >
+                      {align === "left" && <AlignLeft className="size-3" />}
+                      {align === "center" && <AlignCenter className="size-3" />}
+                      {align === "right" && <AlignRight className="size-3" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Couple Names Typography */}

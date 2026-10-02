@@ -8,6 +8,9 @@ export interface ElementPosition {
   y: number;
   zIndex?: number;
   locked?: boolean;
+  width?: number;
+  fontSize?: number;
+  textAlign?: "left" | "center" | "right";
 }
 
 export type TextPositionMap = Record<string, ElementPosition>;
