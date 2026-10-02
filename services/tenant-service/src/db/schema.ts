@@ -36,6 +36,14 @@ export const tenantCustomizations = pgTable("tenant_customizations", {
   fireworksEnabled: boolean("fireworks_enabled").notNull().default(true),
   orbStyle: text("orb_style").notNull().default("warmGoldChocolate"),
   fontPreset: text("font_preset").notNull().default("editorial-serif"),
+  partnerFont: text("partner_font").notNull().default("cormorant"),
+  partnerSize: text("partner_size").notNull().default("72"),
+  eyebrowFont: text("eyebrow_font").notNull().default("inter"),
+  eyebrowSize: text("eyebrow_size").notNull().default("12"),
+  dateFont: text("date_font").notNull().default("inter"),
+  dateSize: text("date_size").notNull().default("13"),
+  quoteFont: text("quote_font").notNull().default("cormorant"),
+  quoteSize: text("quote_size").notNull().default("18"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

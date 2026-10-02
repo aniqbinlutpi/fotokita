@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { UploadCloud, ChevronDown } from "lucide-react";
 import type { Wedding } from "@/types/wedding";
 import imgExpand from "@/assets/images/img-expand.png";
+import {
+  getFontFamilyCss,
+  getPartnerFontSizeStyle,
+  getEyebrowFontSizeStyle,
+  getDateFontSizeStyle,
+  getQuoteFontSizeStyle,
+} from "@/lib/typography";
 
 const themePresets: Record<string, { orb: any; fireworks: string[] }> = {
   warmGold: {
@@ -62,6 +69,14 @@ export interface WeddingHeroProps {
   tagline?: string;
   themePalette?: string;
   fireworksEnabled?: boolean;
+  partnerFont?: string;
+  partnerSize?: string;
+  eyebrowFont?: string;
+  eyebrowSize?: string;
+  dateFont?: string;
+  dateSize?: string;
+  quoteFont?: string;
+  quoteSize?: string;
   deviceView?: "full" | "mobile" | "tablet";
 }
 
@@ -76,6 +91,14 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
   tagline = "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
   themePalette = "warmGold",
   fireworksEnabled = true,
+  partnerFont = "cormorant",
+  partnerSize = "normal",
+  eyebrowFont = "inter",
+  eyebrowSize = "normal",
+  dateFont = "inter",
+  dateSize = "normal",
+  quoteFont = "cormorant",
+  quoteSize = "normal",
   deviceView,
 }) => {
   const [windowWidth, setWindowWidth] = useState<number>(() => {
@@ -228,13 +251,11 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
               }`}
             >
               <span
-                className={`uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-sans font-medium whitespace-nowrap ${
-                  deviceView === "mobile"
-                    ? "text-[11px]"
-                    : deviceView === "tablet"
-                    ? "text-xs"
-                    : "text-[11px] sm:text-xs md:text-base"
-                }`}
+                style={{
+                  fontFamily: getFontFamilyCss(eyebrowFont, "'Inter', sans-serif"),
+                  ...getEyebrowFontSizeStyle(eyebrowSize, deviceView),
+                }}
+                className="uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-medium whitespace-nowrap"
               >
                 {eyebrow}
               </span>
@@ -253,24 +274,20 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 }`}
               >
                 <h1
-                  className={`font-serif font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap ${
-                    deviceView === "mobile"
-                      ? "text-3xl"
-                      : deviceView === "tablet"
-                      ? "text-5xl"
-                      : "text-3xl sm:text-6xl md:text-7xl lg:text-8xl"
-                  }`}
+                  style={{
+                    fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
+                    ...getPartnerFontSizeStyle(partnerSize, deviceView),
+                  }}
+                  className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap"
                 >
                   {firstName}
                 </h1>
                 <p
-                  className={`font-sans text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap ${
-                    deviceView === "mobile"
-                      ? "text-[10.5px] tracking-wide mt-1.5"
-                      : deviceView === "tablet"
-                      ? "text-xs tracking-wider mt-2.5"
-                      : "text-[10.5px] sm:text-xs md:text-sm tracking-wide sm:tracking-wider mt-1.5 sm:mt-3"
-                  }`}
+                  style={{
+                    fontFamily: getFontFamilyCss(dateFont, "'Inter', sans-serif"),
+                    ...getDateFontSizeStyle(dateSize, deviceView),
+                  }}
+                  className="text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap mt-1.5 sm:mt-2.5"
                 >
                   {formattedDate}
                 </p>
@@ -298,13 +315,11 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 }`}
               >
                 <h1
-                  className={`font-serif font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap ${
-                    deviceView === "mobile"
-                      ? "text-3xl"
-                      : deviceView === "tablet"
-                      ? "text-5xl"
-                      : "text-3xl sm:text-6xl md:text-7xl lg:text-8xl"
-                  }`}
+                  style={{
+                    fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
+                    ...getPartnerFontSizeStyle(partnerSize, deviceView),
+                  }}
+                  className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap"
                 >
                   {secondName}
                 </h1>
@@ -344,30 +359,35 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
       >
         {/* Full-bleed expanded overlay content */}
         <div className="flex flex-col items-center justify-center text-center max-w-2xl px-6 pointer-events-auto">
-          <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.3em] text-[#E7DED5] mb-3 drop-shadow">
+          <div className="flex items-center justify-center gap-3 uppercase tracking-[0.3em] text-[#E7DED5] mb-3 drop-shadow">
             <span className="w-8 h-px bg-[#E7DED5]/70" />
-            <span>{eyebrow.replace(/^-+|-+$/g, "").trim() || "Wedding Archive"}</span>
+            <span
+              style={{
+                fontFamily: getFontFamilyCss(eyebrowFont, "'Inter', sans-serif"),
+                ...getEyebrowFontSizeStyle(eyebrowSize, deviceView),
+              }}
+            >
+              {eyebrow.replace(/^-+|-+$/g, "").trim() || "Wedding Archive"}
+            </span>
             <span className="w-8 h-px bg-[#E7DED5]/70" />
           </div>
 
           <h2
-            className={`font-serif font-normal text-white tracking-tight leading-[1.05] mb-4 drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)] ${
-              deviceView === "mobile"
-                ? "text-5xl"
-                : deviceView === "tablet"
-                ? "text-6xl"
-                : "text-5xl sm:text-7xl md:text-8xl"
-            }`}
+            style={{
+              fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
+              ...getPartnerFontSizeStyle(partnerSize, deviceView),
+            }}
+            className="font-normal text-white tracking-tight leading-[1.05] mb-4 drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]"
           >
             {`${firstName} & ${secondName}`}
           </h2>
 
           <p
-            className={`font-serif italic text-[#F8F5F0]/95 max-w-lg mx-auto mb-6 drop-shadow ${
-              deviceView === "mobile"
-                ? "text-base"
-                : "text-base sm:text-xl"
-            }`}
+            style={{
+              fontFamily: getFontFamilyCss(quoteFont, "'Cormorant Garamond', Georgia, serif"),
+              ...getQuoteFontSizeStyle(quoteSize, deviceView),
+            }}
+            className="italic text-[#F8F5F0]/95 max-w-lg mx-auto mb-6 drop-shadow"
           >
             {tagline}
           </p>

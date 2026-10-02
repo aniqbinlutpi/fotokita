@@ -29,6 +29,14 @@ export interface TenantCustomization {
   fireworksEnabled: boolean;
   orbStyle: string;
   fontPreset: string;
+  partnerFont?: string;
+  partnerSize?: string;
+  eyebrowFont?: string;
+  eyebrowSize?: string;
+  dateFont?: string;
+  dateSize?: string;
+  quoteFont?: string;
+  quoteSize?: string;
   slug?: string;
 }
 

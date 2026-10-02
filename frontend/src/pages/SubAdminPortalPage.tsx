@@ -228,6 +228,14 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     fireworksEnabled: true,
     orbStyle: "warmGoldChocolate",
     fontPreset: "editorial-serif",
+    partnerFont: "cormorant",
+    partnerSize: "72",
+    eyebrowFont: "inter",
+    eyebrowSize: "12",
+    dateFont: "inter",
+    dateSize: "13",
+    quoteFont: "cormorant",
+    quoteSize: "18",
     slug: activeSlug || tenant?.weddingSlug || "",
   }));
 
@@ -277,6 +285,14 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
               typeof data.fireworksEnabled === "boolean" ? data.fireworksEnabled : true,
             orbStyle: data.orbStyle || "warmGoldChocolate",
             fontPreset: data.fontPreset || "editorial-serif",
+            partnerFont: data.partnerFont || prev.partnerFont || "cormorant",
+            partnerSize: data.partnerSize || prev.partnerSize || "72",
+            eyebrowFont: data.eyebrowFont || prev.eyebrowFont || "inter",
+            eyebrowSize: data.eyebrowSize || prev.eyebrowSize || "12",
+            dateFont: data.dateFont || prev.dateFont || "inter",
+            dateSize: data.dateSize || prev.dateSize || "13",
+            quoteFont: data.quoteFont || prev.quoteFont || "cormorant",
+            quoteSize: data.quoteSize || prev.quoteSize || "18",
             slug: data.slug || dbWedding?.slug || activeSlug || tenant?.weddingSlug || prev.slug,
           };
         });

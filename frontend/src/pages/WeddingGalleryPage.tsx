@@ -262,6 +262,14 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
             tagline={customization?.tagline}
             themePalette={customization?.themePalette}
             fireworksEnabled={customization?.fireworksEnabled}
+            partnerFont={customization?.partnerFont}
+            partnerSize={customization?.partnerSize}
+            eyebrowFont={customization?.eyebrowFont}
+            eyebrowSize={customization?.eyebrowSize}
+            dateFont={customization?.dateFont}
+            dateSize={customization?.dateSize}
+            quoteFont={customization?.quoteFont}
+            quoteSize={customization?.quoteSize}
           />
         )}
 

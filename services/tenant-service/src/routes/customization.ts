@@ -18,6 +18,14 @@ const updateCustomizationSchema = z.object({
   fireworksEnabled: z.boolean().optional(),
   orbStyle: z.string().optional(),
   fontPreset: z.string().optional(),
+  partnerFont: z.string().optional(),
+  partnerSize: z.string().optional(),
+  eyebrowFont: z.string().optional(),
+  eyebrowSize: z.string().optional(),
+  dateFont: z.string().optional(),
+  dateSize: z.string().optional(),
+  quoteFont: z.string().optional(),
+  quoteSize: z.string().optional(),
   slug: z.string().optional(),
 });
 
@@ -142,6 +150,14 @@ customizationRoute.get("/:identifier", async (c) => {
           fireworksEnabled: true,
           orbStyle: "warmGoldChocolate",
           fontPreset: "editorial-serif",
+          partnerFont: "cormorant",
+          partnerSize: "72",
+          eyebrowFont: "inter",
+          eyebrowSize: "12",
+          dateFont: "inter",
+          dateSize: "13",
+          quoteFont: "cormorant",
+          quoteSize: "18",
         })
         .returning();
 
@@ -160,6 +176,14 @@ customizationRoute.get("/:identifier", async (c) => {
         fireworksEnabled: true,
         orbStyle: "warmGoldChocolate",
         fontPreset: "editorial-serif",
+        partnerFont: "cormorant",
+        partnerSize: "72",
+        eyebrowFont: "inter",
+        eyebrowSize: "12",
+        dateFont: "inter",
+        dateSize: "13",
+        quoteFont: "cormorant",
+        quoteSize: "18",
         updatedAt: new Date(),
       };
     }
@@ -176,6 +200,14 @@ customizationRoute.get("/:identifier", async (c) => {
     fireworksEnabled: true,
     orbStyle: "warmGoldChocolate",
     fontPreset: "editorial-serif",
+    partnerFont: "cormorant",
+    partnerSize: "72",
+    eyebrowFont: "inter",
+    eyebrowSize: "12",
+    dateFont: "inter",
+    dateSize: "13",
+    quoteFont: "cormorant",
+    quoteSize: "18",
   };
 
   return c.json(
@@ -190,6 +222,14 @@ customizationRoute.get("/:identifier", async (c) => {
       fireworksEnabled: typeof active.fireworksEnabled === "boolean" ? active.fireworksEnabled : true,
       orbStyle: active.orbStyle || "warmGoldChocolate",
       fontPreset: active.fontPreset || "editorial-serif",
+      partnerFont: active.partnerFont || "cormorant",
+      partnerSize: active.partnerSize || "72",
+      eyebrowFont: active.eyebrowFont || "inter",
+      eyebrowSize: active.eyebrowSize || "12",
+      dateFont: active.dateFont || "inter",
+      dateSize: active.dateSize || "13",
+      quoteFont: active.quoteFont || "cormorant",
+      quoteSize: active.quoteSize || "18",
       slug: resolvedSlug,
     })
   );
@@ -278,6 +318,14 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
         fireworksEnabled: data.fireworksEnabled ?? true,
         orbStyle: data.orbStyle ?? "warmGoldChocolate",
         fontPreset: data.fontPreset ?? "editorial-serif",
+        partnerFont: data.partnerFont ?? "cormorant",
+        partnerSize: data.partnerSize ?? "72",
+        eyebrowFont: data.eyebrowFont ?? "inter",
+        eyebrowSize: data.eyebrowSize ?? "12",
+        dateFont: data.dateFont ?? "inter",
+        dateSize: data.dateSize ?? "13",
+        quoteFont: data.quoteFont ?? "cormorant",
+        quoteSize: data.quoteSize ?? "18",
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
@@ -292,6 +340,14 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
           fireworksEnabled: data.fireworksEnabled,
           orbStyle: data.orbStyle,
           fontPreset: data.fontPreset,
+          partnerFont: data.partnerFont,
+          partnerSize: data.partnerSize,
+          eyebrowFont: data.eyebrowFont,
+          eyebrowSize: data.eyebrowSize,
+          dateFont: data.dateFont,
+          dateSize: data.dateSize,
+          quoteFont: data.quoteFont,
+          quoteSize: data.quoteSize,
           updatedAt: new Date(),
         },
       })
@@ -319,6 +375,14 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
       fireworksEnabled: savedCustomization.fireworksEnabled,
       orbStyle: savedCustomization.orbStyle,
       fontPreset: savedCustomization.fontPreset,
+      partnerFont: savedCustomization.partnerFont,
+      partnerSize: savedCustomization.partnerSize,
+      eyebrowFont: savedCustomization.eyebrowFont,
+      eyebrowSize: savedCustomization.eyebrowSize,
+      dateFont: savedCustomization.dateFont,
+      dateSize: savedCustomization.dateSize,
+      quoteFont: savedCustomization.quoteFont,
+      quoteSize: savedCustomization.quoteSize,
       slug: syncedSlug,
     })
   );

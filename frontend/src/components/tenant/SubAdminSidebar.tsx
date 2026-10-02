@@ -29,6 +29,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import type { TenantAccount, TenantCustomization } from "@/api/tenant";
+import {
+  WEDDING_FONT_OPTIONS,
+  PARTNER_SIZE_CONFIG,
+  EYEBROW_SIZE_CONFIG,
+  DATE_SIZE_CONFIG,
+  QUOTE_SIZE_CONFIG,
+  parsePartnerSize,
+  parseEyebrowSize,
+  parseDateSize,
+  parseQuoteSize,
+} from "@/lib/typography";
 
 interface SubAdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
   tenant: TenantAccount | null;
@@ -66,6 +77,154 @@ const THEME_OPTIONS = [
     colors: ["#0A0E17", "#152238", "#4F678F", "#B2C4DF"],
   },
 ];
+
+interface TypographyControlProps {
+  label: string;
+  icon?: React.ReactNode;
+  fontValue?: string;
+  defaultFont: string;
+  onFontChange: (fontId: string) => void;
+  sizeValue?: string;
+  defaultSize: number;
+  min?: number;
+  step?: number;
+  parseValue: (val?: string) => number;
+  onSizeChange: (sizeStr: string) => void;
+  filterCategories?: ("serif" | "script" | "sans")[];
+}
+
+const TypographyControl: React.FC<TypographyControlProps> = ({
+  label,
+  icon,
+  fontValue,
+  defaultFont,
+  onFontChange,
+  sizeValue,
+  defaultSize,
+  min = 1,
+  step = 1,
+  parseValue,
+  onSizeChange,
+  filterCategories,
+}) => {
+  const activeFontId = fontValue || defaultFont;
+  const currentNum = sizeValue ? parseValue(sizeValue) : defaultSize;
+  const selectedFont = WEDDING_FONT_OPTIONS.find((f) => f.id === activeFontId);
+  const [typedValue, setTypedValue] = React.useState<string | null>(null);
+
+  const availableFonts = filterCategories
+    ? WEDDING_FONT_OPTIONS.filter((f) => filterCategories.includes(f.category))
+    : WEDDING_FONT_OPTIONS;
+
+  const handleNumChange = (newVal: number) => {
+    const safeVal = Math.max(min, Math.round(newVal));
+    setTypedValue(null);
+    onSizeChange(String(safeVal));
+  };
+
+  return (
+    <div className="p-2.5 rounded-lg bg-sidebar-accent/30 border border-sidebar-border space-y-2.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
+          {icon || <Type className="size-3 text-accent" />}
+          {label}
+        </span>
+        <span className="text-[10px] text-muted-foreground truncate max-w-[125px]">
+          {selectedFont?.name || activeFontId}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-[10px] text-muted-foreground block">Font Style</label>
+        <select
+          value={activeFontId}
+          onChange={(e) => onFontChange(e.target.value)}
+          className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+        >
+          <optgroup label="Editorial & Regal Serifs">
+            {availableFonts
+              .filter((f) => f.category === "serif")
+              .map((f) => (
+                <option key={f.id} value={f.id} style={{ fontFamily: f.cssFamily }}>
+                  {f.name} — {f.description}
+                </option>
+              ))}
+          </optgroup>
+          <optgroup label="Romantic Calligraphy & Scripts">
+            {availableFonts
+              .filter((f) => f.category === "script")
+              .map((f) => (
+                <option key={f.id} value={f.id} style={{ fontFamily: f.cssFamily }}>
+                  {f.name} — {f.description}
+                </option>
+              ))}
+          </optgroup>
+          <optgroup label="Modern Minimalist Sans">
+            {availableFonts
+              .filter((f) => f.category === "sans")
+              .map((f) => (
+                <option key={f.id} value={f.id} style={{ fontFamily: f.cssFamily }}>
+                  {f.name} — {f.description}
+                </option>
+              ))}
+          </optgroup>
+        </select>
+      </div>
+
+      {/* Direct Numeric Font Size Input (No slider) */}
+      <div className="space-y-1">
+        <label className="text-[10px] text-muted-foreground block">Font Size</label>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleNumChange(currentNum - step)}
+            disabled={currentNum <= min}
+            className="size-8 flex items-center justify-center rounded-md border border-input bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors cursor-pointer text-sm select-none shrink-0 font-medium"
+            title="Decrease font size"
+          >
+            -
+          </button>
+
+          <div className="relative flex-1">
+            <input
+              type="number"
+              min={min}
+              value={typedValue !== null ? typedValue : currentNum}
+              onChange={(e) => {
+                const str = e.target.value;
+                setTypedValue(str);
+                const val = parseInt(str, 10);
+                if (!isNaN(val) && val >= min) {
+                  onSizeChange(String(val));
+                }
+              }}
+              onBlur={() => {
+                setTypedValue(null);
+                if (!sizeValue || isNaN(Number(sizeValue)) || Number(sizeValue) < min) {
+                  onSizeChange(String(defaultSize));
+                }
+              }}
+              placeholder={String(defaultSize)}
+              className="w-full h-8 rounded-md border border-input bg-background px-3 pr-8 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <span className="absolute right-2.5 top-2 text-[11px] text-muted-foreground select-none pointer-events-none font-sans">
+              px
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleNumChange(currentNum + step)}
+            className="size-8 flex items-center justify-center rounded-md border border-input bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-sm select-none shrink-0 font-medium"
+            title="Increase font size"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   tenant,
@@ -166,6 +325,21 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               />
             </div>
 
+            {/* Couple Names Typography */}
+            <TypographyControl
+              label="Names Typography"
+              icon={<Heart className="size-3 text-accent" />}
+              fontValue={customization.partnerFont}
+              defaultFont="cormorant"
+              onFontChange={(fontId) => onChangeCustomization({ partnerFont: fontId })}
+              sizeValue={customization.partnerSize}
+              defaultSize={PARTNER_SIZE_CONFIG.defaultValue}
+              min={PARTNER_SIZE_CONFIG.min}
+              step={PARTNER_SIZE_CONFIG.step}
+              parseValue={parsePartnerSize}
+              onSizeChange={(sizeStr) => onChangeCustomization({ partnerSize: sizeStr })}
+            />
+
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted-foreground font-sans flex items-center gap-1">
                 <Calendar className="size-3" />
@@ -178,6 +352,21 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
                 className="h-8 text-xs bg-sidebar-accent/30"
               />
             </div>
+
+            {/* Wedding Date Typography */}
+            <TypographyControl
+              label="Date Typography"
+              icon={<Calendar className="size-3 text-accent" />}
+              fontValue={customization.dateFont}
+              defaultFont="inter"
+              onFontChange={(fontId) => onChangeCustomization({ dateFont: fontId })}
+              sizeValue={customization.dateSize}
+              defaultSize={DATE_SIZE_CONFIG.defaultValue}
+              min={DATE_SIZE_CONFIG.min}
+              step={DATE_SIZE_CONFIG.step}
+              parseValue={parseDateSize}
+              onSizeChange={(sizeStr) => onChangeCustomization({ dateSize: sizeStr })}
+            />
 
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted-foreground font-sans flex items-center gap-1">
@@ -218,6 +407,21 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               />
             </div>
 
+            {/* Eyebrow Typography */}
+            <TypographyControl
+              label="Eyebrow Typography"
+              icon={<Sliders className="size-3 text-accent" />}
+              fontValue={customization.eyebrowFont}
+              defaultFont="inter"
+              onFontChange={(fontId) => onChangeCustomization({ eyebrowFont: fontId })}
+              sizeValue={customization.eyebrowSize}
+              defaultSize={EYEBROW_SIZE_CONFIG.defaultValue}
+              min={EYEBROW_SIZE_CONFIG.min}
+              step={EYEBROW_SIZE_CONFIG.step}
+              parseValue={parseEyebrowSize}
+              onSizeChange={(sizeStr) => onChangeCustomization({ eyebrowSize: sizeStr })}
+            />
+
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted-foreground block">Invitation Quote / Tagline</label>
               <textarea
@@ -228,6 +432,21 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
                 className="w-full text-xs rounded-md border border-input bg-sidebar-accent/30 p-2 font-serif focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
               />
             </div>
+
+            {/* Quote Typography */}
+            <TypographyControl
+              label="Quote Typography"
+              icon={<Type className="size-3 text-accent" />}
+              fontValue={customization.quoteFont}
+              defaultFont="cormorant"
+              onFontChange={(fontId) => onChangeCustomization({ quoteFont: fontId })}
+              sizeValue={customization.quoteSize}
+              defaultSize={QUOTE_SIZE_CONFIG.defaultValue}
+              min={QUOTE_SIZE_CONFIG.min}
+              step={QUOTE_SIZE_CONFIG.step}
+              parseValue={parseQuoteSize}
+              onSizeChange={(sizeStr) => onChangeCustomization({ quoteSize: sizeStr })}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
 
