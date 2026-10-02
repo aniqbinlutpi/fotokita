@@ -1,12 +1,26 @@
 import { db } from "../db";
 import { weddings } from "../db/schema";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, or, sql } from "drizzle-orm";
 
 export async function getWeddingBySlug(slug: string) {
+  let decoded = slug;
+  try {
+    decoded = decodeURIComponent(slug);
+  } catch {
+    // ignore
+  }
+
   const result = await db
     .select()
     .from(weddings)
-    .where(eq(weddings.slug, slug))
+    .where(
+      or(
+        eq(weddings.slug, slug),
+        eq(weddings.slug, decoded),
+        sql`LOWER(${weddings.slug}) = ${slug.toLowerCase()}`,
+        sql`LOWER(${weddings.slug}) = ${decoded.toLowerCase()}`
+      )
+    )
     .limit(1);
 
   return result[0] ?? null;

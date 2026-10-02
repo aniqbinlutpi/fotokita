@@ -278,9 +278,28 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     let stageH = 0;
     let running = false;
 
+    const findScrollContainer = (el: HTMLElement | null): HTMLElement | Window => {
+      let cur = el?.parentElement;
+      while (cur && cur !== document.body && cur !== document.documentElement) {
+        const style = window.getComputedStyle(cur);
+        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+          return cur;
+        }
+        cur = cur.parentElement;
+      }
+      return window;
+    };
+
     const measure = () => {
       const c = propsRef.current;
-      stageH = c.useWindowScroll ? window.innerHeight : root.clientHeight;
+      const scrollParent = findScrollContainer(track);
+      if (scrollParent === window) {
+        stageH = window.innerHeight;
+      } else if (scrollParent instanceof HTMLElement) {
+        stageH = scrollParent.clientHeight || window.innerHeight;
+      } else {
+        stageH = root.clientHeight || window.innerHeight;
+      }
       if (stageH <= 0) return;
       stage.style.height = `${stageH}px`;
       track.style.height = `${stageH * (1 + Math.max(0, c.scrollDistance) + Math.max(0, c.holdDistance))}px`;
@@ -298,9 +317,16 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       const c = propsRef.current;
       if (!c.enabled) return 1;
       const span = stageH * Math.max(0.01, c.scrollDistance);
-      if (c.useWindowScroll) {
+      const scrollParent = findScrollContainer(track);
+      if (scrollParent === window) {
         const top = track.getBoundingClientRect().top;
         return clamp(-top / span, 0, 1);
+      }
+      if (scrollParent instanceof HTMLElement) {
+        const containerRect = scrollParent.getBoundingClientRect();
+        const trackRect = track.getBoundingClientRect();
+        const scrolled = containerRect.top - trackRect.top;
+        return clamp(scrolled / span, 0, 1);
       }
       return clamp(root.scrollTop / span, 0, 1);
     };
@@ -345,15 +371,20 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     current = target;
     applyProgress(current);
 
-    const scroller = useWindowScroll ? window : root;
-    scroller.addEventListener('scroll', onScroll, { passive: true });
+    const scrollParent = findScrollContainer(track);
+    scrollParent.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
     window.addEventListener('resize', onResize);
     const ro = new ResizeObserver(onResize);
     ro.observe(root);
+    if (scrollParent instanceof HTMLElement) {
+      ro.observe(scrollParent);
+    }
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
-      scroller.removeEventListener('scroll', onScroll);
+      scrollParent.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onResize);
       ro.disconnect();
     };

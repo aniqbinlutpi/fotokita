@@ -190,7 +190,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
                   value={customization.slug ?? tenant?.weddingSlug ?? ""}
                   onChange={(e) =>
                     onChangeCustomization({
-                      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-&]/g, ""),
                     })
                   }
                   placeholder="e.g. wan-three"

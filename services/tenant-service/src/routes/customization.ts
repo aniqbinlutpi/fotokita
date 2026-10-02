@@ -23,8 +23,16 @@ const updateCustomizationSchema = z.object({
 
 // Helper to resolve an identifier (weddingId or slug) to actual weddingId & weddingSlug
 async function resolveWedding(identifier: string): Promise<{ weddingId: string; slug?: string; name?: string }> {
+  let decoded = identifier;
+  try {
+    decoded = decodeURIComponent(identifier);
+  } catch {
+    // ignore
+  }
+
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const isUuid = uuidRegex.test(identifier);
+  const isUuid = uuidRegex.test(identifier) || uuidRegex.test(decoded);
+  const targetId = isUuid ? (uuidRegex.test(identifier) ? identifier : decoded) : identifier;
 
   // 1. First check tenantAccounts in PostgreSQL
   try {
@@ -33,10 +41,12 @@ async function resolveWedding(identifier: string): Promise<{ weddingId: string; 
       .from(tenantAccounts)
       .where(
         isUuid
-          ? eq(tenantAccounts.weddingId, identifier)
+          ? eq(tenantAccounts.weddingId, targetId)
           : or(
               eq(tenantAccounts.weddingSlug, identifier),
-              sql`LOWER(${tenantAccounts.weddingSlug}) = ${identifier.toLowerCase()}`
+              eq(tenantAccounts.weddingSlug, decoded),
+              sql`LOWER(${tenantAccounts.weddingSlug}) = ${identifier.toLowerCase()}`,
+              sql`LOWER(${tenantAccounts.weddingSlug}) = ${decoded.toLowerCase()}`
             )
       )
       .limit(1);
@@ -57,8 +67,8 @@ async function resolveWedding(identifier: string): Promise<{ weddingId: string; 
   const weddingServiceUrl = process.env.WEDDING_SERVICE_URL || "http://localhost:3001";
   try {
     const endpoint = isUuid
-      ? `${weddingServiceUrl}/weddings/${encodeURIComponent(identifier)}`
-      : `${weddingServiceUrl}/weddings/slug/${encodeURIComponent(identifier)}`;
+      ? `${weddingServiceUrl}/weddings/${encodeURIComponent(targetId)}`
+      : `${weddingServiceUrl}/weddings/slug/${encodeURIComponent(decoded)}`;
     const res = await fetch(endpoint);
     if (res.ok) {
       const body = (await res.json()) as any;
@@ -98,13 +108,22 @@ customizationRoute.get("/:identifier", async (c) => {
     return c.json(error("DATABASE_ERROR", "Failed to retrieve wedding customization"), 500);
   }
 
-  // Extract initial partner names from resolvedName if present (e.g. "wan & three" -> "Wan", "Three")
-  let defaultPartner1 = "Wan";
-  let defaultPartner2 = "Three";
-  if (resolvedName && resolvedName.includes("&")) {
-    const parts = resolvedName.split("&").map((p) => p.trim());
-    if (parts[0]) defaultPartner1 = parts[0];
-    if (parts[1]) defaultPartner2 = parts[1];
+  // Extract initial partner names from resolvedName if present
+  let defaultPartner1 = "";
+  let defaultPartner2 = "";
+  if (resolvedName) {
+    if (resolvedName.includes("&")) {
+      const parts = resolvedName.split("&").map((p) => p.trim());
+      defaultPartner1 = parts[0] || "";
+      defaultPartner2 = parts[1] || "";
+    } else if (resolvedName.includes("and")) {
+      const parts = resolvedName.split("and").map((p) => p.trim());
+      defaultPartner1 = parts[0] || "";
+      defaultPartner2 = parts[1] || "";
+    } else {
+      defaultPartner1 = resolvedName;
+      defaultPartner2 = "";
+    }
   }
 
   // If not found in DB yet, create initial default row in PostgreSQL
@@ -250,8 +269,8 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
       .insert(tenantCustomizations)
       .values({
         weddingId,
-        partner1: data.partner1 ?? "Wan",
-        partner2: data.partner2 ?? "Three",
+        partner1: data.partner1 ?? "",
+        partner2: data.partner2 ?? "",
         weddingDate: data.weddingDate ?? "2026-10-30",
         eyebrow: data.eyebrow ?? "- WEDDING ARCHIVE -",
         tagline: data.tagline ?? "Every candid smile, every heartfelt celebration — preserved for a lifetime.",

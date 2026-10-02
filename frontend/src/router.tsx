@@ -64,6 +64,8 @@ const indexRoute = createRoute({
     if (page === "subadmin" || page === "portal") {
       return (
         <SubAdminPortalPage
+          slug={slug || undefined}
+          weddingId={weddingId || undefined}
           onNavigateHome={() => navigate({ to: "/" } as any)}
           onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
         />
@@ -93,6 +95,8 @@ const indexRoute = createRoute({
     if (page === "login") {
       return (
         <SubAdminPortalPage
+          slug={slug || undefined}
+          weddingId={weddingId || undefined}
           onNavigateHome={() => navigate({ to: "/" } as any)}
           onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
         />
@@ -146,10 +150,24 @@ const subAdminRoute = createRoute({
   path: "/subadmin",
   component: function SubAdminComponent() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const rawSearch = location.searchStr || window.location.search;
+    const urlParams = new URLSearchParams(rawSearch);
+    let slug = urlParams.get("slug") || undefined;
+    const weddingId = urlParams.get("weddingId") || undefined;
+    if (slug && !weddingId && !urlParams.has("token")) {
+      const raw = rawSearch.replace(/^\?/, "");
+      if (raw.startsWith("slug=")) {
+        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
+      }
+    }
+
     return (
       <SubAdminPortalPage
+        slug={slug}
+        weddingId={weddingId}
         onNavigateHome={() => navigate({ to: "/" } as any)}
-        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
+        onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
       />
     );
   },
@@ -160,10 +178,24 @@ const portalRoute = createRoute({
   path: "/portal",
   component: function PortalComponent() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const rawSearch = location.searchStr || window.location.search;
+    const urlParams = new URLSearchParams(rawSearch);
+    let slug = urlParams.get("slug") || undefined;
+    const weddingId = urlParams.get("weddingId") || undefined;
+    if (slug && !weddingId && !urlParams.has("token")) {
+      const raw = rawSearch.replace(/^\?/, "");
+      if (raw.startsWith("slug=")) {
+        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
+      }
+    }
+
     return (
       <SubAdminPortalPage
+        slug={slug}
+        weddingId={weddingId}
         onNavigateHome={() => navigate({ to: "/" } as any)}
-        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
+        onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
       />
     );
   },
@@ -174,11 +206,25 @@ const loginRoute = createRoute({
   path: "/login",
   component: function LoginComponent() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const rawSearch = location.searchStr || window.location.search;
+    const urlParams = new URLSearchParams(rawSearch);
+    let slug = urlParams.get("slug") || undefined;
+    const weddingId = urlParams.get("weddingId") || undefined;
+    if (slug && !weddingId && !urlParams.has("token")) {
+      const raw = rawSearch.replace(/^\?/, "");
+      if (raw.startsWith("slug=")) {
+        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
+      }
+    }
+
     return (
       <SubAdminPortalPage
+        slug={slug}
+        weddingId={weddingId}
         onNavigateHome={() => navigate({ to: "/" } as any)}
         onLoginSuccess={() => navigate({ to: "/subadmin" } as any)}
-        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
+        onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
       />
     );
   },
