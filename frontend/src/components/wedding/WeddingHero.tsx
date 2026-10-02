@@ -62,6 +62,7 @@ export interface WeddingHeroProps {
   tagline?: string;
   themePalette?: string;
   fireworksEnabled?: boolean;
+  deviceView?: "full" | "mobile" | "tablet";
 }
 
 export const WeddingHero: React.FC<WeddingHeroProps> = ({
@@ -75,12 +76,13 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
   tagline = "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
   themePalette = "warmGold",
   fireworksEnabled = true,
+  deviceView,
 }) => {
-  const [isMobile, setIsMobile] = useState<boolean>(() => {
+  const [windowWidth, setWindowWidth] = useState<number>(() => {
     if (typeof window !== "undefined") {
-      return window.innerWidth < 768;
+      return window.innerWidth;
     }
-    return false;
+    return 1024;
   });
 
   const activeTheme = useMemo(() => {
@@ -89,12 +91,24 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      setWindowWidth(window.innerWidth);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const isMobile = useMemo(() => {
+    if (deviceView === "mobile") return true;
+    if (deviceView === "tablet") return false;
+    return windowWidth < 768;
+  }, [deviceView, windowWidth]);
+
+  const isTablet = useMemo(() => {
+    if (deviceView === "tablet") return true;
+    if (deviceView === "mobile") return false;
+    return windowWidth >= 768 && windowWidth < 1024;
+  }, [deviceView, windowWidth]);
 
   const [firstName, secondName] = useMemo(() => {
     if (partner1Name || partner2Name) {
@@ -135,9 +149,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         alt={wedding?.name ? `${wedding.name} Wedding Archive` : "Wedding Archive"}
         useWindowScroll={true}
         shape="circle"
-        circleSize={isMobile ? 0.20 : 0.16}
-        orbSize={isMobile ? 54 : 130}
-        orbOffset={isMobile ? { x: 40, y: -38 } : { x: 112, y: -98 }}
+        circleSize={isMobile ? 0.20 : isTablet ? 0.18 : 0.16}
+        orbSize={isMobile ? 54 : isTablet ? 90 : 130}
+        orbOffset={isMobile ? { x: 40, y: -38 } : isTablet ? { x: 70, y: -65 } : { x: 112, y: -98 }}
         startRadius={9999}
         endRadius={0}
         mediaZoom={1.28}
@@ -180,16 +194,48 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         }
         behindOrb={
           <div className="flex items-center justify-center pointer-events-none select-none">
-            <span className="font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none text-[200px] sm:text-[380px] md:text-[480px] lg:text-[560px] translate-y-[-2%] select-none">
+            <span
+              className={`font-serif not-italic font-normal text-[#2F2926] dark:text-[#F5EFEB]/25 leading-none translate-y-[-2%] select-none ${
+                deviceView === "mobile"
+                  ? "text-[200px]"
+                  : deviceView === "tablet"
+                  ? "text-[380px]"
+                  : "text-[200px] sm:text-[380px] md:text-[480px] lg:text-[560px]"
+              }`}
+            >
               &
             </span>
           </div>
         }
         title={
-          <div className="w-full flex flex-col items-center justify-center pointer-events-none select-none max-w-7xl mx-auto relative px-2 sm:px-8 md:px-16">
+          <div
+            className={`w-full flex flex-col items-center justify-center pointer-events-none select-none max-w-7xl mx-auto relative ${
+              deviceView === "mobile"
+                ? "px-2"
+                : deviceView === "tablet"
+                ? "px-6"
+                : "px-2 sm:px-8 md:px-16"
+            }`}
+          >
             {/* Top Eyebrow: customizable */}
-            <div className="absolute -top-20 sm:-top-32 md:-top-40 lg:-top-44 left-0 right-0 flex items-center justify-center">
-              <span className="text-[11px] sm:text-xs md:text-base uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-sans font-medium whitespace-nowrap">
+            <div
+              className={`absolute left-0 right-0 flex items-center justify-center ${
+                deviceView === "mobile"
+                  ? "-top-20"
+                  : deviceView === "tablet"
+                  ? "-top-32"
+                  : "-top-20 sm:-top-32 md:-top-40 lg:-top-44"
+              }`}
+            >
+              <span
+                className={`uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-sans font-medium whitespace-nowrap ${
+                  deviceView === "mobile"
+                    ? "text-[11px]"
+                    : deviceView === "tablet"
+                    ? "text-xs"
+                    : "text-[11px] sm:text-xs md:text-base"
+                }`}
+              >
                 {eyebrow}
               </span>
             </div>
@@ -197,24 +243,80 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             {/* Middle Row: Partner 1 on Left, Orb in Center, Partner 2 on Right */}
             <div className="w-full flex items-center justify-between">
               {/* Left Column: Partner 1 + Date */}
-              <div className="flex-1 flex flex-col items-end text-right pr-5 sm:pr-16 md:pr-28 lg:pr-36 min-w-0">
-                <h1 className="font-serif text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap">
+              <div
+                className={`flex-1 flex flex-col items-end text-right min-w-0 ${
+                  deviceView === "mobile"
+                    ? "pr-5"
+                    : deviceView === "tablet"
+                    ? "pr-14"
+                    : "pr-5 sm:pr-16 md:pr-28 lg:pr-36"
+                }`}
+              >
+                <h1
+                  className={`font-serif font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap ${
+                    deviceView === "mobile"
+                      ? "text-3xl"
+                      : deviceView === "tablet"
+                      ? "text-5xl"
+                      : "text-3xl sm:text-6xl md:text-7xl lg:text-8xl"
+                  }`}
+                >
                   {firstName}
                 </h1>
-                <p className="font-sans text-[10.5px] sm:text-xs md:text-sm text-[#2F2926]/75 dark:text-[#F5EFEB]/75 tracking-wide sm:tracking-wider mt-1.5 sm:mt-3 whitespace-nowrap">
+                <p
+                  className={`font-sans text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap ${
+                    deviceView === "mobile"
+                      ? "text-[10.5px] tracking-wide mt-1.5"
+                      : deviceView === "tablet"
+                      ? "text-xs tracking-wider mt-2.5"
+                      : "text-[10.5px] sm:text-xs md:text-sm tracking-wide sm:tracking-wider mt-1.5 sm:mt-3"
+                  }`}
+                >
                   {formattedDate}
                 </p>
               </div>
 
               {/* Center Spacer accommodating the 3D Orb and & */}
-              <div className="shrink-0 w-[96px] sm:w-[125px] md:w-[145px] lg:w-[165px] pointer-events-none" />
+              <div
+                className={`shrink-0 pointer-events-none ${
+                  deviceView === "mobile"
+                    ? "w-[96px]"
+                    : deviceView === "tablet"
+                    ? "w-[125px]"
+                    : "w-[96px] sm:w-[125px] md:w-[145px] lg:w-[165px]"
+                }`}
+              />
 
               {/* Right Column: Partner 2 + Photo Count */}
-              <div className="flex-1 flex flex-col items-start text-left pl-9 sm:pl-16 md:pl-24 lg:pl-32 min-w-0">
-                <h1 className="font-serif text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap">
+              <div
+                className={`flex-1 flex flex-col items-start text-left min-w-0 ${
+                  deviceView === "mobile"
+                    ? "pl-9"
+                    : deviceView === "tablet"
+                    ? "pl-14"
+                    : "pl-9 sm:pl-16 md:pl-24 lg:pl-32"
+                }`}
+              >
+                <h1
+                  className={`font-serif font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap ${
+                    deviceView === "mobile"
+                      ? "text-3xl"
+                      : deviceView === "tablet"
+                      ? "text-5xl"
+                      : "text-3xl sm:text-6xl md:text-7xl lg:text-8xl"
+                  }`}
+                >
                   {secondName}
                 </h1>
-                <p className="font-sans text-[10.5px] sm:text-xs md:text-sm text-[#2F2926]/75 dark:text-[#F5EFEB]/75 tracking-wide sm:tracking-wider mt-1.5 sm:mt-3 whitespace-nowrap">
+                <p
+                  className={`font-sans text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap ${
+                    deviceView === "mobile"
+                      ? "text-[10.5px] tracking-wide mt-1.5"
+                      : deviceView === "tablet"
+                      ? "text-xs tracking-wider mt-2.5"
+                      : "text-[10.5px] sm:text-xs md:text-sm tracking-wide sm:tracking-wider mt-1.5 sm:mt-3"
+                  }`}
+                >
                   {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
                 </p>
               </div>
@@ -248,11 +350,25 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             <span className="w-8 h-px bg-[#E7DED5]/70" />
           </div>
 
-          <h2 className="font-serif text-5xl sm:text-7xl md:text-8xl font-normal text-white tracking-tight leading-[1.05] mb-4 drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
+          <h2
+            className={`font-serif font-normal text-white tracking-tight leading-[1.05] mb-4 drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)] ${
+              deviceView === "mobile"
+                ? "text-5xl"
+                : deviceView === "tablet"
+                ? "text-6xl"
+                : "text-5xl sm:text-7xl md:text-8xl"
+            }`}
+          >
             {`${firstName} & ${secondName}`}
           </h2>
 
-          <p className="font-serif italic text-base sm:text-xl text-[#F8F5F0]/95 max-w-lg mx-auto mb-6 drop-shadow">
+          <p
+            className={`font-serif italic text-[#F8F5F0]/95 max-w-lg mx-auto mb-6 drop-shadow ${
+              deviceView === "mobile"
+                ? "text-base"
+                : "text-base sm:text-xl"
+            }`}
+          >
             {tagline}
           </p>
 

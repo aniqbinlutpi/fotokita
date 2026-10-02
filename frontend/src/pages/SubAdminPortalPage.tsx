@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -21,12 +21,14 @@ import {
   Monitor,
   Eye,
   Lock,
+  RotateCcw,
+  QrCode,
+  Copy,
+  Check,
+  X,
+  Apple,
 } from "lucide-react";
 import { toast } from "sonner";
-import { WeddingHero } from "@/components/wedding/WeddingHero";
-import { Gallery } from "@/components/wedding/Gallery";
-import { UploadPhotos } from "@/components/wedding/UploadPhotos";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { SubAdminSidebar } from "@/components/tenant/SubAdminSidebar";
 import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
 import {
@@ -41,11 +43,75 @@ import {
   type TenantCustomization,
 } from "@/api/tenant";
 import { updateWedding } from "@/api/wedding";
-import { deleteMedia } from "@/api/media";
 import { useActiveWedding, weddingKeys } from "@/hooks/queries/useWeddings";
-import { useMedia, useDeleteMedia } from "@/hooks/queries/useMedia";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Wedding } from "@/types/wedding";
+
+export interface PhoneProfile {
+  id: string;
+  name: string;
+  brand: "Apple" | "Android";
+  category?: "phone" | "tablet";
+  width: number;
+  height: number;
+  resolutionLabel: string;
+}
+
+export const PHONE_PROFILES: PhoneProfile[] = [
+  {
+    id: "iphone-16-pro",
+    name: "iPhone 16 Pro",
+    brand: "Apple",
+    category: "phone",
+    width: 393,
+    height: 852,
+    resolutionLabel: "393 × 852 px",
+  },
+  {
+    id: "iphone-16-promax",
+    name: "iPhone 16 Pro Max",
+    brand: "Apple",
+    category: "phone",
+    width: 430,
+    height: 932,
+    resolutionLabel: "430 × 932 px",
+  },
+  {
+    id: "iphone-se",
+    name: "iPhone SE / 13 mini",
+    brand: "Apple",
+    category: "phone",
+    width: 375,
+    height: 720,
+    resolutionLabel: "375 × 720 px",
+  },
+  {
+    id: "ipad-air",
+    name: "iPad Air / 11″",
+    brand: "Apple",
+    category: "tablet",
+    width: 820,
+    height: 1180,
+    resolutionLabel: "820 × 1180 px",
+  },
+  {
+    id: "samsung-s24-ultra",
+    name: "Samsung Galaxy S24 Ultra",
+    brand: "Android",
+    category: "phone",
+    width: 412,
+    height: 915,
+    resolutionLabel: "412 × 915 px",
+  },
+  {
+    id: "google-pixel-9",
+    name: "Google Pixel 9",
+    brand: "Android",
+    category: "phone",
+    width: 412,
+    height: 892,
+    resolutionLabel: "412 × 892 px",
+  },
+];
 
 interface SubAdminPortalPageProps {
   slug?: string;
@@ -63,6 +129,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   onLoginSuccess,
 }) => {
   const queryClient = useQueryClient();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Read URL search params
   const urlParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
@@ -78,17 +145,56 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(!tenant);
 
-  // Device frame view switcher ('full' | 'mobile' | 'tablet')
-  const [deviceView, setDeviceView] = useState<"full" | "mobile" | "tablet">("full");
+  // View Mode: 'desktop' | 'mobile'
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("mobile");
+  const [selectedPhoneId, setSelectedPhoneId] = useState<string>("iphone-16-pro");
+  const [zoomLevel, setZoomLevel] = useState<"fit" | "100" | "85" | "75" | "65">("fit");
+  const [windowHeight, setWindowHeight] = useState<number>(() =>
+    typeof window !== "undefined" ? window.innerHeight : 800
+  );
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [copiedQrLink, setCopiedQrLink] = useState(false);
 
-  // Upload modal state
-  const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
+  useEffect(() => {
+    const handleResize = () => setWindowHeight(window.innerHeight);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const selectedPhone = useMemo(
+    () => PHONE_PROFILES.find((p) => p.id === selectedPhoneId) || PHONE_PROFILES[0]!,
+    [selectedPhoneId]
+  );
+
+  const totalPhoneHeight = selectedPhone.height;
+  const fitScale = useMemo(() => {
+    // Header is 56px, canvas padding and breathing room is ~130px
+    const availableH = Math.max(380, windowHeight - 130);
+    const heightScale = availableH / totalPhoneHeight;
+    // For wider devices like iPad (820px wide), ensure it also fits comfortably horizontally beside control dock
+    const widthScale = 520 / selectedPhone.width;
+    const calculated =
+      selectedPhone.category === "tablet"
+        ? Math.min(heightScale, widthScale)
+        : heightScale;
+    // Cap fit scale between 0.42 and 0.78 so it comfortably fits any screen
+    return Math.min(0.78, Math.max(0.42, Number(calculated.toFixed(3))));
+  }, [windowHeight, totalPhoneHeight, selectedPhone.width, selectedPhone.category]);
+
+  const activeScale =
+    zoomLevel === "100"
+      ? 1
+      : zoomLevel === "85"
+      ? 0.85
+      : zoomLevel === "75"
+      ? 0.75
+      : zoomLevel === "65"
+      ? 0.65
+      : fitScale;
 
   // Query wedding from PostgreSQL (drizzle orm via wedding-service)
   const {
     data: dbWedding,
-    isLoading: isLoadingWedding,
-    error: weddingError,
     refetch: refetchWedding,
   } = useActiveWedding({
     slug: activeSlug || tenant?.weddingSlug,
@@ -127,19 +233,6 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
 
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  // Effective wedding ID and slug
-  const targetWeddingId = dbWedding?.id || tenant?.weddingId || customization.weddingId;
-
-  // Media listing from media-service (PostgreSQL & S3)
-  const {
-    data: mediaList = [],
-    isLoading: isLoadingMedia,
-    error: mediaQueryError,
-    refetch: refetchMedia,
-  } = useMedia(targetWeddingId);
-
-  const deleteMutation = useDeleteMedia(targetWeddingId);
 
   // Fetch initial customization and live tenant profile
   useEffect(() => {
@@ -208,11 +301,41 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     };
   }, [dbWedding?.id, dbWedding?.name, dbWedding?.slug, dbWedding?.date, activeSlug, parsedPartnerNames]);
 
+  // Synchronize live changes with iframe simulator via postMessage
+  const syncCustomizationWithIframe = useCallback(() => {
+    if (!iframeRef.current?.contentWindow) return;
+    try {
+      iframeRef.current.contentWindow.postMessage(
+        {
+          type: "FOTOKITA_PREVIEW_SYNC",
+          customization,
+        },
+        "*"
+      );
+    } catch {
+      // ignore
+    }
+  }, [customization]);
+
+  useEffect(() => {
+    syncCustomizationWithIframe();
+  }, [syncCustomizationWithIframe]);
+
+  useEffect(() => {
+    const handleWindowMessage = (event: MessageEvent) => {
+      if (event.data?.type === "FOTOKITA_PREVIEW_READY") {
+        syncCustomizationWithIframe();
+      }
+    };
+    window.addEventListener("message", handleWindowMessage);
+    return () => window.removeEventListener("message", handleWindowMessage);
+  }, [syncCustomizationWithIframe]);
+
   const handleCustomizationChange = (updated: Partial<TenantCustomization>) => {
-    setCustomization((prev) => ({
-      ...prev,
-      ...updated,
-    }));
+    setCustomization((prev) => {
+      const next = { ...prev, ...updated };
+      return next;
+    });
     setHasUnsavedChanges(true);
   };
 
@@ -287,16 +410,16 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
       // Invalidate queries to update all gallery views
       queryClient.invalidateQueries({ queryKey: weddingKeys.all });
       await refetchWedding();
-      await refetchMedia();
+      syncCustomizationWithIframe();
 
       setHasUnsavedChanges(false);
-      toast.success("Perubahan Berjaya Disimpan!", {
-        description: `Tetamu boleh melihat perubahan secara langsung di fotokita.my/?slug=${newSlug}`,
+      toast.success("Changes Saved Successfully!", {
+        description: `Guests can view live updates at fotokita.my/?slug=${newSlug}`,
       });
     } catch (err: any) {
       console.error("Save failed:", err);
-      toast.error("Gagal Menyimpan Perubahan", {
-        description: err?.message || "Sila semak sambungan pangkalan data.",
+      toast.error("Failed to Save Changes", {
+        description: err?.message || "Please check your database connection.",
       });
     } finally {
       setIsSaving(false);
@@ -307,7 +430,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     clearStoredTenantSession();
     setTenant(null);
     setIsLoginModalOpen(true);
-    toast.info("Anda telah log keluar daripada portal Sub-Admin.");
+    toast.info("You have been signed out from the Sub-Admin portal.");
   };
 
   const handleOpenLiveGuestView = () => {
@@ -319,46 +442,19 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     }
   };
 
-  const handleDeleteMedia = async (mediaId: string, code?: string) => {
-    try {
-      if (code) {
-        await deleteMedia(mediaId, code);
-        await refetchMedia();
-      } else {
-        await deleteMutation.mutateAsync(mediaId);
-      }
-      try {
-        localStorage.removeItem(`fotokita_secret_${mediaId}`);
-      } catch {
-        // Ignored
-      }
-      toast.success("Foto dipadam daripada arkib");
-    } catch (err: any) {
-      console.error("Failed to delete media:", err);
-      toast.error("Gagal memadam foto", {
-        description: err?.message || "Sila semak kod rahsia atau sambungan pangkalan data.",
-      });
-      throw err;
+  // Preview URL pointing to WeddingGalleryPage inside iframe
+  const currentSlug = customization.slug || dbWedding?.slug || tenant?.weddingSlug || activeSlug || "wedding";
+  const finalWeddingId = dbWedding?.id || tenant?.weddingId || customization.weddingId || activeWeddingId;
+  const previewIframeUrl = `/?slug=${encodeURIComponent(currentSlug)}${finalWeddingId ? `&weddingId=${encodeURIComponent(finalWeddingId)}` : ""}&preview=subadmin`;
+
+  const guestPublicUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/?slug=${encodeURIComponent(currentSlug)}`;
+
+  const handleRefreshPreview = () => {
+    if (iframeRef.current) {
+      iframeRef.current.src = previewIframeUrl;
+      toast.info("Refreshing preview...");
     }
   };
-
-  const handleUploadSuccess = () => {
-    refetchMedia();
-  };
-
-  // Synthesized active wedding object for Live Guest View components
-  const activeWedding: Wedding = useMemo(() => {
-    return {
-      id: dbWedding?.id || customization.weddingId,
-      name:
-        customization.partner1 && customization.partner2
-          ? `${customization.partner1} & ${customization.partner2}`
-          : customization.partner1 || dbWedding?.name || "Wedding Archive",
-      slug: customization.slug || dbWedding?.slug || tenant?.weddingSlug || activeSlug || "wedding",
-      date: customization.weddingDate || dbWedding?.date || "2026-10-30",
-      createdAt: dbWedding?.createdAt || new Date().toISOString(),
-    };
-  }, [dbWedding, customization, tenant?.weddingSlug, activeSlug]);
 
   // If not logged in and no session, show login overlay prompt
   if (!tenant) {
@@ -398,17 +494,17 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             <Lock className="size-7" />
           </div>
           <h2 className="font-serif text-2xl font-normal text-foreground">
-            Akses Portal Sub-Admin
+            Sub-Admin Portal Access
           </h2>
           <p className="text-xs text-muted-foreground">
-            Sila log masuk dengan akaun Sub-Admin anda untuk mengurus dan menyunting galeri perkahwinan ini.
+            Please sign in with your Sub-Admin account to customize this wedding gallery.
           </p>
           <div className="pt-2">
             <Button
               onClick={() => setIsLoginModalOpen(true)}
               className="w-full text-xs uppercase tracking-wider font-semibold cursor-pointer"
             >
-              Log Masuk Sekarang
+              Sign In Now
             </Button>
           </div>
         </div>
@@ -463,57 +559,65 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
               </Breadcrumb>
             </div>
 
-            {/* Right Action Controls: Device Mockup Switcher & Save Button */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Responsive Device View Toggle */}
-              <div className="hidden md:flex items-center rounded-lg border border-border bg-muted/30 p-0.5 text-xs">
+            {/* Right Action Controls: Mode Switcher, Phone Selector, Zoom & Tools */}
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              {/* Desktop vs Mobile Toggle */}
+              <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs shadow-2xs">
                 <button
                   type="button"
-                  onClick={() => setDeviceView("full")}
-                  title="Full Viewport"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    deviceView === "full"
-                      ? "bg-background shadow-2xs font-medium text-foreground"
+                  onClick={() => setViewMode("desktop")}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                    viewMode === "desktop"
+                      ? "bg-background shadow-xs font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Monitor className="size-3.5" />
-                  <span>Full</span>
+                  <span className="hidden sm:inline">Desktop</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDeviceView("tablet")}
-                  title="Tablet Mockup Frame (768px)"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    deviceView === "tablet"
-                      ? "bg-background shadow-2xs font-medium text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Tablet className="size-3.5" />
-                  <span>Tablet</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeviceView("mobile")}
-                  title="Mobile Mockup Frame (410px)"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    deviceView === "mobile"
-                      ? "bg-background shadow-2xs font-medium text-foreground"
+                  onClick={() => setViewMode("mobile")}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                    viewMode === "mobile"
+                      ? "bg-background shadow-xs font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Smartphone className="size-3.5" />
-                  <span>Mobile</span>
+                  <span className="hidden sm:inline">Mobile</span>
                 </button>
               </div>
+
+              {/* Refresh Preview Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefreshPreview}
+                title="Refresh preview"
+                className="size-8 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+              >
+                <RotateCcw className="size-3.5" />
+              </Button>
+
+              {/* Scan on Phone / QR Code */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsQrModalOpen(true)}
+                title="Scan QR code to test on real phone"
+                className="hidden sm:inline-flex text-xs h-8 cursor-pointer gap-1.5 shrink-0"
+              >
+                <QrCode className="size-3.5 text-muted-foreground" />
+                <span>Test Phone</span>
+              </Button>
 
               {/* View as Guest link */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleOpenLiveGuestView}
-                className="hidden sm:inline-flex text-xs h-8 cursor-pointer"
+                className="hidden sm:inline-flex text-xs h-8 cursor-pointer shrink-0"
               >
                 <Eye className="size-3.5 mr-1 text-muted-foreground" />
                 <span>Guest View ↗</span>
@@ -524,7 +628,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                 onClick={handleSave}
                 disabled={isSaving}
                 size="sm"
-                className={`text-xs h-8 shadow-sm cursor-pointer ${
+                className={`text-xs h-8 shadow-sm cursor-pointer shrink-0 ${
                   hasUnsavedChanges
                     ? "bg-accent hover:bg-accent/90 text-accent-foreground animate-pulse"
                     : ""
@@ -536,136 +640,228 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             </div>
           </header>
 
-          {/* Main Visual Canvas: Live Guest View matching WeddingGalleryPage! */}
-          <main className="flex-1 overflow-y-auto bg-[#F8F5F0] dark:bg-[#12100E] p-0 flex items-start justify-center transition-colors">
-            <div
-              className={`w-full transition-all duration-300 flex flex-col ${
-                deviceView === "mobile"
-                  ? "max-w-[410px] h-[840px] max-h-[calc(100vh-4.5rem)] my-6 rounded-3xl border-8 border-[#2F2926] shadow-2xl overflow-hidden bg-[#F8F5F0] dark:bg-[#12100E]"
-                  : deviceView === "tablet"
-                  ? "max-w-[768px] h-[900px] max-h-[calc(100vh-4.5rem)] my-6 rounded-2xl border-4 border-[#2F2926] shadow-2xl overflow-hidden bg-[#F8F5F0] dark:bg-[#12100E]"
-                  : "max-w-full min-h-full"
-              }`}
-            >
-              {/* Mobile / Tablet simulated status bar */}
-              {deviceView !== "full" && (
-                <div className="bg-[#2F2926] text-[#F5EFEB] text-[10px] py-1.5 px-4 flex items-center justify-between select-none shrink-0 z-30">
-                  <span>9:41 AM</span>
-                  <span className="font-mono text-[9px] text-[#C9AA7C]">fotokita.my/?slug={activeWedding.slug}</span>
-                  <span>100%</span>
-                </div>
-              )}
-
-              {/* Guest View Scrollable Area */}
-              <div className={`w-full flex-1 flex flex-col ${deviceView !== "full" ? "overflow-y-auto" : ""}`}>
-                {/* Guest Navigation Bar */}
-                <nav className="border-b border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8]/80 dark:bg-[#1A1715]/80 backdrop-blur-md sticky top-0 left-0 right-0 z-40 px-6 py-3 transition-colors duration-300">
-                  <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-serif tracking-widest text-base sm:text-lg font-medium text-[#2F2926] dark:text-[#F5EFEB] uppercase">
-                        Fotokita
-                      </span>
-                      <span className="hidden sm:inline-block w-px h-3.5 bg-[#E7DED5] dark:bg-[#332B25]" />
-                      <span className="hidden sm:inline-block text-[11px] uppercase tracking-widest text-[#7A7069] dark:text-[#A89F97]">
-                        Editorial Wedding Gallery
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <span className="text-xs text-[#7A7069] dark:text-[#A89F97] hidden md:inline-block">
-                        Archive: <span className="text-[#2F2926] dark:text-[#F5EFEB] font-medium">{activeWedding.name}</span>
-                      </span>
-
-                      <AnimatedThemeToggler
-                        variant="circle"
-                        duration={450}
-                        className="text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors duration-200 cursor-pointer p-1 flex items-center justify-center select-none [&_svg]:size-4"
-                        title="Toggle dark / light mode"
-                        aria-label="Toggle dark / light mode"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => setIsUploadOpen(true)}
-                        className="text-xs uppercase tracking-widest text-[#A67C6B] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors duration-200 font-medium cursor-pointer"
-                      >
-                        + Upload
-                      </button>
-                    </div>
-                  </div>
-                </nav>
-
-                {/* Error / Loading State Banner if any */}
-                {weddingError && (
-                  <div className="bg-destructive/10 border-b border-destructive/20 text-destructive text-xs px-4 py-2 text-center">
-                    Gagal memuat arkib dari pangkalan data: {(weddingError as Error).message}
-                  </div>
-                )}
-                {isLoadingWedding && !dbWedding && (
-                  <div className="bg-primary/5 text-muted-foreground text-xs px-4 py-2 text-center animate-pulse">
-                    Memuat data arkib majlis dari pangkalan data...
-                  </div>
-                )}
-
-                {/* Hero Section */}
-                <div className="w-full relative">
-                  <WeddingHero
-                    wedding={activeWedding}
-                    photoCount={mediaList.length}
-                    onOpenUpload={() => setIsUploadOpen(true)}
-                    partner1Name={customization.partner1}
-                    partner2Name={customization.partner2}
-                    customDate={customization.weddingDate}
-                    eyebrow={customization.eyebrow}
-                    tagline={customization.tagline}
-                    themePalette={customization.themePalette}
-                    fireworksEnabled={customization.fireworksEnabled}
-                  />
-                </div>
-
-                {/* Gallery Section */}
-                <div className="w-full flex-1">
-                  <Gallery
-                    weddingId={activeWedding.id}
-                    wedding={activeWedding}
-                    mediaList={mediaList}
-                    isLoading={isLoadingMedia}
-                    error={mediaQueryError ? (mediaQueryError as Error).message : null}
-                    onRefresh={refetchMedia}
-                    onDeleteMedia={handleDeleteMedia}
-                    onOpenUpload={() => setIsUploadOpen(true)}
-                  />
-                </div>
-
-                {/* Footer Section */}
-                <footer className="border-t border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8] dark:bg-[#1A1715] py-8 px-6 text-center text-xs text-[#7A7069] dark:text-[#A89F97] transition-colors duration-300 mt-auto">
-                  <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="font-serif italic text-sm text-[#2F2926] dark:text-[#F5EFEB]">
-                      Fotokita — Preserving timeless wedding memories
-                    </p>
-                    <div className="flex items-center gap-4 text-[11px] uppercase tracking-widest">
-                      <span>Photography & Art Direction</span>
-                      <span className="w-1 h-1 rounded-full bg-[#A67C6B]" />
-                      <span className="text-[#A67C6B] font-semibold">
-                        Live Guest View
-                      </span>
-                    </div>
-                  </div>
-                </footer>
+          {/* Main Visual Canvas: Responsive Desktop or Scaled Mobile Phone Simulator */}
+          <main className="flex-1 overflow-auto bg-[#F2EDE4] dark:bg-[#0D0B0A] p-4 sm:p-6 flex items-center justify-center transition-colors relative">
+            {viewMode === "desktop" ? (
+              <div className="w-full h-full rounded-lg border border-border shadow-xs overflow-hidden bg-background">
+                <iframe
+                  ref={iframeRef}
+                  src={previewIframeUrl}
+                  key="desktop-preview"
+                  title="Live Guest View Simulator - Desktop"
+                  onLoad={() => syncCustomizationWithIframe()}
+                  className="w-full h-full border-0 bg-[#F8F5F0] dark:bg-[#12100E]"
+                />
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6 max-h-full">
+                {/* Clean Mobile Viewport (Tanpa Fake Bezel / Status Bar) */}
+                <div
+                  style={{
+                    width: `${Math.round(selectedPhone.width * activeScale)}px`,
+                    height: `${Math.round(totalPhoneHeight * activeScale)}px`,
+                  }}
+                  className="relative shrink-0 rounded-2xl shadow-2xl border border-border/80 overflow-hidden bg-background ring-1 ring-black/5 dark:ring-white/10"
+                >
+                  <div
+                    style={{
+                      width: `${selectedPhone.width}px`,
+                      height: `${totalPhoneHeight}px`,
+                      transform: `scale(${activeScale})`,
+                      transformOrigin: "top left",
+                    }}
+                    className="absolute top-0 left-0 transition-transform duration-200"
+                  >
+                    {/* Live Guest View Iframe (100% Full Mobile Viewport) */}
+                    <iframe
+                      ref={iframeRef}
+                      src={previewIframeUrl}
+                      key={selectedPhone.id}
+                      title="Live Guest View Simulator"
+                      onLoad={() => {
+                        syncCustomizationWithIframe();
+                      }}
+                      className="w-full h-full border-0 bg-[#F8F5F0] dark:bg-[#12100E]"
+                    />
+                  </div>
+                </div>
+
+                {/* Side Device Controller (Beside Device) */}
+                <div className="flex flex-col gap-3 bg-card/95 backdrop-blur-md border border-border shadow-xl rounded-2xl p-3.5 w-60 shrink-0 text-xs animate-in fade-in-50">
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-1 border-b border-border/50">
+                    <div className="flex items-center gap-1.5 text-foreground font-semibold">
+                      {selectedPhone.category === "tablet" ? (
+                        <Tablet className="size-3.5 text-primary" />
+                      ) : (
+                        <Smartphone className="size-3.5 text-primary" />
+                      )}
+                      <span>Select Device</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground bg-muted/70 px-1.5 py-0.5 rounded">
+                      {selectedPhone.resolutionLabel}
+                    </span>
+                  </div>
+
+                  {/* Device List */}
+                  <div className="space-y-1">
+                    {PHONE_PROFILES.map((phone) => {
+                      const isSelected = selectedPhoneId === phone.id;
+                      return (
+                        <button
+                          key={phone.id}
+                          type="button"
+                          onClick={() => setSelectedPhoneId(phone.id)}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer text-left ${
+                            isSelected
+                              ? "bg-foreground text-background font-medium shadow-xs"
+                              : "hover:bg-muted/70 text-foreground"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {phone.category === "tablet" ? (
+                              <Tablet
+                                className={`size-3.5 shrink-0 ${
+                                  isSelected ? "text-background" : "text-blue-500 dark:text-blue-400"
+                                }`}
+                              />
+                            ) : phone.brand === "Apple" ? (
+                              <Apple
+                                className={`size-3.5 shrink-0 ${
+                                  isSelected ? "text-background" : "text-foreground"
+                                }`}
+                              />
+                            ) : (
+                              <Smartphone
+                                className={`size-3.5 shrink-0 ${
+                                  isSelected ? "text-emerald-300" : "text-emerald-500"
+                                }`}
+                              />
+                            )}
+                            <span className="truncate">{phone.name}</span>
+                          </div>
+                          {isSelected && (
+                            <Check className="size-3.5 shrink-0 ml-1 text-primary-foreground" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="h-px bg-border/60" />
+
+                  {/* Zoom Scale Switcher */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Display Zoom
+                      </span>
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        {Math.round(activeScale * 100)}%
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/50 text-[11px]">
+                      {(["fit", "65", "75", "100"] as const).map((z) => (
+                        <button
+                          key={z}
+                          type="button"
+                          onClick={() => setZoomLevel(z)}
+                          className={`py-1 rounded text-center transition-colors cursor-pointer capitalize ${
+                            zoomLevel === z
+                              ? "bg-background shadow-xs font-semibold text-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {z === "fit" ? "Fit" : `${z}%`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Actions (Refresh / Test Phone) */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRefreshPreview}
+                      className="flex-1 text-xs h-7.5 cursor-pointer gap-1.5"
+                    >
+                      <RotateCcw className="size-3" />
+                      <span>Refresh</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsQrModalOpen(true)}
+                      className="flex-1 text-xs h-7.5 cursor-pointer gap-1.5"
+                    >
+                      <QrCode className="size-3" />
+                      <span>QR Code</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
         </SidebarInset>
 
-        {/* Upload Modal Dialog for live testing upload */}
-        {activeWedding && (
-          <UploadPhotos
-            weddingId={activeWedding.id}
-            wedding={activeWedding}
-            isOpen={isUploadOpen}
-            onOpenChange={setIsUploadOpen}
-            onUploadSuccess={handleUploadSuccess}
-          />
+        {/* Test on Phone QR Modal */}
+        {isQrModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-50">
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl relative space-y-4">
+              <button
+                type="button"
+                onClick={() => setIsQrModalOpen(false)}
+                className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+              <div className="text-center space-y-1">
+                <h3 className="font-serif text-lg font-medium text-foreground">
+                  Test on Real Phone
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Scan the QR code below with your phone camera to preview live guest view directly on your device.
+                </p>
+              </div>
+              <div className="flex justify-center p-3 bg-white rounded-xl border border-border shadow-inner">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(guestPublicUrl)}`}
+                  alt="Guest Gallery QR Code"
+                  className="size-48 object-contain"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 p-2 rounded-lg bg-muted/40 border border-border text-xs">
+                <span className="truncate flex-1 font-mono text-[11px] text-muted-foreground">
+                  {guestPublicUrl}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(guestPublicUrl);
+                    setCopiedQrLink(true);
+                    setTimeout(() => setCopiedQrLink(false), 2000);
+                    toast.success("Link copied to clipboard!");
+                  }}
+                  className="shrink-0 p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  {copiedQrLink ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+                </button>
+              </div>
+              <Button
+                type="button"
+                onClick={() => {
+                  window.open(guestPublicUrl, "_blank", "noopener,noreferrer");
+                  setIsQrModalOpen(false);
+                }}
+                variant="outline"
+                className="w-full text-xs cursor-pointer"
+              >
+                <Eye className="size-3.5 mr-1.5" />
+                Open in New Tab
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </SidebarProvider>

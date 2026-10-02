@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { WeddingHero } from "@/components/wedding/WeddingHero";
 import { Gallery } from "@/components/wedding/Gallery";
 import { UploadPhotos } from "@/components/wedding/UploadPhotos";
@@ -12,6 +12,8 @@ import { useActiveWedding, weddingKeys } from "@/hooks/queries/useWeddings";
 import { useMedia, useDeleteMedia } from "@/hooks/queries/useMedia";
 import { useQueryClient } from "@tanstack/react-query";
 import { PricingModal } from "@/components/pricing/PricingModal";
+import { extractSlugFromSearch } from "@/lib/slug";
+import type { Wedding } from "@/types/wedding";
 
 
 interface WeddingGalleryPageProps {
@@ -28,8 +30,9 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
   onNavigateToLanding,
 }) => {
   const urlParams = new URLSearchParams(window.location.search);
-  const activeSlug = propSlug || urlParams.get("slug") || undefined;
+  const activeSlug = propSlug || extractSlugFromSearch(window.location.search) || undefined;
   const activeWeddingId = propWeddingId || urlParams.get("weddingId") || undefined;
+  const isSubadminPreview = urlParams.get("preview") === "subadmin";
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const initialAdminOpen =
@@ -50,6 +53,25 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
   // Customization styling from tenant-service
   const [customization, setCustomization] = useState<TenantCustomization | null>(null);
 
+  // Compute effective wedding for live preview or active wedding
+  const effectiveWedding: Wedding | null = useMemo(() => {
+    if (wedding) return wedding;
+    if (isSubadminPreview && customization) {
+      const name =
+        customization.partner1 && customization.partner2
+          ? `${customization.partner1} & ${customization.partner2}`
+          : customization.partner1 || "Wedding Archive";
+      return {
+        id: customization.weddingId || activeWeddingId || "preview-wedding",
+        name,
+        slug: customization.slug || activeSlug || "wedding",
+        date: customization.weddingDate || "2026-10-30",
+        createdAt: new Date().toISOString(),
+      };
+    }
+    return null;
+  }, [wedding, isSubadminPreview, customization, activeWeddingId, activeSlug]);
+
   React.useEffect(() => {
     const identifier = wedding?.id || activeSlug;
     if (!identifier) return;
@@ -58,16 +80,36 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
       .catch(() => {});
   }, [wedding?.id, activeSlug]);
 
+  // Listen for live preview synchronization from parent editor (Sub-Admin Portal)
+  React.useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "FOTOKITA_PREVIEW_SYNC" && event.data.customization) {
+        setCustomization((prev) => ({
+          ...prev,
+          ...event.data.customization,
+        }));
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "FOTOKITA_PREVIEW_READY" }, "*");
+    }
+
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
   // TanStack Query for Media
   const {
     data: mediaList = [],
     isLoading: isLoadingMedia,
     error: mediaQueryError,
     refetch: refetchMedia,
-  } = useMedia(wedding?.id);
+  } = useMedia(effectiveWedding?.id);
 
   // TanStack Query Mutation for Delete
-  const deleteMutation = useDeleteMedia(wedding?.id);
+  const deleteMutation = useDeleteMedia(effectiveWedding?.id);
 
   const handleRefresh = async () => {
     await refetchMedia();
@@ -133,10 +175,14 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
               </button>
             )}
 
-            {wedding && (
+            {effectiveWedding && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[#7A7069] dark:text-[#A89F97] hidden md:inline-block">
-                  Archive: <span className="text-[#2F2926] dark:text-[#F5EFEB] font-medium">{wedding.name}</span>
+                  Archive: <span className="text-[#2F2926] dark:text-[#F5EFEB] font-medium">
+                    {customization?.partner1 && customization?.partner2
+                      ? `${customization.partner1} & ${customization.partner2}`
+                      : effectiveWedding.name}
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -180,13 +226,13 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {weddingError ? (
+        {weddingError && !effectiveWedding ? (
           <div className="pt-32 pb-24 text-center px-4 max-w-md mx-auto space-y-4">
             <h2 className="font-serif text-3xl font-normal text-[#2F2926] dark:text-[#F5EFEB]">
-              Galeri Tidak Dijumpai
+              Gallery Not Found
             </h2>
             <p className="text-xs text-[#7A7069] dark:text-[#A89F97] leading-relaxed">
-              Pautan galeri perkahwinan ini tidak wujud atau URL slug telah dikemas kini. Sila pastikan URL slug majlis adalah tepat.
+              This wedding gallery link does not exist or the URL slug has been updated. Please verify that the wedding slug is correct.
             </p>
             {onNavigateToLanding && (
               <button
@@ -194,11 +240,11 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
                 onClick={onNavigateToLanding}
                 className="mt-4 px-6 py-2.5 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] hover:border-[#2F2926] dark:hover:border-[#F5EFEB] text-xs font-medium cursor-pointer transition-colors"
               >
-                Kembali ke Laman Utama
+                Back to Home
               </button>
             )}
           </div>
-        ) : isLoadingWedding ? (
+        ) : isLoadingWedding && !effectiveWedding ? (
           <div className="pt-20 pb-16 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-[#7A7069] dark:text-[#A89F97] animate-pulse">
               Loading Wedding Archive...
@@ -206,7 +252,7 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
           </div>
         ) : (
           <WeddingHero
-            wedding={wedding || null}
+            wedding={effectiveWedding}
             photoCount={mediaList.length}
             onOpenUpload={() => setIsUploadOpen(true)}
             partner1Name={customization?.partner1}
@@ -219,10 +265,10 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
           />
         )}
 
-        {wedding && (
+        {effectiveWedding && (
           <Gallery
-            weddingId={wedding.id}
-            wedding={wedding}
+            weddingId={effectiveWedding.id}
+            wedding={effectiveWedding}
             mediaList={mediaList}
             isLoading={isLoadingMedia}
             error={mediaQueryError ? (mediaQueryError as Error).message : null}
@@ -234,10 +280,10 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
       </main>
 
       {/* Upload Modal Dialog */}
-      {wedding && (
+      {effectiveWedding && (
         <UploadPhotos
-          weddingId={wedding.id}
-          wedding={wedding}
+          weddingId={effectiveWedding.id}
+          wedding={effectiveWedding}
           isOpen={isUploadOpen}
           onOpenChange={setIsUploadOpen}
           onUploadSuccess={handleUploadSuccess}
@@ -245,9 +291,9 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
       )}
 
       {/* Admin Settings Modal */}
-      {wedding && (
+      {effectiveWedding && (
         <AdminModal
-          wedding={wedding}
+          wedding={effectiveWedding}
           isOpen={isAdminOpen}
           onOpenChange={setIsAdminOpen}
           onWeddingUpdated={(_updated) => {

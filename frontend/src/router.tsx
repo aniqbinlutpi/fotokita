@@ -14,6 +14,7 @@ import { DemoGalleryPage } from "./pages/DemoGalleryPage";
 import { AdminControlPage } from "./pages/AdminControlPage";
 import { SubAdminPortalPage } from "./pages/SubAdminPortalPage";
 import { SubscriberRegisterPage } from "./pages/SubscriberRegisterPage";
+import { extractSlugFromSearch } from "@/lib/slug";
 
 // 1. Root Route
 const rootRoute = createRootRoute({
@@ -40,16 +41,8 @@ const indexRoute = createRoute({
     const rawSearch = location.searchStr || window.location.search;
     const urlParams = new URLSearchParams(rawSearch);
     const page = urlParams.get("page");
-    let slug = urlParams.get("slug");
+    const slug = extractSlugFromSearch(rawSearch);
     const weddingId = urlParams.get("weddingId");
-
-    // Support unencoded slugs with '&' in query string e.g. ?slug=abc&def
-    if (slug && !page && !weddingId && !urlParams.has("token")) {
-      const raw = rawSearch.replace(/^\?/, "");
-      if (raw.startsWith("slug=")) {
-        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
-      }
-    }
 
     // Handle legacy query params (?page=admin, ?page=demo, ?page=subadmin etc.)
     if (page === "admin" || page === "adminfotokita") {
@@ -153,14 +146,8 @@ const subAdminRoute = createRoute({
     const location = useLocation();
     const rawSearch = location.searchStr || window.location.search;
     const urlParams = new URLSearchParams(rawSearch);
-    let slug = urlParams.get("slug") || undefined;
+    const slug = extractSlugFromSearch(rawSearch);
     const weddingId = urlParams.get("weddingId") || undefined;
-    if (slug && !weddingId && !urlParams.has("token")) {
-      const raw = rawSearch.replace(/^\?/, "");
-      if (raw.startsWith("slug=")) {
-        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
-      }
-    }
 
     return (
       <SubAdminPortalPage
@@ -181,14 +168,8 @@ const portalRoute = createRoute({
     const location = useLocation();
     const rawSearch = location.searchStr || window.location.search;
     const urlParams = new URLSearchParams(rawSearch);
-    let slug = urlParams.get("slug") || undefined;
+    const slug = extractSlugFromSearch(rawSearch);
     const weddingId = urlParams.get("weddingId") || undefined;
-    if (slug && !weddingId && !urlParams.has("token")) {
-      const raw = rawSearch.replace(/^\?/, "");
-      if (raw.startsWith("slug=")) {
-        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
-      }
-    }
 
     return (
       <SubAdminPortalPage
@@ -209,14 +190,8 @@ const loginRoute = createRoute({
     const location = useLocation();
     const rawSearch = location.searchStr || window.location.search;
     const urlParams = new URLSearchParams(rawSearch);
-    let slug = urlParams.get("slug") || undefined;
+    const slug = extractSlugFromSearch(rawSearch);
     const weddingId = urlParams.get("weddingId") || undefined;
-    if (slug && !weddingId && !urlParams.has("token")) {
-      const raw = rawSearch.replace(/^\?/, "");
-      if (raw.startsWith("slug=")) {
-        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
-      }
-    }
 
     return (
       <SubAdminPortalPage
@@ -286,16 +261,8 @@ const galleryRoute = createRoute({
     const navigate = useNavigate();
     const rawSearch = window.location.search;
     const urlParams = new URLSearchParams(rawSearch);
-    let slug = urlParams.get("slug") || undefined;
+    const slug = extractSlugFromSearch(rawSearch);
     const weddingId = urlParams.get("weddingId") || undefined;
-
-    // Support unencoded slugs with '&' in query string e.g. ?slug=abc&def
-    if (slug && !weddingId && !urlParams.has("token")) {
-      const raw = rawSearch.replace(/^\?/, "");
-      if (raw.startsWith("slug=")) {
-        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
-      }
-    }
 
     return (
       <WeddingGalleryPage
