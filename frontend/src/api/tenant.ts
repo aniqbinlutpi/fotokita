@@ -18,6 +18,8 @@ export interface TenantAccount {
   mediaCleanedUp?: boolean;
 }
 
+export type TextPositionMap = Record<string, { x: number; y: number }>;
+
 export interface TenantCustomization {
   weddingId: string;
   partner1: string;
@@ -37,6 +39,7 @@ export interface TenantCustomization {
   dateSize?: string;
   quoteFont?: string;
   quoteSize?: string;
+  textPositions?: TextPositionMap | null;
   slug?: string;
 }
 

@@ -26,6 +26,7 @@ const updateCustomizationSchema = z.object({
   dateSize: z.string().optional(),
   quoteFont: z.string().optional(),
   quoteSize: z.string().optional(),
+  textPositions: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
   slug: z.string().optional(),
 });
 
@@ -184,6 +185,7 @@ customizationRoute.get("/:identifier", async (c) => {
         dateSize: "13",
         quoteFont: "cormorant",
         quoteSize: "18",
+        textPositions: null as string | null,
         updatedAt: new Date(),
       };
     }
@@ -208,6 +210,7 @@ customizationRoute.get("/:identifier", async (c) => {
     dateSize: "13",
     quoteFont: "cormorant",
     quoteSize: "18",
+    textPositions: null as string | null,
   };
 
   return c.json(
@@ -230,6 +233,17 @@ customizationRoute.get("/:identifier", async (c) => {
       dateSize: active.dateSize || "13",
       quoteFont: active.quoteFont || "cormorant",
       quoteSize: active.quoteSize || "18",
+      textPositions: active.textPositions
+        ? typeof active.textPositions === "string"
+          ? (() => {
+              try {
+                return JSON.parse(active.textPositions);
+              } catch {
+                return active.textPositions;
+              }
+            })()
+          : active.textPositions
+        : null,
       slug: resolvedSlug,
     })
   );
@@ -304,52 +318,69 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
 
   // Persist customization in PostgreSQL using Drizzle ORM upsert
   let savedCustomization: TenantCustomization | null = null;
+  const textPositionsStr =
+    data.textPositions !== undefined
+      ? typeof data.textPositions === "string"
+        ? data.textPositions
+        : JSON.stringify(data.textPositions)
+      : undefined;
+
   try {
+    const insertValues: any = {
+      weddingId,
+      partner1: data.partner1 ?? "",
+      partner2: data.partner2 ?? "",
+      weddingDate: data.weddingDate ?? "2026-10-30",
+      eyebrow: data.eyebrow ?? "- WEDDING ARCHIVE -",
+      tagline: data.tagline ?? "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
+      themePalette: data.themePalette ?? "warmGold",
+      fireworksEnabled: data.fireworksEnabled ?? true,
+      orbStyle: data.orbStyle ?? "warmGoldChocolate",
+      fontPreset: data.fontPreset ?? "editorial-serif",
+      partnerFont: data.partnerFont ?? "cormorant",
+      partnerSize: data.partnerSize ?? "72",
+      eyebrowFont: data.eyebrowFont ?? "inter",
+      eyebrowSize: data.eyebrowSize ?? "12",
+      dateFont: data.dateFont ?? "inter",
+      dateSize: data.dateSize ?? "13",
+      quoteFont: data.quoteFont ?? "cormorant",
+      quoteSize: data.quoteSize ?? "18",
+      updatedAt: new Date(),
+    };
+    if (textPositionsStr !== undefined) {
+      insertValues.textPositions = textPositionsStr;
+    }
+
+    const updateSet: any = {
+      partner1: data.partner1,
+      partner2: data.partner2,
+      weddingDate: data.weddingDate,
+      eyebrow: data.eyebrow,
+      tagline: data.tagline,
+      themePalette: data.themePalette,
+      fireworksEnabled: data.fireworksEnabled,
+      orbStyle: data.orbStyle,
+      fontPreset: data.fontPreset,
+      partnerFont: data.partnerFont,
+      partnerSize: data.partnerSize,
+      eyebrowFont: data.eyebrowFont,
+      eyebrowSize: data.eyebrowSize,
+      dateFont: data.dateFont,
+      dateSize: data.dateSize,
+      quoteFont: data.quoteFont,
+      quoteSize: data.quoteSize,
+      updatedAt: new Date(),
+    };
+    if (textPositionsStr !== undefined) {
+      updateSet.textPositions = textPositionsStr;
+    }
+
     const rows = await db
       .insert(tenantCustomizations)
-      .values({
-        weddingId,
-        partner1: data.partner1 ?? "",
-        partner2: data.partner2 ?? "",
-        weddingDate: data.weddingDate ?? "2026-10-30",
-        eyebrow: data.eyebrow ?? "- WEDDING ARCHIVE -",
-        tagline: data.tagline ?? "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
-        themePalette: data.themePalette ?? "warmGold",
-        fireworksEnabled: data.fireworksEnabled ?? true,
-        orbStyle: data.orbStyle ?? "warmGoldChocolate",
-        fontPreset: data.fontPreset ?? "editorial-serif",
-        partnerFont: data.partnerFont ?? "cormorant",
-        partnerSize: data.partnerSize ?? "72",
-        eyebrowFont: data.eyebrowFont ?? "inter",
-        eyebrowSize: data.eyebrowSize ?? "12",
-        dateFont: data.dateFont ?? "inter",
-        dateSize: data.dateSize ?? "13",
-        quoteFont: data.quoteFont ?? "cormorant",
-        quoteSize: data.quoteSize ?? "18",
-        updatedAt: new Date(),
-      })
+      .values(insertValues)
       .onConflictDoUpdate({
         target: tenantCustomizations.weddingId,
-        set: {
-          partner1: data.partner1,
-          partner2: data.partner2,
-          weddingDate: data.weddingDate,
-          eyebrow: data.eyebrow,
-          tagline: data.tagline,
-          themePalette: data.themePalette,
-          fireworksEnabled: data.fireworksEnabled,
-          orbStyle: data.orbStyle,
-          fontPreset: data.fontPreset,
-          partnerFont: data.partnerFont,
-          partnerSize: data.partnerSize,
-          eyebrowFont: data.eyebrowFont,
-          eyebrowSize: data.eyebrowSize,
-          dateFont: data.dateFont,
-          dateSize: data.dateSize,
-          quoteFont: data.quoteFont,
-          quoteSize: data.quoteSize,
-          updatedAt: new Date(),
-        },
+        set: updateSet,
       })
       .returning();
 
@@ -383,6 +414,17 @@ customizationRoute.put("/:identifier", requireTenantAuth, async (c) => {
       dateSize: savedCustomization.dateSize,
       quoteFont: savedCustomization.quoteFont,
       quoteSize: savedCustomization.quoteSize,
+      textPositions: savedCustomization.textPositions
+        ? typeof savedCustomization.textPositions === "string"
+          ? (() => {
+              try {
+                return JSON.parse(savedCustomization.textPositions);
+              } catch {
+                return savedCustomization.textPositions;
+              }
+            })()
+          : savedCustomization.textPositions
+        : null,
       slug: syncedSlug,
     })
   );

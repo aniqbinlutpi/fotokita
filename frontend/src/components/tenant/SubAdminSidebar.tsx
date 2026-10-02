@@ -24,6 +24,8 @@ import {
   Type,
   Flame,
   Globe,
+  Move,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,6 +93,8 @@ interface TypographyControlProps {
   parseValue: (val?: string) => number;
   onSizeChange: (sizeStr: string) => void;
   filterCategories?: ("serif" | "script" | "sans")[];
+  position?: { x: number; y: number };
+  onResetPosition?: () => void;
 }
 
 const TypographyControl: React.FC<TypographyControlProps> = ({
@@ -106,6 +110,8 @@ const TypographyControl: React.FC<TypographyControlProps> = ({
   parseValue,
   onSizeChange,
   filterCategories,
+  position,
+  onResetPosition,
 }) => {
   const activeFontId = fontValue || defaultFont;
   const currentNum = sizeValue ? parseValue(sizeValue) : defaultSize;
@@ -222,6 +228,26 @@ const TypographyControl: React.FC<TypographyControlProps> = ({
           </button>
         </div>
       </div>
+
+      {position && (position.x !== 0 || position.y !== 0) && (
+        <div className="flex items-center justify-between text-[10px] text-accent-foreground bg-accent/15 px-2 py-1 rounded-md border border-accent/30 animate-in fade-in-50">
+          <span className="flex items-center gap-1 font-mono">
+            <Move className="size-2.5 text-accent" />
+            Position: {position.x > 0 ? `+${position.x}` : position.x}px, {position.y > 0 ? `+${position.y}` : position.y}px
+          </span>
+          {onResetPosition && (
+            <button
+              type="button"
+              onClick={onResetPosition}
+              className="text-[9px] hover:underline flex items-center gap-0.5 cursor-pointer text-muted-foreground hover:text-foreground"
+              title="Reset position to default"
+            >
+              <RotateCcw className="size-2.5" />
+              Reset
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -246,6 +272,10 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const hasCustomPositions = customization.textPositions
+    ? Object.values(customization.textPositions).some((p) => p && (p.x !== 0 || p.y !== 0))
+    : false;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border" {...props}>
@@ -298,6 +328,39 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
       </SidebarHeader>
 
       <SidebarContent className="space-y-4 px-3 py-3">
+        {/* Canvas Drag & Placement Status / Reset */}
+        {hasCustomPositions ? (
+          <div className="p-2.5 rounded-lg bg-accent/10 border border-accent/25 space-y-2 animate-in fade-in-50">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
+                <Move className="size-3 text-accent" />
+                <span>Text Placement</span>
+              </span>
+              <span className="text-[9px] bg-accent/20 text-accent font-semibold px-1.5 py-0.5 rounded">
+                Custom Positions
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Text elements have been repositioned on the preview canvas.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onChangeCustomization({ textPositions: {} })}
+              className="w-full h-7 text-[11px] cursor-pointer gap-1.5 border-dashed"
+            >
+              <RotateCcw className="size-3" />
+              <span>Reset All Positions</span>
+            </Button>
+          </div>
+        ) : (
+          <div className="p-2 rounded-lg bg-muted/40 border border-border/60 text-[10px] text-muted-foreground flex items-center gap-2">
+            <Move className="size-3.5 text-accent shrink-0" />
+            <span>Click & drag any text directly on the canvas to place it anywhere.</span>
+          </div>
+        )}
+
         {/* Section 1: Names & Identity */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 font-medium">
@@ -338,6 +401,13 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={PARTNER_SIZE_CONFIG.step}
               parseValue={parsePartnerSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ partnerSize: sizeStr })}
+              position={customization.textPositions?.partner1 || customization.textPositions?.partner2}
+              onResetPosition={() => {
+                const next = { ...(customization.textPositions || {}) };
+                delete next.partner1;
+                delete next.partner2;
+                onChangeCustomization({ textPositions: next });
+              }}
             />
 
             <div className="space-y-1.5">
@@ -366,6 +436,12 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={DATE_SIZE_CONFIG.step}
               parseValue={parseDateSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ dateSize: sizeStr })}
+              position={customization.textPositions?.date}
+              onResetPosition={() => {
+                const next = { ...(customization.textPositions || {}) };
+                delete next.date;
+                onChangeCustomization({ textPositions: next });
+              }}
             />
 
             <div className="space-y-1.5">
@@ -420,6 +496,12 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={EYEBROW_SIZE_CONFIG.step}
               parseValue={parseEyebrowSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ eyebrowSize: sizeStr })}
+              position={customization.textPositions?.eyebrow}
+              onResetPosition={() => {
+                const next = { ...(customization.textPositions || {}) };
+                delete next.eyebrow;
+                onChangeCustomization({ textPositions: next });
+              }}
             />
 
             <div className="space-y-1.5">
@@ -446,6 +528,12 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={QUOTE_SIZE_CONFIG.step}
               parseValue={parseQuoteSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ quoteSize: sizeStr })}
+              position={customization.textPositions?.quote}
+              onResetPosition={() => {
+                const next = { ...(customization.textPositions || {}) };
+                delete next.quote;
+                onChangeCustomization({ textPositions: next });
+              }}
             />
           </SidebarGroupContent>
         </SidebarGroup>

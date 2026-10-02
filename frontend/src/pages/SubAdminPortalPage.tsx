@@ -236,6 +236,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     dateSize: "13",
     quoteFont: "cormorant",
     quoteSize: "18",
+    textPositions: null,
     slug: activeSlug || tenant?.weddingSlug || "",
   }));
 
@@ -293,6 +294,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             dateSize: data.dateSize || prev.dateSize || "13",
             quoteFont: data.quoteFont || prev.quoteFont || "cormorant",
             quoteSize: data.quoteSize || prev.quoteSize || "18",
+            textPositions: data.textPositions || prev.textPositions || null,
             slug: data.slug || dbWedding?.slug || activeSlug || tenant?.weddingSlug || prev.slug,
           };
         });
@@ -341,6 +343,10 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     const handleWindowMessage = (event: MessageEvent) => {
       if (event.data?.type === "FOTOKITA_PREVIEW_READY") {
         syncCustomizationWithIframe();
+      } else if (event.data?.type === "FOTOKITA_PREVIEW_POSITION_CHANGE" && event.data.textPositions) {
+        handleCustomizationChange({
+          textPositions: event.data.textPositions,
+        });
       }
     };
     window.addEventListener("message", handleWindowMessage);

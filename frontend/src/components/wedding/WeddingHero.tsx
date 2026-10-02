@@ -13,6 +13,7 @@ import {
   getDateFontSizeStyle,
   getQuoteFontSizeStyle,
 } from "@/lib/typography";
+import { DraggableHeroItem } from "./DraggableHeroItem";
 
 const themePresets: Record<string, { orb: any; fireworks: string[] }> = {
   warmGold: {
@@ -78,6 +79,9 @@ export interface WeddingHeroProps {
   quoteFont?: string;
   quoteSize?: string;
   deviceView?: "full" | "mobile" | "tablet";
+  textPositions?: Record<string, { x: number; y: number }> | null;
+  isEditor?: boolean;
+  onTextPositionChange?: (id: string, pos: { x: number; y: number }) => void;
 }
 
 export const WeddingHero: React.FC<WeddingHeroProps> = ({
@@ -100,6 +104,9 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
   quoteFont = "cormorant",
   quoteSize = "normal",
   deviceView,
+  textPositions,
+  isEditor = false,
+  onTextPositionChange,
 }) => {
   const [windowWidth, setWindowWidth] = useState<number>(() => {
     if (typeof window !== "undefined") {
@@ -242,7 +249,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
           >
             {/* Top Eyebrow: customizable */}
             <div
-              className={`absolute left-0 right-0 flex items-center justify-center ${
+              className={`absolute left-0 right-0 flex items-center justify-center pointer-events-auto ${
                 deviceView === "mobile"
                   ? "-top-20"
                   : deviceView === "tablet"
@@ -250,15 +257,23 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   : "-top-20 sm:-top-32 md:-top-40 lg:-top-44"
               }`}
             >
-              <span
-                style={{
-                  fontFamily: getFontFamilyCss(eyebrowFont, "'Inter', sans-serif"),
-                  ...getEyebrowFontSizeStyle(eyebrowSize, deviceView),
-                }}
-                className="uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-medium whitespace-nowrap"
+              <DraggableHeroItem
+                id="eyebrow"
+                label="Eyebrow"
+                position={textPositions?.eyebrow}
+                isEditor={isEditor}
+                onPositionChange={onTextPositionChange}
               >
-                {eyebrow}
-              </span>
+                <span
+                  style={{
+                    fontFamily: getFontFamilyCss(eyebrowFont, "'Inter', sans-serif"),
+                    ...getEyebrowFontSizeStyle(eyebrowSize, deviceView),
+                  }}
+                  className="uppercase tracking-[0.35em] text-[#2F2926]/85 dark:text-[#F5EFEB]/85 font-medium whitespace-nowrap block"
+                >
+                  {eyebrow}
+                </span>
+              </DraggableHeroItem>
             </div>
 
             {/* Middle Row: Partner 1 on Left, Orb in Center, Partner 2 on Right */}
@@ -273,24 +288,42 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                     : "pr-5 sm:pr-16 md:pr-28 lg:pr-36"
                 }`}
               >
-                <h1
-                  style={{
-                    fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
-                    ...getPartnerFontSizeStyle(partnerSize, deviceView),
-                  }}
-                  className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap"
+                <DraggableHeroItem
+                  id="partner1"
+                  label="Partner 1"
+                  position={textPositions?.partner1}
+                  isEditor={isEditor}
+                  onPositionChange={onTextPositionChange}
                 >
-                  {firstName}
-                </h1>
-                <p
-                  style={{
-                    fontFamily: getFontFamilyCss(dateFont, "'Inter', sans-serif"),
-                    ...getDateFontSizeStyle(dateSize, deviceView),
-                  }}
-                  className="text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap mt-1.5 sm:mt-2.5"
+                  <h1
+                    style={{
+                      fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
+                      ...getPartnerFontSizeStyle(partnerSize, deviceView),
+                    }}
+                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap"
+                  >
+                    {firstName}
+                  </h1>
+                </DraggableHeroItem>
+
+                <DraggableHeroItem
+                  id="date"
+                  label="Wedding Date"
+                  position={textPositions?.date}
+                  isEditor={isEditor}
+                  onPositionChange={onTextPositionChange}
+                  className="mt-1.5 sm:mt-2.5"
                 >
-                  {formattedDate}
-                </p>
+                  <p
+                    style={{
+                      fontFamily: getFontFamilyCss(dateFont, "'Inter', sans-serif"),
+                      ...getDateFontSizeStyle(dateSize, deviceView),
+                    }}
+                    className="text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap"
+                  >
+                    {formattedDate}
+                  </p>
+                </DraggableHeroItem>
               </div>
 
               {/* Center Spacer accommodating the 3D Orb and & */}
@@ -314,26 +347,50 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                     : "pl-9 sm:pl-16 md:pl-24 lg:pl-32"
                 }`}
               >
-                <h1
-                  style={{
-                    fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
-                    ...getPartnerFontSizeStyle(partnerSize, deviceView),
-                  }}
-                  className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap"
+                <DraggableHeroItem
+                  id="partner2"
+                  label="Partner 2"
+                  position={textPositions?.partner2}
+                  isEditor={isEditor}
+                  onPositionChange={onTextPositionChange}
                 >
-                  {secondName}
-                </h1>
-                <p
-                  className={`font-sans text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap ${
+                  <h1
+                    style={{
+                      fontFamily: getFontFamilyCss(partnerFont, "'Cormorant Garamond', Georgia, serif"),
+                      ...getPartnerFontSizeStyle(partnerSize, deviceView),
+                    }}
+                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-none drop-shadow-sm whitespace-nowrap"
+                  >
+                    {secondName}
+                  </h1>
+                </DraggableHeroItem>
+
+                <DraggableHeroItem
+                  id="photoCount"
+                  label="Photo Count"
+                  position={textPositions?.photoCount}
+                  isEditor={isEditor}
+                  onPositionChange={onTextPositionChange}
+                  className={
                     deviceView === "mobile"
-                      ? "text-[10.5px] tracking-wide mt-1.5"
+                      ? "mt-1.5"
                       : deviceView === "tablet"
-                      ? "text-xs tracking-wider mt-2.5"
-                      : "text-[10.5px] sm:text-xs md:text-sm tracking-wide sm:tracking-wider mt-1.5 sm:mt-3"
-                  }`}
+                      ? "mt-2.5"
+                      : "mt-1.5 sm:mt-3"
+                  }
                 >
-                  {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
-                </p>
+                  <p
+                    className={`font-sans text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap ${
+                      deviceView === "mobile"
+                        ? "text-[10.5px] tracking-wide"
+                        : deviceView === "tablet"
+                        ? "text-xs tracking-wider"
+                        : "text-[10.5px] sm:text-xs md:text-sm tracking-wide sm:tracking-wider"
+                    }`}
+                  >
+                    {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
+                  </p>
+                </DraggableHeroItem>
               </div>
             </div>
           </div>
@@ -382,15 +439,24 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             {`${firstName} & ${secondName}`}
           </h2>
 
-          <p
-            style={{
-              fontFamily: getFontFamilyCss(quoteFont, "'Cormorant Garamond', Georgia, serif"),
-              ...getQuoteFontSizeStyle(quoteSize, deviceView),
-            }}
-            className="italic text-[#F8F5F0]/95 max-w-lg mx-auto mb-6 drop-shadow"
+          <DraggableHeroItem
+            id="quote"
+            label="Invitation Quote"
+            position={textPositions?.quote}
+            isEditor={isEditor}
+            onPositionChange={onTextPositionChange}
+            className="mb-6"
           >
-            {tagline}
-          </p>
+            <p
+              style={{
+                fontFamily: getFontFamilyCss(quoteFont, "'Cormorant Garamond', Georgia, serif"),
+                ...getQuoteFontSizeStyle(quoteSize, deviceView),
+              }}
+              className="italic text-[#F8F5F0]/95 max-w-lg mx-auto drop-shadow"
+            >
+              {tagline}
+            </p>
+          </DraggableHeroItem>
 
           <div className="flex items-center justify-center gap-4">
             <Button

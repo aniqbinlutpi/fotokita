@@ -100,6 +100,24 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  const handleHeroPositionChange = (id: string, pos: { x: number; y: number }) => {
+    const updatedPositions = {
+      ...(customization?.textPositions || {}),
+      [id]: pos,
+    };
+    setCustomization((prev) => (prev ? { ...prev, textPositions: updatedPositions } : null));
+
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(
+        {
+          type: "FOTOKITA_PREVIEW_POSITION_CHANGE",
+          textPositions: updatedPositions,
+        },
+        "*"
+      );
+    }
+  };
+
   // TanStack Query for Media
   const {
     data: mediaList = [],
@@ -270,6 +288,9 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
             dateSize={customization?.dateSize}
             quoteFont={customization?.quoteFont}
             quoteSize={customization?.quoteSize}
+            textPositions={customization?.textPositions}
+            isEditor={isSubadminPreview}
+            onTextPositionChange={handleHeroPositionChange}
           />
         )}
 

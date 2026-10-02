@@ -72,6 +72,7 @@ export async function initDb(): Promise<void> {
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS date_size TEXT NOT NULL DEFAULT 'normal';`;
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS quote_font TEXT NOT NULL DEFAULT 'cormorant';`;
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS quote_size TEXT NOT NULL DEFAULT 'normal';`;
+    await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS text_positions TEXT;`;
 
     // Index for cleanup query performance
     await client`CREATE INDEX IF NOT EXISTS idx_tenant_media_cleanup ON tenant_accounts (media_expires_at, media_cleaned_up, preserve_media);`;
