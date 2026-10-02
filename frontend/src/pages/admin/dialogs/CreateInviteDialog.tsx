@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,28 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserPlus, Sparkles, Clock, Check, Copy, MessageCircle } from "lucide-react";
+import {
+  UserPlus,
+  Sparkles,
+  Clock,
+  Check,
+  Copy,
+  MessageCircle,
+  Receipt,
+  UploadCloud,
+  FileText,
+  Trash2,
+  AlertCircle,
+} from "lucide-react";
 import type { AdminInvite, SubscriptionTier } from "@/api/admin";
 import { formatTierLabel, getWhatsAppShareUrl } from "../utils";
+
+export interface ReceiptUploadFile {
+  data: string;
+  name: string;
+  type: string;
+  size: number;
+}
 
 interface CreateInviteDialogProps {
   open: boolean;
@@ -22,6 +41,8 @@ interface CreateInviteDialogProps {
   onInviteClientNameChange: (name: string) => void;
   inviteNotes: string;
   onInviteNotesChange: (notes: string) => void;
+  receiptFile: ReceiptUploadFile | null;
+  onReceiptFileChange: (file: ReceiptUploadFile | null) => void;
   isCreatingInvite: boolean;
   onSubmit: (e: React.FormEvent) => void;
   newlyCreatedInvite: AdminInvite | null;
@@ -39,6 +60,8 @@ export function CreateInviteDialog({
   onInviteClientNameChange,
   inviteNotes,
   onInviteNotesChange,
+  receiptFile,
+  onReceiptFileChange,
   isCreatingInvite,
   onSubmit,
   newlyCreatedInvite,
@@ -46,21 +69,72 @@ export function CreateInviteDialog({
   copiedInviteId,
   onCopyInviteUrl,
 }: CreateInviteDialogProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const processFile = (file: File) => {
+    setUploadError(null);
+    const validExtensions = /\.(png|jpe?g|webp|heic|pdf)$/i;
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+    if (!isImage && !isPdf && !validExtensions.test(file.name)) {
+      setUploadError("Please upload an image (PNG, JPG, WEBP) or PDF receipt.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("Receipt file exceeds 10MB size limit. Please choose a smaller file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      onReceiptFileChange({
+        data: reader.result as string,
+        name: file.name,
+        type: file.type || (isPdf ? "application/pdf" : "image/jpeg"),
+        size: file.size,
+      });
+    };
+    reader.onerror = () => {
+      setUploadError("Failed to read file. Please try again.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receiptFile) {
+      setUploadError("Payment receipt is required before generating an invite link.");
+      return;
+    }
+    onSubmit(e);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="size-5 text-accent" />
-            <span>Jana Link Pendaftaran Tenant</span>
+            <span>Generate Tenant Registration Link</span>
           </DialogTitle>
           <DialogDescription>
-            Hasilkan pautan pendaftaran 24 jam berserta pakej langganan yang dikunci khas untuk pelanggan selepas mereka membuat bayaran QR.
+            Generate a 24-hour registration link with a locked subscription plan for the client after they make a QR payment.
           </DialogDescription>
         </DialogHeader>
 
         {!newlyCreatedInvite ? (
-          <form onSubmit={onSubmit} className="space-y-5 py-2">
+          <form onSubmit={handleSubmit} className="space-y-4 py-1">
             {/* 1. Subscription Tier Selection */}
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
@@ -184,7 +258,113 @@ export function CreateInviteDialog({
               </p>
             </div>
 
-            {/* 3. Internal Notes (Optional) */}
+            {/* 3. Payment Receipt Upload (Required for Audit) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <Receipt className="size-3.5 text-accent" />
+                  <span>Payment Receipt Evidence *</span>
+                </label>
+                <span className="text-[10px] text-muted-foreground">
+                  Image or PDF (Max 10MB)
+                </span>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/heic,application/pdf"
+                className="hidden"
+                onChange={handleFileInputChange}
+              />
+
+              {!receiptFile ? (
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) processFile(file);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${
+                    isDragging
+                      ? "border-accent bg-accent/10"
+                      : "border-border hover:border-accent/50 hover:bg-muted/30"
+                  }`}
+                >
+                  <UploadCloud className="size-6 mx-auto text-accent mb-1.5" />
+                  <p className="text-xs font-medium text-foreground">
+                    Click to upload or drag &amp; drop payment receipt
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Proof of payment (QR / bank transfer) required before generating 24h link
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/40">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {receiptFile.type.includes("pdf") ? (
+                      <div className="size-9 rounded-md bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+                        <FileText className="size-5" />
+                      </div>
+                    ) : (
+                      <img
+                        src={receiptFile.data}
+                        alt="Receipt preview"
+                        className="size-9 rounded-md object-cover border shrink-0 bg-background"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate max-w-[220px] sm:max-w-[280px]">
+                        {receiptFile.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                        <span>{(receiptFile.size / 1024).toFixed(0)} KB</span>
+                        <span>•</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                          Receipt ready for audit
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-7 text-xs px-2"
+                    >
+                      Change
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onReceiptFileChange(null)}
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {uploadError && (
+                <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                  <AlertCircle className="size-3 shrink-0" />
+                  <span>{uploadError}</span>
+                </p>
+              )}
+            </div>
+
+            {/* 4. Internal Notes (Optional) */}
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                 Internal Notes / Payment Reference (Optional)
@@ -215,7 +395,7 @@ export function CreateInviteDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={isCreatingInvite}
+                disabled={isCreatingInvite || !receiptFile || !inviteClientName.trim()}
                 className="gap-2 cursor-pointer"
               >
                 <Sparkles className="size-4" />
@@ -236,6 +416,14 @@ export function CreateInviteDialog({
               <p className="text-xs text-muted-foreground">
                 Package <strong>{formatTierLabel(newlyCreatedInvite.tier)}</strong> is locked to this link.
               </p>
+              {(newlyCreatedInvite.receiptFilename || receiptFile?.name) && (
+                <div className="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                  <Receipt className="size-3" />
+                  <span>
+                    Receipt saved: {newlyCreatedInvite.receiptFilename || receiptFile?.name}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">

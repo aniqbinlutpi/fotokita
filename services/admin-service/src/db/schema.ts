@@ -34,9 +34,13 @@ export const tenantInvites = pgTable("tenant_invites", {
   tier: text("tier").notNull(),
   clientName: text("client_name"),
   notes: text("notes"),
+  receiptData: text("receipt_data"),
+  receiptFilename: text("receipt_filename"),
+  receiptMimeType: text("receipt_mime_type"),
   expiresAt: timestamp("expires_at").notNull(),
   isUsed: boolean("is_used").notNull().default(false),
   usedAt: timestamp("used_at"),
   registrationDetails: jsonb("registration_details").$type<TenantRegistrationDetails>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+

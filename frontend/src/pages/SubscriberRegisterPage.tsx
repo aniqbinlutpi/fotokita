@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { checkSlugAvailability, createWedding } from "@/api/wedding";
 import { verifyInviteToken, redeemInviteToken, type SubscriptionTier } from "@/api/admin";
-import { registerTenant } from "@/api/tenant";
+import { registerTenant, updateTenantCustomization } from "@/api/tenant";
 import { toast } from "sonner";
 import {
   Sparkles,
@@ -13,6 +13,7 @@ import {
   Lock,
   Heart,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Globe,
   Database,
@@ -22,6 +23,8 @@ import {
   AlertTriangle,
   MessageCircle,
   LogIn,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,18 +70,19 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   const [tokenRemainingHours, setTokenRemainingHours] = useState<number | null>(null);
   const [lockedPlan, setLockedPlan] = useState<SubscriptionTier | null>(null);
 
-  // Form states
-  const [coupleName, setCoupleName] = useState("");
+  // Form states - Separate names for Groom (Guy) and Bride (Lady)
+  const [groomName, setGroomName] = useState("");
+  const [brideName, setBrideName] = useState("");
   const [slug, setSlug] = useState("");
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
-  const [weddingDate, setWeddingDate] = useState(() => {
-    return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-  });
+  const [weddingDate, setWeddingDate] = useState("");
   const [username, setUsername] = useState("");
   const [isUsernameLocked, setIsUsernameLocked] = useState(false);
   const [subscriberEmail, setSubscriberEmail] = useState("");
-  const [adminPin, setAdminPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>(initialPlan);
 
   // Success view state (NO AUTO LOGIN)
@@ -89,7 +93,6 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   const [slugStatus, setSlugStatus] = useState<{
     checked: boolean;
     available: boolean;
-    message: string;
   } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,8 +102,6 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
     if (!token) return;
 
     let isMounted = true;
-    setIsVerifyingToken(true);
-    setTokenError(null);
 
     verifyInviteToken(token)
       .then((res) => {
@@ -134,27 +135,42 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
     };
   }, [token]);
 
-  // Format string into clean slug
+  // Format string into clean slug (letters, numbers, hyphens, and '&')
   const formatToSlug = (text: string) => {
     return text
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .replace(/[^\w\s-&]/g, "")
+      .replace(/[\s_]+/g, "-")
+      .replace(/-*&-*/g, "&")
+      .replace(/&+/g, "&")
+      .replace(/^[-&]+|[-&]+$/g, "");
   };
 
-  // Auto-generate slug from couple name if not manually edited
-  const handleCoupleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setCoupleName(val);
-    if (!isSlugManuallyEdited) {
-      const generated = formatToSlug(val);
-      setSlug(generated);
-      if (generated.length >= 3) {
-        setIsCheckingSlug(true);
-      }
+  // Auto-generate slug from groom and bride names if not manually edited
+  const updateSlugFromNames = (groom: string, bride: string) => {
+    if (isSlugManuallyEdited) return;
+    const parts: string[] = [];
+    if (groom.trim()) parts.push(groom.trim());
+    if (bride.trim()) parts.push(bride.trim());
+    const combined = parts.join("&");
+    const generated = formatToSlug(combined);
+    setSlug(generated);
+    if (generated.length >= 3) {
+      setIsCheckingSlug(true);
     }
+  };
+
+  const handleGroomNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setGroomName(val);
+    updateSlugFromNames(val, brideName);
+  };
+
+  const handleBrideNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setBrideName(val);
+    updateSlugFromNames(groomName, val);
   };
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,15 +194,11 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         setSlugStatus({
           checked: true,
           available: res.available,
-          message: res.available
-            ? "URL slug ini boleh digunakan!"
-            : "URL slug ini telah didaftarkan. Sila cuba slug yang lain.",
         });
-      } catch (err: any) {
+      } catch {
         setSlugStatus({
           checked: true,
           available: false,
-          message: err?.message || "Gagal menyemak URL slug",
         });
       } finally {
         setIsCheckingSlug(false);
@@ -200,41 +212,53 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!coupleName.trim()) {
-      toast.error("Sila masukkan nama pasangan.");
+    if (!groomName.trim()) {
+      toast.error("Please enter the groom's name.");
+      return;
+    }
+
+    if (!brideName.trim()) {
+      toast.error("Please enter the bride's name.");
       return;
     }
 
     if (!slug.trim()) {
-      toast.error("Sila tentukan URL galeri (slug).");
+      toast.error("Please specify a gallery URL (slug).");
+      return;
+    }
+
+    if (!weddingDate) {
+      toast.error("Please select your wedding event date.");
       return;
     }
 
     if (slugStatus && !slugStatus.available) {
-      toast.error("URL slug ini tidak sah atau telah diambil.");
+      toast.error("This URL slug is invalid or already taken.");
       return;
     }
 
     if (!username.trim()) {
-      toast.error("Sila masukkan username untuk akaun Sub-Admin.");
+      toast.error("Please enter a username for your Sub-Admin account.");
       return;
     }
 
-    if (!adminPin || adminPin.length < 4) {
-      toast.error("PIN / Kata laluan Sub-Admin mestilah sekurang-kurangnya 4 aksara.");
+    if (!adminPassword || adminPassword.length < 4) {
+      toast.error("Sub-Admin password must be at least 4 characters.");
       return;
     }
 
-    if (adminPin !== confirmPin) {
-      toast.error("Pengesahan PIN / Kata laluan tidak sepadan.");
+    if (adminPassword !== confirmPassword) {
+      toast.error("Password confirmation does not match.");
       return;
     }
+
+    const coupleFullName = `${groomName.trim()} & ${brideName.trim()}`;
 
     setIsSubmitting(true);
     try {
       // 1. Create Wedding in wedding-service
       const newWedding = await createWedding({
-        name: coupleName.trim(),
+        name: coupleFullName,
         slug: slug.trim(),
         date: new Date(weddingDate).toISOString(),
       });
@@ -244,7 +268,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         await registerTenant({
           username: username.trim(),
           email: subscriberEmail.trim() || `${username.trim()}@fotokita.my`,
-          password: adminPin.trim(),
+          password: adminPassword.trim(),
           weddingId: newWedding.id,
           weddingSlug: newWedding.slug,
           weddingName: newWedding.name,
@@ -254,7 +278,17 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         console.warn("Could not register tenant account in tenant-service:", regErr);
       }
 
-      // 3. If an invite token was used, redeem it in admin-service (Single-use token burned!)
+      // 3. Initialize customization with separate partner names
+      try {
+        await updateTenantCustomization(newWedding.id, {
+          partner1: groomName.trim(),
+          partner2: brideName.trim(),
+        });
+      } catch {
+        // non-blocking
+      }
+
+      // 4. If an invite token was used, redeem it in admin-service (Single-use token burned!)
       if (token) {
         try {
           await redeemInviteToken({
@@ -270,10 +304,13 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         }
       }
 
-      // 4. Save admin PIN locally for quick sub-admin convenience
+      // 5. Save credentials & names locally for quick sub-admin convenience
       try {
         localStorage.setItem("fotokita_registered_username", username.trim());
-        localStorage.setItem(`fotokita_admin_pin_${newWedding.id}`, adminPin.trim());
+        localStorage.setItem(`fotokita_admin_pin_${newWedding.id}`, adminPassword.trim());
+        localStorage.setItem(`fotokita_admin_password_${newWedding.id}`, adminPassword.trim());
+        localStorage.setItem(`fotokita_partner1_${newWedding.id}`, groomName.trim());
+        localStorage.setItem(`fotokita_partner2_${newWedding.id}`, brideName.trim());
         localStorage.setItem("fotokita_active_wedding_id", newWedding.id);
         if (subscriberEmail) {
           localStorage.setItem(`fotokita_subscriber_${newWedding.id}`, subscriberEmail.trim());
@@ -283,17 +320,17 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         // ignore
       }
 
-      toast.success("Pendaftaran berjaya!", {
-        description: `Galeri anda sedia dilancarkan di fotokita.my/${newWedding.slug}`,
+      toast.success("Registration successful!", {
+        description: `Your gallery is ready to launch at fotokita.my/${newWedding.slug}`,
       });
 
       // NO AUTO LOGIN: Transition to login prompt view
       setRegisteredWedding(newWedding);
     } catch (err: any) {
       console.error("Failed to register:", err);
-      toast.error("Pendaftaran gagal", {
+      toast.error("Registration failed", {
         description:
-          err?.message || "URL slug mungkin telah digunakan atau berlaku ralat sambungan pelayan.",
+          err?.message || "URL slug might already be in use or a server connection error occurred.",
       });
     } finally {
       setIsSubmitting(false);
@@ -306,9 +343,9 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="text-center space-y-4 max-w-sm">
           <Loader2 className="size-8 text-accent animate-spin mx-auto" />
-          <h2 className="text-lg font-serif">Menyemak Link Jemputan...</h2>
+          <h2 className="text-lg font-serif">Verifying Invitation Link...</h2>
           <p className="text-xs text-muted-foreground">
-            Sistem sedang mengesahkan status token pendaftaran dan pakej langganan anda.
+            The system is verifying your registration token status and subscription package.
           </p>
         </div>
       </div>
@@ -318,7 +355,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   // State: Token Error (Expired >24h or Already Used)
   if (token && tokenError) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -331,7 +368,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
             <div>
               <h2 className="text-xl font-serif font-medium text-foreground">
-                Link Pendaftaran Tidak Sah
+                Invalid Registration Link
               </h2>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                 {tokenError}
@@ -341,21 +378,23 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             <div className="p-3.5 rounded-lg bg-muted/40 border text-left text-xs space-y-1.5 text-muted-foreground">
               <div className="flex items-center gap-1.5 font-medium text-foreground">
                 <Clock className="size-3.5 text-accent" />
-                <span>Peraturan Keselamatan Token:</span>
+                <span>Token Security Policy:</span>
               </div>
-              <p>&bull; Link hanya sah selama <strong>24 jam</strong> dari masa dijana oleh admin.</p>
-              <p>&bull; Setiap link adalah <strong>sekali guna sahaja (Single-Use Token)</strong>.</p>
+              <p>&bull; Link is valid for only <strong>24 hours</strong> from generation by admin.</p>
+              <p>&bull; Each link is <strong>single-use only (Single-Use Token)</strong>.</p>
             </div>
 
             <div className="pt-2 flex flex-col gap-2">
               <a
-                href="https://wa.me/?text=Hai%20Admin%20Fotokita,%20link%20pendaftaran%20saya%20sudah%20tamat%20tempoh%20/%20tidak%20sah.%20Boleh%20dapatkan%20link%20baru?"
+                href={`https://wa.me/?text=${encodeURIComponent(
+                  "Hi Fotokita Admin, my registration link has expired or is invalid. Could I get a new link?"
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm"
               >
                 <MessageCircle className="size-4" />
-                <span>Hubungi Admin di WhatsApp</span>
+                <span>Contact Admin on WhatsApp</span>
               </a>
 
               {onCancel && (
@@ -365,7 +404,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                   onClick={onCancel}
                   className="w-full h-10 text-xs uppercase tracking-wider cursor-pointer"
                 >
-                  Kembali ke Laman Utama
+                  Back to Home
                 </Button>
               )}
             </div>
@@ -378,7 +417,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   // State: Registration Success Screen (NO AUTO LOGIN -> Navigate to Sub-Admin Login)
   if (registeredWedding) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -391,13 +430,13 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
             <div className="space-y-2">
               <Badge variant="outline" className="text-[11px] uppercase tracking-widest text-accent">
-                Pendaftaran Berjaya
+                Registration Successful
               </Badge>
               <h2 className="text-2xl sm:text-3xl font-serif text-foreground">
-                Galeri Anda Sedia Digunakan!
+                Your Gallery Is Ready!
               </h2>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                Akaun Sub-Admin dan arkib galeri perkahwinan anda telah selamat didaftarkan.
+                Your Sub-Admin account and wedding gallery archive have been successfully registered.
               </p>
             </div>
 
@@ -405,21 +444,21 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             <div className="p-4 rounded-xl bg-card/60 border border-border text-left space-y-3 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-border">
                 <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
-                  Nama Pasangan
+                  Couple Names
                 </span>
                 <span className="font-medium text-foreground">{registeredWedding.name}</span>
               </div>
 
               <div className="flex justify-between items-center pb-2 border-b border-border">
                 <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
-                  URL Rasmi Galeri
+                  Official Gallery URL
                 </span>
                 <span className="font-mono text-accent">fotokita.my/{registeredWedding.slug}</span>
               </div>
 
               <div className="flex justify-between items-center pb-2 border-b border-border">
                 <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
-                  Username Sub-Admin
+                  Sub-Admin Username
                 </span>
                 <span className="font-mono font-medium text-foreground">@{username}</span>
               </div>
@@ -438,7 +477,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             <div className="p-3 bg-muted/30 rounded-lg text-xs text-muted-foreground flex items-start gap-2 text-left">
               <Lock className="size-4 text-accent shrink-0 mt-0.5" />
               <span>
-                Demi keselamatan akaun, sila <strong>log masuk semula</strong> menggunakan PIN / kata laluan Sub-Admin anda untuk mula mengurus galeri.
+                For account security, please log in again using your Sub-Admin password to start managing your gallery.
               </span>
             </div>
 
@@ -449,7 +488,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
               className="w-full h-12 text-xs uppercase tracking-widest font-semibold cursor-pointer shadow-md gap-2"
             >
               <LogIn className="size-4" />
-              <span>Pergi ke Log Masuk Sub-Admin</span>
+              <span>Proceed to Sub-Admin Login</span>
             </Button>
           </Card>
         </motion.div>
@@ -466,24 +505,42 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         transition={{ duration: 0.5 }}
         className="max-w-2xl mx-auto"
       >
+        {/* Navigation Bar */}
+        {onCancel && (
+          <div className="mb-6">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              className="text-xs text-muted-foreground hover:text-foreground gap-1.5 px-2"
+            >
+              <ArrowLeft className="size-3.5" />
+              <span>Back to Home</span>
+            </Button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8">
           <Badge variant="outline" className="mb-4 gap-1.5 px-3 py-1 text-[11px] uppercase tracking-widest text-accent">
             <Sparkles className="size-3.5" />
-            Pendaftaran Sub-Admin Galeri
+            Gallery Sub-Admin Registration
           </Badge>
           <h1 className="font-serif text-3xl sm:text-4xl text-foreground tracking-wide font-normal">
-            Daftar Galeri Perkahwinan Anda
+            Register Your Wedding Gallery
           </h1>
           <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">
-            Lengkapkan maklumat di bawah untuk melancarkan galeri digital eksklusif anda.
+            Complete the details below to launch your exclusive digital wedding gallery.
           </p>
 
           {/* Active 24h Token Banner */}
           {token && tokenRemainingHours !== null && (
             <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs">
               <Clock className="size-3.5" />
-              <span>Link Sah: Berbaki kira-kira <strong>{tokenRemainingHours} jam</strong> (Single-Use)</span>
+              <span>
+                Valid Link: Approximately <strong>{tokenRemainingHours} hours</strong> remaining (Single-Use)
+              </span>
             </div>
           )}
         </div>
@@ -518,20 +575,38 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         {/* Registration Form Card */}
         <Card className="bg-card p-6 sm:p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 1. Couple Names */}
-            <div>
-              <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                Wedding / Couple Names *
-              </label>
-              <div className="relative">
-                <Input
-                  required
-                  placeholder="e.g. Afiq & Wieam"
-                  value={coupleName}
-                  onChange={handleCoupleNameChange}
-                  className="pr-10"
-                />
-                <Heart className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+            {/* 1. Couple Names: Groom (Guy) & Bride (Lady) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
+                  Groom's Name (Guy) *
+                </label>
+                <div className="relative">
+                  <Input
+                    required
+                    placeholder="e.g. Alex"
+                    value={groomName}
+                    onChange={handleGroomNameChange}
+                    className="pr-10"
+                  />
+                  <User className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
+                  Bride's Name (Lady) *
+                </label>
+                <div className="relative">
+                  <Input
+                    required
+                    placeholder="e.g. Rihana"
+                    value={brideName}
+                    onChange={handleBrideNameChange}
+                    className="pr-10"
+                  />
+                  <Heart className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+                </div>
               </div>
             </div>
 
@@ -553,7 +628,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="afiq-and-wieam"
+                  placeholder="alex&rihana"
                   value={slug}
                   onChange={handleSlugChange}
                   className="flex-1 px-4 py-2.5 bg-background/50 border border-input rounded-r-lg text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors"
@@ -585,7 +660,11 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                   ) : (
                     <XCircle className="size-3.5 shrink-0" />
                   )}
-                  <span>{slugStatus.message}</span>
+                  <span>
+                    {slugStatus.available
+                      ? "This URL slug is available!"
+                      : "This URL slug has already been taken. Please choose another."}
+                  </span>
                 </div>
               )}
             </div>
@@ -601,7 +680,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                   required
                   value={weddingDate}
                   onChange={(e) => setWeddingDate(e.target.value)}
-                  className="pr-10"
+                  className="pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
                 <Calendar className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
               </div>
@@ -729,39 +808,61 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
               </div>
             </div>
 
-            {/* 6. Sub-Admin Password / PIN & Confirmation */}
+            {/* 6. Sub-Admin Password & Confirmation */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Sub-Admin Password / PIN *
+                  Sub-Admin Password *
                 </label>
                 <div className="relative">
                   <Input
                     required
-                    type="password"
-                    placeholder="4-8 digits or password"
-                    value={adminPin}
-                    onChange={(e) => setAdminPin(e.target.value)}
+                    type={showAdminPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
                     className="pr-10 font-mono"
                   />
-                  <Lock className="size-3.5 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPassword((prev) => !prev)}
+                    className="absolute right-2.5 top-2.5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    aria-label={showAdminPassword ? "Hide password" : "Show password"}
+                  >
+                    {showAdminPassword ? (
+                      <EyeOff className="size-4 text-accent" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Confirm Password / PIN *
+                  Confirm Password *
                 </label>
                 <div className="relative">
                   <Input
                     required
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Re-enter password"
-                    value={confirmPin}
-                    onChange={(e) => setConfirmPin(e.target.value)}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pr-10 font-mono"
                   />
-                  <Lock className="size-3.5 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="absolute right-2.5 top-2.5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="size-4 text-accent" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
@@ -775,7 +876,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                   onClick={onCancel}
                   className="w-full sm:w-auto h-11 px-5 uppercase text-xs tracking-wider cursor-pointer"
                 >
-                  Batal
+                  Cancel
                 </Button>
               )}
 
@@ -790,11 +891,11 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    Mendaftar Galeri...
+                    Registering Gallery...
                   </>
                 ) : (
                   <>
-                    <span>Daftar Akaun Sub-Admin</span>
+                    <span>Register Sub-Admin Account</span>
                     <ArrowRight data-icon="inline-end" />
                   </>
                 )}
@@ -806,7 +907,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         {/* Security Assurance Footer */}
         <div className="mt-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
           <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Akaun anda dilindungi dengan pengesahan enkripsi dan pangkalan data terasing.</span>
+          <span>Your account is protected with encrypted authentication and an isolated database tenant.</span>
         </div>
       </motion.div>
     </div>

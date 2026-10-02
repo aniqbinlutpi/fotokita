@@ -21,8 +21,8 @@ export const slugSchema = z
   .min(3, "URL slug mestilah sekurang-kurangnya 3 aksara")
   .max(60, "URL slug tidak boleh melebihi 60 aksara")
   .regex(
-    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-    "URL slug hanya boleh mengandungi huruf kecil, nombor, dan tanda tolak (-)",
+    /^[a-z0-9]+(?:[-&][a-z0-9]+)*$/,
+    "URL slug hanya boleh mengandungi huruf kecil, nombor, tanda tolak (-), dan simbol (&)",
   )
   .refine((val) => !RESERVED_SLUGS.includes(val.toLowerCase()), {
     message: "URL ini adalah kata kunci khas sistem dan tidak boleh digunakan",

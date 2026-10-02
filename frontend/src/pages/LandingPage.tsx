@@ -238,7 +238,7 @@ const itemVariants = {
 export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigateToGallery,
   onNavigateToDemo,
-  onNavigateToRegister,
+  onNavigateToRegister: _onNavigateToRegister,
   onNavigateToSubAdmin,
 }) => {
   // Sub-Admin Login Modal State
@@ -777,20 +777,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               transition={{ duration: 0.6, delay: 0.3 }}
               className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3.5"
             >
-              <Button
-                size="lg"
-                onClick={() => {
-                  if (onNavigateToSubAdmin) {
-                    onNavigateToSubAdmin();
-                  } else {
-                    setIsLoginModalOpen(true);
-                  }
-                }}
-                className="w-full sm:w-auto h-12 px-8 rounded-xl text-xs uppercase tracking-widest font-semibold cursor-pointer shadow-md hover:shadow-lg transition-all gap-2"
-              >
-                <span>Sub-Admin Portal Login</span>
-                <LogIn className="size-4" />
-              </Button>
 
               <a
                 href="?page=demo"

@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { db } from "../db";
 import { tenantInvites, type TenantRegistrationDetails } from "../db/schema";
 
@@ -23,6 +23,10 @@ export interface InviteToken {
   tier: SubscriptionTier;
   clientName?: string;
   notes?: string;
+  hasReceipt?: boolean;
+  receiptFilename?: string;
+  receiptMimeType?: string;
+  receiptData?: string;
   createdAt: number;
   expiresAt: number; // 24 hours from creation
   isUsed: boolean; // strictly single-use
@@ -34,13 +38,20 @@ export type VerifyResult =
   | { valid: true; invite: InviteToken }
   | { valid: false; reason: "not_found" | "already_used" | "expired"; message: string };
 
-function mapInviteRow(row: typeof tenantInvites.$inferSelect): InviteToken {
+function mapInviteRow(
+  row: typeof tenantInvites.$inferSelect,
+  includeReceiptData = false
+): InviteToken {
   return {
     id: row.id,
     token: row.token,
     tier: row.tier as SubscriptionTier,
     clientName: row.clientName || undefined,
     notes: row.notes || undefined,
+    hasReceipt: Boolean(row.receiptData),
+    receiptFilename: row.receiptFilename || undefined,
+    receiptMimeType: row.receiptMimeType || undefined,
+    receiptData: includeReceiptData ? row.receiptData || undefined : undefined,
     createdAt: row.createdAt ? new Date(row.createdAt).getTime() : Date.now(),
     expiresAt: new Date(row.expiresAt).getTime(),
     isUsed: row.isUsed,
@@ -56,6 +67,9 @@ export async function createInviteToken(params: {
   tier: SubscriptionTier;
   clientName?: string;
   notes?: string;
+  receiptData: string;
+  receiptFilename?: string;
+  receiptMimeType?: string;
 }): Promise<InviteToken> {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -71,6 +85,9 @@ export async function createInviteToken(params: {
       tier: params.tier,
       clientName: params.clientName?.trim().toLowerCase() || null,
       notes: params.notes?.trim() || null,
+      receiptData: params.receiptData,
+      receiptFilename: params.receiptFilename || null,
+      receiptMimeType: params.receiptMimeType || null,
       createdAt: now,
       expiresAt,
       isUsed: false,
@@ -86,14 +103,66 @@ export async function createInviteToken(params: {
 
 /**
  * List all invites sorted by createdAt descending.
+ * Omits heavy receiptData to keep payload lightweight and fast.
  */
 export async function listInvites(): Promise<InviteToken[]> {
   const rows = await db
-    .select()
+    .select({
+      id: tenantInvites.id,
+      token: tenantInvites.token,
+      tier: tenantInvites.tier,
+      clientName: tenantInvites.clientName,
+      notes: tenantInvites.notes,
+      hasReceipt: sql<boolean>`CASE WHEN ${tenantInvites.receiptData} IS NOT NULL AND ${tenantInvites.receiptData} != '' THEN true ELSE false END`,
+      receiptFilename: tenantInvites.receiptFilename,
+      receiptMimeType: tenantInvites.receiptMimeType,
+      expiresAt: tenantInvites.expiresAt,
+      isUsed: tenantInvites.isUsed,
+      usedAt: tenantInvites.usedAt,
+      registrationDetails: tenantInvites.registrationDetails,
+      createdAt: tenantInvites.createdAt,
+    })
     .from(tenantInvites)
     .orderBy(desc(tenantInvites.createdAt));
 
-  return rows.map(mapInviteRow);
+  return rows.map((r) => ({
+    id: r.id,
+    token: r.token,
+    tier: r.tier as SubscriptionTier,
+    clientName: r.clientName || undefined,
+    notes: r.notes || undefined,
+    hasReceipt: Boolean(r.hasReceipt),
+    receiptFilename: r.receiptFilename || undefined,
+    receiptMimeType: r.receiptMimeType || undefined,
+    createdAt: r.createdAt ? new Date(r.createdAt).getTime() : Date.now(),
+    expiresAt: new Date(r.expiresAt).getTime(),
+    isUsed: r.isUsed,
+    usedAt: r.usedAt ? new Date(r.usedAt).getTime() : undefined,
+    registrationDetails: r.registrationDetails || undefined,
+  }));
+}
+
+/**
+ * Retrieve payment receipt for a specific invite token (for admin auditing).
+ */
+export async function getInviteReceipt(id: string): Promise<{
+  id: string;
+  receiptData: string | null;
+  receiptFilename: string | null;
+  receiptMimeType: string | null;
+} | null> {
+  const [row] = await db
+    .select({
+      id: tenantInvites.id,
+      receiptData: tenantInvites.receiptData,
+      receiptFilename: tenantInvites.receiptFilename,
+      receiptMimeType: tenantInvites.receiptMimeType,
+    })
+    .from(tenantInvites)
+    .where(eq(tenantInvites.id, id))
+    .limit(1);
+
+  return row || null;
 }
 
 /**

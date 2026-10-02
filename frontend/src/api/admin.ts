@@ -176,6 +176,10 @@ export interface AdminInvite {
   tier: SubscriptionTier;
   clientName?: string;
   notes?: string;
+  hasReceipt?: boolean;
+  receiptFilename?: string;
+  receiptMimeType?: string;
+  receiptData?: string;
   createdAt: number;
   expiresAt: number;
   isUsed: boolean;
@@ -200,6 +204,13 @@ export interface VerifyInviteResponse {
   remainingMs: number;
 }
 
+export interface InviteReceiptResponse {
+  id: string;
+  receiptData: string | null;
+  receiptFilename: string | null;
+  receiptMimeType: string | null;
+}
+
 export async function getAdminInvites(): Promise<AdminInvite[]> {
   const response = await fetch(`${ADMIN_BASE_URL}/invites`, {
     headers: getAuthHeaders(),
@@ -211,6 +222,9 @@ export async function createAdminInvite(params: {
   tier: SubscriptionTier;
   clientName?: string;
   notes?: string;
+  receiptData: string;
+  receiptFilename?: string;
+  receiptMimeType?: string;
 }): Promise<CreateInviteResponse> {
   const response = await fetch(`${ADMIN_BASE_URL}/invites`, {
     method: "POST",
@@ -218,6 +232,13 @@ export async function createAdminInvite(params: {
     body: JSON.stringify(params),
   });
   return handleApiResponse<CreateInviteResponse>(response);
+}
+
+export async function getAdminInviteReceipt(id: string): Promise<InviteReceiptResponse> {
+  const response = await fetch(`${ADMIN_BASE_URL}/invites/${encodeURIComponent(id)}/receipt`, {
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<InviteReceiptResponse>(response);
 }
 
 export async function deleteAdminInvite(id: string): Promise<{ message: string }> {

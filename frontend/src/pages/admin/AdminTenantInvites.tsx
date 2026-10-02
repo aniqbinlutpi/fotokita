@@ -27,6 +27,7 @@ import {
   Copy,
   MessageCircle,
   Trash2,
+  Receipt,
 } from "lucide-react";
 import type { AdminInvite } from "@/api/admin";
 import { formatTierLabel, getWhatsAppShareUrl } from "./utils";
@@ -37,6 +38,7 @@ interface AdminTenantInvitesProps {
   onCopyInviteUrl: (token: string, id: string) => void;
   onDeleteInvite: (id: string) => void;
   onOpenCreateInvite: () => void;
+  onViewReceipt: (invite: AdminInvite) => void;
 }
 
 export function AdminTenantInvites({
@@ -45,6 +47,7 @@ export function AdminTenantInvites({
   onCopyInviteUrl,
   onDeleteInvite,
   onOpenCreateInvite,
+  onViewReceipt,
 }: AdminTenantInvitesProps) {
   return (
     <div className="space-y-6">
@@ -152,6 +155,7 @@ export function AdminTenantInvites({
                 <TableHead>Client / Notes</TableHead>
                 <TableHead>Subscription Plan</TableHead>
                 <TableHead>Token Status (24h)</TableHead>
+                <TableHead>Payment Receipt</TableHead>
                 <TableHead>Tenant Registration Details</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -160,7 +164,7 @@ export function AdminTenantInvites({
               {invites.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-12 text-muted-foreground"
                   >
                     No invite links found. Click &quot;Generate New Link&quot; to get started.
@@ -210,6 +214,32 @@ export function AdminTenantInvites({
                           <Clock className="size-3" />
                           <span>Expired (&gt;24h)</span>
                         </div>
+                      )}
+                    </TableCell>
+
+                    <TableCell className="align-top">
+                      {inv.hasReceipt ? (
+                        <div className="space-y-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onViewReceipt(inv)}
+                            className="h-7 text-xs gap-1.5 border-accent/40 hover:border-accent text-foreground hover:bg-accent/10 cursor-pointer"
+                            title="View payment receipt evidence"
+                          >
+                            <Receipt className="size-3 text-accent" />
+                            <span>Audit Receipt</span>
+                          </Button>
+                          {inv.receiptFilename && (
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[130px]">
+                              {inv.receiptFilename}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">
+                          No receipt
+                        </span>
                       )}
                     </TableCell>
 

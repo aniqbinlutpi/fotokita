@@ -24,7 +24,7 @@ interface WeddingGalleryPageProps {
 export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
   slug: propSlug,
   weddingId: propWeddingId,
-  onOpenRegister,
+  onOpenRegister: _onOpenRegister,
   onNavigateToLanding,
 }) => {
   const urlParams = new URLSearchParams(window.location.search);

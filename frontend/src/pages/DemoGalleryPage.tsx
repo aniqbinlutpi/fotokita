@@ -128,7 +128,7 @@ interface DemoGalleryPageProps {
 }
 
 export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
-  onOpenRegister,
+  onOpenRegister: _onOpenRegister,
   onNavigateToLanding,
 }) => {
   const [isMobile, setIsMobile] = useState<boolean>(() => {

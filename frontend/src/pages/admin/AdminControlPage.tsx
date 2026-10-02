@@ -27,7 +27,8 @@ import { AdminWeddings } from "./AdminWeddings";
 import { AdminSystemServices } from "./AdminSystemServices";
 
 // Dialogs
-import { CreateInviteDialog } from "./dialogs/CreateInviteDialog";
+import { CreateInviteDialog, type ReceiptUploadFile } from "./dialogs/CreateInviteDialog";
+import { ViewReceiptDialog } from "./dialogs/ViewReceiptDialog";
 import { CreateWeddingDialog } from "./dialogs/CreateWeddingDialog";
 import { DeleteWeddingDialog } from "./dialogs/DeleteWeddingDialog";
 
@@ -58,7 +59,6 @@ import {
 import {
   getWeddings,
   createWedding,
-  deleteWedding,
   checkSlugAvailability,
 } from "@/api/wedding";
 import type { Wedding } from "@/types/wedding";
@@ -100,9 +100,14 @@ export function AdminControlPage({
   const [inviteTier, setInviteTier] = useState<SubscriptionTier>("1day");
   const [inviteClientName, setInviteClientName] = useState("");
   const [inviteNotes, setInviteNotes] = useState("");
+  const [receiptFile, setReceiptFile] = useState<ReceiptUploadFile | null>(null);
   const [isCreatingInvite, setIsCreatingInvite] = useState(false);
   const [newlyCreatedInvite, setNewlyCreatedInvite] = useState<AdminInvite | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+
+  // View receipt modal states
+  const [viewReceiptInvite, setViewReceiptInvite] = useState<AdminInvite | null>(null);
+  const [isViewReceiptOpen, setIsViewReceiptOpen] = useState(false);
 
   // Create wedding modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -290,18 +295,26 @@ export function AdminControlPage({
       setInviteTier("1day");
     }
     setNewlyCreatedInvite(null);
+    setReceiptFile(null);
     setIsCreateInviteOpen(true);
   };
 
   // Invite operations
   const handleCreateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!receiptFile) {
+      toast.error("Please upload payment receipt evidence before generating the link.");
+      return;
+    }
     setIsCreatingInvite(true);
     try {
       const res = await createAdminInvite({
         tier: inviteTier,
         clientName: inviteClientName.trim() || undefined,
         notes: inviteNotes.trim() || undefined,
+        receiptData: receiptFile.data,
+        receiptFilename: receiptFile.name,
+        receiptMimeType: receiptFile.type,
       });
       setInvites((prev) => [res.invite, ...prev]);
       setNewlyCreatedInvite(res.invite);
@@ -461,7 +474,7 @@ export function AdminControlPage({
     setIsCleaningUp(true);
     try {
       const res = await triggerAdminMediaCleanup();
-      const count = res.data?.cleanedTenants?.length || 0;
+      const count = res.cleanedTenants?.length || res.processedCount || 0;
       toast.success(
         `Retention cleanup complete: ${count} expired wedding galleries processed.`
       );
@@ -619,7 +632,12 @@ export function AdminControlPage({
                 onDeleteInvite={handleDeleteInvite}
                 onOpenCreateInvite={() => {
                   setNewlyCreatedInvite(null);
+                  setReceiptFile(null);
                   setIsCreateInviteOpen(true);
+                }}
+                onViewReceipt={(inv) => {
+                  setViewReceiptInvite(inv);
+                  setIsViewReceiptOpen(true);
                 }}
               />
             )}
@@ -649,13 +667,20 @@ export function AdminControlPage({
       {/* Dialogs */}
       <CreateInviteDialog
         open={isCreateInviteOpen}
-        onOpenChange={setIsCreateInviteOpen}
+        onOpenChange={(open) => {
+          setIsCreateInviteOpen(open);
+          if (!open) {
+            setReceiptFile(null);
+          }
+        }}
         inviteTier={inviteTier}
         onInviteTierChange={setInviteTier}
         inviteClientName={inviteClientName}
         onInviteClientNameChange={setInviteClientName}
         inviteNotes={inviteNotes}
         onInviteNotesChange={setInviteNotes}
+        receiptFile={receiptFile}
+        onReceiptFileChange={setReceiptFile}
         isCreatingInvite={isCreatingInvite}
         onSubmit={handleCreateInvite}
         newlyCreatedInvite={newlyCreatedInvite}
@@ -663,9 +688,16 @@ export function AdminControlPage({
           setNewlyCreatedInvite(null);
           setInviteClientName("");
           setInviteNotes("");
+          setReceiptFile(null);
         }}
         copiedInviteId={copiedInviteId}
         onCopyInviteUrl={handleCopyInviteUrl}
+      />
+
+      <ViewReceiptDialog
+        open={isViewReceiptOpen}
+        onOpenChange={setIsViewReceiptOpen}
+        invite={viewReceiptInvite}
       />
 
       <CreateWeddingDialog

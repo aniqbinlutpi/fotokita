@@ -32,12 +32,23 @@ export async function initDb(): Promise<void> {
         tier TEXT NOT NULL,
         client_name TEXT,
         notes TEXT,
+        receipt_data TEXT,
+        receipt_filename TEXT,
+        receipt_mime_type TEXT,
         expires_at TIMESTAMP NOT NULL,
         is_used BOOLEAN NOT NULL DEFAULT false,
         used_at TIMESTAMP,
         registration_details JSONB,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       );
+    `;
+
+    // Ensure columns exist if table was already created
+    await client`
+      ALTER TABLE tenant_invites 
+      ADD COLUMN IF NOT EXISTS receipt_data TEXT,
+      ADD COLUMN IF NOT EXISTS receipt_filename TEXT,
+      ADD COLUMN IF NOT EXISTS receipt_mime_type TEXT;
     `;
 
     await client`

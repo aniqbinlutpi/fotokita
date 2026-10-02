@@ -7,6 +7,7 @@ import {
   verifyInviteToken,
   redeemInviteToken,
   deleteInvite,
+  getInviteReceipt,
   type SubscriptionTier,
 } from "../lib/invites";
 import { success, error } from "../lib/response";
@@ -15,9 +16,12 @@ const invitesRoute = new Hono();
 
 // Schema for generating an invite link
 const createInviteSchema = z.object({
-  tier: z.string().min(1, "Sila pilih pakej subscription yang sah"),
+  tier: z.string().min(1, "Please select a valid subscription plan"),
   clientName: z.string().optional(),
   notes: z.string().optional(),
+  receiptData: z.string().min(1, "Payment receipt evidence is required"),
+  receiptFilename: z.string().optional(),
+  receiptMimeType: z.string().optional(),
 });
 
 // Schema for redeeming an invite
@@ -135,26 +139,42 @@ invitesRoute.post("/", requireAdminAuth, async (c) => {
     tier: parsed.data.tier as SubscriptionTier,
     clientName: parsed.data.clientName,
     notes: parsed.data.notes,
+    receiptData: parsed.data.receiptData,
+    receiptFilename: parsed.data.receiptFilename,
+    receiptMimeType: parsed.data.receiptMimeType,
   });
 
   return c.json(
     success({
       invite,
       invitePath: `/register?token=${invite.token}`,
-      message: "Link jemputan sah 24 jam berjaya dihasilkan",
+      message: "24-hour registration link generated successfully",
     }),
     201
   );
 });
 
-// 5. ADMIN PROTECTED: Delete / revoke invite
+// 5. ADMIN PROTECTED: Get payment receipt for audit
+invitesRoute.get("/:id/receipt", requireAdminAuth, async (c) => {
+  const id = c.req.param("id");
+  const receipt = await getInviteReceipt(id);
+
+  if (!receipt || !receipt.receiptData) {
+    return c.json(error("NOT_FOUND", "Payment receipt not found for this invite"), 404);
+  }
+
+  return c.json(success(receipt));
+});
+
+// 6. ADMIN PROTECTED: Delete / revoke invite
 invitesRoute.delete("/:id", requireAdminAuth, async (c) => {
   const id = c.req.param("id");
   const deleted = await deleteInvite(id);
   if (!deleted) {
-    return c.json(error("NOT_FOUND", "Link jemputan tidak dijumpai"), 404);
+    return c.json(error("NOT_FOUND", "Invite link not found"), 404);
   }
-  return c.json(success({ message: "Link jemputan berjaya dipadamkan" }));
+  return c.json(success({ message: "Invite link revoked successfully" }));
 });
 
 export default invitesRoute;
+

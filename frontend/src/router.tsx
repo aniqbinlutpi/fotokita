@@ -13,6 +13,7 @@ import { WeddingGalleryPage } from "./pages/WeddingGalleryPage";
 import { DemoGalleryPage } from "./pages/DemoGalleryPage";
 import { AdminControlPage } from "./pages/AdminControlPage";
 import { SubAdminPortalPage } from "./pages/SubAdminPortalPage";
+import { SubscriberRegisterPage } from "./pages/SubscriberRegisterPage";
 
 // 1. Root Route
 const rootRoute = createRootRoute({
@@ -36,10 +37,19 @@ const indexRoute = createRoute({
   component: function IndexComponent() {
     const navigate = useNavigate();
     const location = useLocation();
-    const urlParams = new URLSearchParams(location.searchStr || window.location.search);
+    const rawSearch = location.searchStr || window.location.search;
+    const urlParams = new URLSearchParams(rawSearch);
     const page = urlParams.get("page");
-    const slug = urlParams.get("slug");
+    let slug = urlParams.get("slug");
     const weddingId = urlParams.get("weddingId");
+
+    // Support unencoded slugs with '&' in query string e.g. ?slug=abc&def
+    if (slug && !page && !weddingId && !urlParams.has("token")) {
+      const raw = rawSearch.replace(/^\?/, "");
+      if (raw.startsWith("slug=")) {
+        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
+      }
+    }
 
     // Handle legacy query params (?page=admin, ?page=demo, ?page=subadmin etc.)
     if (page === "admin" || page === "adminfotokita") {
@@ -63,13 +73,24 @@ const indexRoute = createRoute({
     if (page === "demo") {
       return (
         <DemoGalleryPage
-          onOpenRegister={() => navigate({ to: "/subadmin" } as any)}
+          onOpenRegister={() => navigate({ to: "/register" } as any)}
           onNavigateToLanding={() => navigate({ to: "/" } as any)}
         />
       );
     }
 
-    if (page === "register" || page === "login") {
+    if (page === "register") {
+      const token = urlParams.get("token") || undefined;
+      return (
+        <SubscriberRegisterPage
+          inviteToken={token}
+          onSuccess={() => navigate({ to: "/subadmin" } as any)}
+          onCancel={() => navigate({ to: "/" } as any)}
+        />
+      );
+    }
+
+    if (page === "login") {
       return (
         <SubAdminPortalPage
           onNavigateHome={() => navigate({ to: "/" } as any)}
@@ -83,7 +104,7 @@ const indexRoute = createRoute({
         <WeddingGalleryPage
           slug={slug || undefined}
           weddingId={weddingId || undefined}
-          onOpenRegister={() => navigate({ to: "/subadmin" } as any)}
+          onOpenRegister={() => navigate({ to: "/register" } as any)}
           onNavigateToLanding={() => navigate({ to: "/" } as any)}
         />
       );
@@ -97,7 +118,7 @@ const indexRoute = createRoute({
           navigate({ to: "/subadmin" } as any);
         }}
         onNavigateToRegister={() => {
-          navigate({ to: "/subadmin" } as any);
+          navigate({ to: "/register" } as any);
         }}
       />
     );
@@ -162,6 +183,25 @@ const loginRoute = createRoute({
   },
 });
 
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/register",
+  component: function RegisterComponent() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const urlParams = new URLSearchParams(location.searchStr || window.location.search);
+    const token = urlParams.get("token") || undefined;
+
+    return (
+      <SubscriberRegisterPage
+        inviteToken={token}
+        onSuccess={() => navigate({ to: "/subadmin" } as any)}
+        onCancel={() => navigate({ to: "/" } as any)}
+      />
+    );
+  },
+});
+
 // 5. Admin Routes (/admin & /adminfotokita)
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -197,16 +237,24 @@ const galleryRoute = createRoute({
   path: "/gallery",
   component: function GalleryComponent() {
     const navigate = useNavigate();
-    const location = useLocation();
-    const urlParams = new URLSearchParams(location.searchStr || window.location.search);
-    const slug = urlParams.get("slug") || undefined;
+    const rawSearch = window.location.search;
+    const urlParams = new URLSearchParams(rawSearch);
+    let slug = urlParams.get("slug") || undefined;
     const weddingId = urlParams.get("weddingId") || undefined;
+
+    // Support unencoded slugs with '&' in query string e.g. ?slug=abc&def
+    if (slug && !weddingId && !urlParams.has("token")) {
+      const raw = rawSearch.replace(/^\?/, "");
+      if (raw.startsWith("slug=")) {
+        slug = decodeURIComponent(raw.replace(/^slug=/, ""));
+      }
+    }
 
     return (
       <WeddingGalleryPage
         slug={slug}
         weddingId={weddingId}
-        onOpenRegister={() => navigate({ to: "/subadmin" } as any)}
+        onOpenRegister={() => navigate({ to: "/register" } as any)}
         onNavigateToLanding={() => navigate({ to: "/" } as any)}
       />
     );
@@ -224,7 +272,7 @@ const weddingSlugRoute = createRoute({
     return (
       <WeddingGalleryPage
         slug={slug}
-        onOpenRegister={() => navigate({ to: "/subadmin" } as any)}
+        onOpenRegister={() => navigate({ to: "/register" } as any)}
         onNavigateToLanding={() => navigate({ to: "/" } as any)}
       />
     );
@@ -238,6 +286,7 @@ const routeTree = rootRoute.addChildren([
   subAdminRoute,
   portalRoute,
   loginRoute,
+  registerRoute,
   adminRoute,
   adminFotokitaRoute,
   galleryRoute,
