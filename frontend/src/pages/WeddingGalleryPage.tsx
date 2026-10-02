@@ -52,6 +52,13 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
 
   // Customization styling from tenant-service
   const [customization, setCustomization] = useState<TenantCustomization | null>(null);
+  const [showAlignmentGuides, setShowAlignmentGuides] = useState<boolean>(true);
+  const [showMobileBoundary, setShowMobileBoundary] = useState<boolean>(true);
+  const [deviceView, setDeviceView] = useState<"full" | "mobile" | "tablet">(() => {
+    const p = urlParams.get("deviceView");
+    if (p === "mobile" || p === "tablet" || p === "full") return p;
+    return "full";
+  });
 
   // Compute effective wedding for live preview or active wedding
   const effectiveWedding: Wedding | null = useMemo(() => {
@@ -83,11 +90,24 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
   // Listen for live preview synchronization from parent editor (Sub-Admin Portal)
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === "FOTOKITA_PREVIEW_SYNC" && event.data.customization) {
-        setCustomization((prev) => ({
-          ...prev,
-          ...event.data.customization,
-        }));
+      if (event.data?.type === "FOTOKITA_PREVIEW_SYNC") {
+        if (event.data.customization) {
+          setCustomization((prev) => ({
+            ...prev,
+            ...event.data.customization,
+          }));
+        }
+        if (event.data.deviceView) {
+          setDeviceView(event.data.deviceView);
+        }
+        if (event.data.guides) {
+          if (typeof event.data.guides.showAlignmentGuides === "boolean") {
+            setShowAlignmentGuides(event.data.guides.showAlignmentGuides);
+          }
+          if (typeof event.data.guides.showMobileBoundary === "boolean") {
+            setShowMobileBoundary(event.data.guides.showMobileBoundary);
+          }
+        }
       }
     };
 
@@ -291,6 +311,9 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
             textPositions={customization?.textPositions}
             isEditor={isSubadminPreview}
             onTextPositionChange={handleHeroPositionChange}
+            showAlignmentGuides={showAlignmentGuides}
+            showMobileBoundary={showMobileBoundary}
+            deviceView={deviceView}
           />
         )}
 

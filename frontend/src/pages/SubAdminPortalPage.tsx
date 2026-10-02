@@ -149,6 +149,8 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [selectedPhoneId, setSelectedPhoneId] = useState<string>("iphone-16-pro");
   const [zoomLevel, setZoomLevel] = useState<"fit" | "100" | "85" | "75" | "65">("fit");
+  const [showAlignmentGuides, setShowAlignmentGuides] = useState<boolean>(true);
+  const [showMobileBoundary, setShowMobileBoundary] = useState<boolean>(true);
   const [windowHeight, setWindowHeight] = useState<number>(() =>
     typeof window !== "undefined" ? window.innerHeight : 800
   );
@@ -327,13 +329,17 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
         {
           type: "FOTOKITA_PREVIEW_SYNC",
           customization,
+          guides: {
+            showAlignmentGuides,
+            showMobileBoundary: viewMode === "desktop" ? showMobileBoundary : false,
+          },
         },
         "*"
       );
     } catch {
       // ignore
     }
-  }, [customization]);
+  }, [customization, showAlignmentGuides, showMobileBoundary, viewMode]);
 
   useEffect(() => {
     syncCustomizationWithIframe();
@@ -546,6 +552,11 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
           isSaving={isSaving}
           onLogout={handleLogout}
           onOpenLiveGuestView={handleOpenLiveGuestView}
+          showAlignmentGuides={showAlignmentGuides}
+          onToggleAlignmentGuides={() => setShowAlignmentGuides((v) => !v)}
+          showMobileBoundary={showMobileBoundary}
+          onToggleMobileBoundary={() => setShowMobileBoundary((v) => !v)}
+          viewMode={viewMode}
         />
 
         {/* Main Content Area */}

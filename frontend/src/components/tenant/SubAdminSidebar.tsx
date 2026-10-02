@@ -26,6 +26,7 @@ import {
   Globe,
   Move,
   RotateCcw,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,11 @@ interface SubAdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
   isSaving: boolean;
   onLogout: () => void;
   onOpenLiveGuestView: () => void;
+  showAlignmentGuides?: boolean;
+  onToggleAlignmentGuides?: () => void;
+  showMobileBoundary?: boolean;
+  onToggleMobileBoundary?: () => void;
+  viewMode?: "desktop" | "mobile";
 }
 
 const THEME_OPTIONS = [
@@ -260,6 +266,11 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   isSaving,
   onLogout,
   onOpenLiveGuestView,
+  showAlignmentGuides = true,
+  onToggleAlignmentGuides,
+  showMobileBoundary = true,
+  onToggleMobileBoundary,
+  viewMode = "desktop",
   ...props
 }) => {
   const [copied, setCopied] = React.useState(false);
@@ -328,38 +339,85 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
       </SidebarHeader>
 
       <SidebarContent className="space-y-4 px-3 py-3">
-        {/* Canvas Drag & Placement Status / Reset */}
-        {hasCustomPositions ? (
-          <div className="p-2.5 rounded-lg bg-accent/10 border border-accent/25 space-y-2 animate-in fade-in-50">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
-                <Move className="size-3 text-accent" />
-                <span>Text Placement</span>
-              </span>
+        {/* Canvas Guides & Text Placement */}
+        <div className="p-2.5 rounded-lg bg-sidebar-accent/30 border border-sidebar-border space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
+              <Move className="size-3 text-accent" />
+              <span>Canvas Guides</span>
+            </span>
+            {hasCustomPositions && (
               <span className="text-[9px] bg-accent/20 text-accent font-semibold px-1.5 py-0.5 rounded">
                 Custom Positions
               </span>
+            )}
+          </div>
+
+          {/* Guide toggles */}
+          <div className="flex flex-col gap-1.5">
+            {onToggleAlignmentGuides && (
+              <button
+                type="button"
+                onClick={onToggleAlignmentGuides}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[11px] font-medium border transition-colors cursor-pointer select-none ${
+                  showAlignmentGuides
+                    ? "bg-primary text-primary-foreground border-primary shadow-2xs"
+                    : "bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground border-input"
+                }`}
+                title="Toggle Canva-style snap alignment guides"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-3.5 shrink-0" />
+                  <span>Alignment Guides</span>
+                </div>
+                {showAlignmentGuides && <Check className="size-3.5 shrink-0" />}
+              </button>
+            )}
+
+            {viewMode !== "mobile" && onToggleMobileBoundary && (
+              <button
+                type="button"
+                onClick={onToggleMobileBoundary}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[11px] font-medium border transition-colors cursor-pointer select-none ${
+                  showMobileBoundary
+                    ? "bg-sky-500 text-white border-sky-500 shadow-2xs"
+                    : "bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground border-input"
+                }`}
+                title="Toggle center line and approximate mobile-width zone"
+              >
+                <div className="flex items-center gap-2">
+                  <Smartphone className="size-3.5 shrink-0" />
+                  <span>Mobile Guide</span>
+                </div>
+                {showMobileBoundary && <Check className="size-3.5 shrink-0" />}
+              </button>
+            )}
+          </div>
+
+          {hasCustomPositions ? (
+            <div className="space-y-1.5 pt-0.5">
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                {viewMode === "mobile"
+                  ? "Elements repositioned. Snap lines guide alignment."
+                  : "Elements repositioned. Snap lines and mobile boundary guide alignment."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onChangeCustomization({ textPositions: {} })}
+                className="w-full h-7 text-[11px] cursor-pointer gap-1.5 border-dashed"
+              >
+                <RotateCcw className="size-3" />
+                <span>Reset All Positions</span>
+              </Button>
             </div>
+          ) : (
             <p className="text-[10px] text-muted-foreground leading-relaxed">
-              Text elements have been repositioned on the preview canvas.
+              Drag text freely on the canvas. Snap lines and mobile boundary guide alignment.
             </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onChangeCustomization({ textPositions: {} })}
-              className="w-full h-7 text-[11px] cursor-pointer gap-1.5 border-dashed"
-            >
-              <RotateCcw className="size-3" />
-              <span>Reset All Positions</span>
-            </Button>
-          </div>
-        ) : (
-          <div className="p-2 rounded-lg bg-muted/40 border border-border/60 text-[10px] text-muted-foreground flex items-center gap-2">
-            <Move className="size-3.5 text-accent shrink-0" />
-            <span>Click & drag any text directly on the canvas to place it anywhere.</span>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Section 1: Names & Identity */}
         <SidebarGroup>

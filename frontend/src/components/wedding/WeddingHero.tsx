@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import ScrollExpand from "@/components/ScrollExpand";
 import { Shdr12 } from "@/components/ui/shdr-12";
 import { FireworksBackground } from "@/components/animate-ui/components/backgrounds/fireworks";
@@ -13,7 +13,12 @@ import {
   getDateFontSizeStyle,
   getQuoteFontSizeStyle,
 } from "@/lib/typography";
-import { DraggableHeroItem } from "./DraggableHeroItem";
+import { DraggableHeroItem, type Position } from "./DraggableHeroItem";
+import {
+  CanvasAlignmentGuides,
+  type AlignmentGuideState,
+  DESKTOP_MOBILE_GUIDE_WIDTH,
+} from "./CanvasAlignmentGuides";
 
 const themePresets: Record<string, { orb: any; fireworks: string[] }> = {
   warmGold: {
@@ -82,6 +87,8 @@ export interface WeddingHeroProps {
   textPositions?: Record<string, { x: number; y: number }> | null;
   isEditor?: boolean;
   onTextPositionChange?: (id: string, pos: { x: number; y: number }) => void;
+  showAlignmentGuides?: boolean;
+  showMobileBoundary?: boolean;
 }
 
 export const WeddingHero: React.FC<WeddingHeroProps> = ({
@@ -107,6 +114,8 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
   textPositions,
   isEditor = false,
   onTextPositionChange,
+  showAlignmentGuides: propShowAlignmentGuides,
+  showMobileBoundary: propShowMobileBoundary,
 }) => {
   const [windowWidth, setWindowWidth] = useState<number>(() => {
     if (typeof window !== "undefined") {
@@ -128,6 +137,28 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const [guideState, setGuideState] = useState<AlignmentGuideState | null>(null);
+  const effectiveShowMobileBoundary = propShowMobileBoundary ?? true;
+  const effectiveShowAlignmentGuides = propShowAlignmentGuides ?? true;
+
+  // Ref to the title container div — used to measure actual canvas width
+  // so mobile boundary and center snap work relative to the canvas, not window.
+  const titleContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  useEffect(() => {
+    const el = titleContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setContainerWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    setContainerWidth(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
+
+
   const isMobile = useMemo(() => {
     if (deviceView === "mobile") return true;
     if (deviceView === "tablet") return false;
@@ -139,6 +170,165 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
     if (deviceView === "mobile") return false;
     return windowWidth >= 768 && windowWidth < 1024;
   }, [deviceView, windowWidth]);
+
+  const handleDragMove = useCallback(
+    (id: string, rawOffset: Position, _initialPos: Position, domRect?: DOMRect): Position => {
+      let snappedX = rawOffset.x;
+      let snappedY = rawOffset.y;
+      let snapCenterX = false;
+      let snapCenterY = false;
+      let snapSiblingY = false;
+      let snapSiblingX = false;
+      let siblingLabel = "";
+
+      const SNAP_THRESHOLD = 6;
+
+      // 1. Canvas-center snapping (Canva pink line)
+      // Compare the element's absolute center within the container against the container's own center.
+      // We use the container's DOMRect as the reference frame so this works correctly inside iframes.
+      if (domRect && titleContainerRef.current) {
+        const containerRect = titleContainerRef.current.getBoundingClientRect();
+
+        // Element center relative to container
+        const elCenterX = domRect.left + domRect.width / 2 - containerRect.left;
+        const elCenterY = domRect.top + domRect.height / 2 - containerRect.top;
+
+        // Canvas center
+        const canvasCenterX = containerRect.width / 2;
+        const canvasCenterY = containerRect.height / 2;
+
+        if (Math.abs(elCenterX - canvasCenterX) <= SNAP_THRESHOLD) {
+          // Snap: shift rawOffset.x so element center aligns to canvas center
+          snappedX = rawOffset.x - (elCenterX - canvasCenterX);
+          snapCenterX = true;
+        }
+
+        if (Math.abs(elCenterY - canvasCenterY) <= SNAP_THRESHOLD) {
+          snappedY = rawOffset.y - (elCenterY - canvasCenterY);
+          snapCenterY = true;
+        }
+      }
+
+      // 2. Canva-style sibling alignment snapping
+      if (id === "partner1") {
+        const p2Y = textPositions?.partner2?.y ?? 0;
+        if (Math.abs(snappedY - p2Y) <= SNAP_THRESHOLD) {
+          snappedY = p2Y;
+          snapSiblingY = true;
+          siblingLabel = "Partner 2";
+        }
+      } else if (id === "partner2") {
+        const p1Y = textPositions?.partner1?.y ?? 0;
+        if (Math.abs(snappedY - p1Y) <= SNAP_THRESHOLD) {
+          snappedY = p1Y;
+          snapSiblingY = true;
+          siblingLabel = "Partner 1";
+        }
+      } else if (id === "date") {
+        const p1X = textPositions?.partner1?.x ?? 0;
+        if (Math.abs(snappedX - p1X) <= SNAP_THRESHOLD) {
+          snappedX = p1X;
+          snapSiblingX = true;
+          siblingLabel = "Partner 1";
+        }
+      } else if (id === "photoCount") {
+        const p2X = textPositions?.partner2?.x ?? 0;
+        if (Math.abs(snappedX - p2X) <= SNAP_THRESHOLD) {
+          snappedX = p2X;
+          snapSiblingX = true;
+          siblingLabel = "Partner 2";
+        }
+      }
+
+      // 3. Mobile overflow guard — absolute position vs mobile zone.
+      // Only active in desktop view; on mobile the screen itself is the mobile viewport.
+      let isOutsideMobile = false;
+      let distanceToMobileEdge = 0;
+
+      if (!isMobile && deviceView !== "mobile" && domRect && titleContainerRef.current) {
+        const containerRect = titleContainerRef.current.getBoundingClientRect();
+        const w = containerRect.width;
+        const mobileHalf = Math.min(w, DESKTOP_MOBILE_GUIDE_WIDTH) / 2;
+        const mobileSafeLeft = containerRect.left + w / 2 - mobileHalf;
+        const mobileSafeRight = containerRect.left + w / 2 + mobileHalf;
+
+        if (domRect.left < mobileSafeLeft || domRect.right > mobileSafeRight) {
+          isOutsideMobile = true;
+          distanceToMobileEdge = Math.round(
+            domRect.left < mobileSafeLeft
+              ? mobileSafeLeft - domRect.left
+              : domRect.right - mobileSafeRight
+          );
+        }
+      }
+
+      const labelMap: Record<string, string> = {
+        partner1: "Partner 1",
+        partner2: "Partner 2",
+        date: "Wedding Date",
+        eyebrow: "Eyebrow",
+        photoCount: "Photograph Count",
+        quote: "Tagline Quote",
+      };
+
+      setGuideState({
+        isDragging: true,
+        activeId: id,
+        activeLabel: labelMap[id] || id,
+        currentX: Math.round(snappedX),
+        currentY: Math.round(snappedY),
+        snapCenterX,
+        snapCenterY,
+        snapSiblingY,
+        siblingLabel,
+        snapSiblingX,
+        isOutsideMobile,
+        distanceToMobileEdge,
+      });
+
+      return { x: snappedX, y: snappedY };
+    },
+    [textPositions, isMobile, deviceView]
+  );
+
+  /** IDs of elements whose current drop position falls outside the mobile safe zone */
+  const [outsideMobileIds, setOutsideMobileIds] = useState<Set<string>>(new Set());
+
+  // Clear outside mobile warning badges when in mobile view
+  useEffect(() => {
+    if (isMobile || deviceView === "mobile") {
+      setOutsideMobileIds(new Set());
+    }
+  }, [isMobile, deviceView]);
+
+  const handleDragEnd = useCallback(
+    (id: string, _finalPos: { x: number; y: number }, finalRect?: DOMRect) => {
+      setGuideState(null);
+
+      // In mobile view, no outside-mobile warning is needed as the user directly sees the mobile screen
+      let isOutside = false;
+
+      if (!isMobile && deviceView !== "mobile" && finalRect && titleContainerRef.current) {
+        const containerRect = titleContainerRef.current.getBoundingClientRect();
+        const w = containerRect.width;
+        const mobileHalf = Math.min(w, DESKTOP_MOBILE_GUIDE_WIDTH) / 2;
+        const mobileSafeLeft = containerRect.left + w / 2 - mobileHalf;
+        const mobileSafeRight = containerRect.left + w / 2 + mobileHalf;
+        isOutside = finalRect.left < mobileSafeLeft || finalRect.right > mobileSafeRight;
+      }
+
+      setOutsideMobileIds((prev) => {
+        const next = new Set(prev);
+        if (isOutside) {
+          next.add(id);
+        } else {
+          next.delete(id);
+        }
+        return next;
+      });
+    },
+    [isMobile, deviceView]
+  );
 
   const [firstName, secondName] = useMemo(() => {
     if (partner1Name || partner2Name) {
@@ -239,6 +429,7 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
         }
         title={
           <div
+            ref={titleContainerRef}
             className={`w-full flex flex-col items-center justify-center pointer-events-none select-none max-w-7xl mx-auto relative ${
               deviceView === "mobile"
                 ? "px-2"
@@ -247,6 +438,16 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 : "px-2 sm:px-8 md:px-16"
             }`}
           >
+            {/* Canva Alignment Guides & Mobile View Safe Zone Boundary */}
+            <CanvasAlignmentGuides
+              guideState={guideState}
+              showMobileBoundary={effectiveShowMobileBoundary}
+              showAlignmentGuides={effectiveShowAlignmentGuides}
+              isEditor={isEditor}
+              deviceView={isMobile ? "mobile" : deviceView}
+              containerWidth={containerWidth || undefined}
+            />
+
             {/* Top Eyebrow: customizable */}
             <div
               className={`absolute left-0 right-0 flex items-center justify-center pointer-events-auto ${
@@ -262,7 +463,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                 label="Eyebrow"
                 position={textPositions?.eyebrow}
                 isEditor={isEditor}
+                isOutsideMobile={outsideMobileIds.has("eyebrow")}
                 onPositionChange={onTextPositionChange}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragEnd}
               >
                 <span
                   style={{
@@ -293,7 +497,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   label="Partner 1"
                   position={textPositions?.partner1}
                   isEditor={isEditor}
+                  isOutsideMobile={outsideMobileIds.has("partner1")}
                   onPositionChange={onTextPositionChange}
+                  onDragMove={handleDragMove}
+                  onDragEnd={handleDragEnd}
                 >
                   <h1
                     style={{
@@ -311,7 +518,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   label="Wedding Date"
                   position={textPositions?.date}
                   isEditor={isEditor}
+                  isOutsideMobile={outsideMobileIds.has("date")}
                   onPositionChange={onTextPositionChange}
+                  onDragMove={handleDragMove}
+                  onDragEnd={handleDragEnd}
                   className="mt-1.5 sm:mt-2.5"
                 >
                   <p
@@ -352,7 +562,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   label="Partner 2"
                   position={textPositions?.partner2}
                   isEditor={isEditor}
+                  isOutsideMobile={outsideMobileIds.has("partner2")}
                   onPositionChange={onTextPositionChange}
+                  onDragMove={handleDragMove}
+                  onDragEnd={handleDragEnd}
                 >
                   <h1
                     style={{
@@ -370,7 +583,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
                   label="Photo Count"
                   position={textPositions?.photoCount}
                   isEditor={isEditor}
+                  isOutsideMobile={outsideMobileIds.has("photoCount")}
                   onPositionChange={onTextPositionChange}
+                  onDragMove={handleDragMove}
+                  onDragEnd={handleDragEnd}
                   className={
                     deviceView === "mobile"
                       ? "mt-1.5"
@@ -444,7 +660,10 @@ export const WeddingHero: React.FC<WeddingHeroProps> = ({
             label="Invitation Quote"
             position={textPositions?.quote}
             isEditor={isEditor}
+            isOutsideMobile={outsideMobileIds.has("quote")}
             onPositionChange={onTextPositionChange}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
             className="mb-6"
           >
             <p

@@ -145,62 +145,35 @@ export function parseQuoteSize(sizeStr?: string): number {
   return 18;
 }
 
-// Dynamic CSS style generators ensuring responsive scaling across Mobile, iPad, and Desktop
+// Dynamic CSS style generators ensuring typography matches user setting exactly across F12, real mobile, and preview
 export function getPartnerFontSizeStyle(
   sizeStr?: string,
-  deviceView?: "full" | "mobile" | "tablet"
+  _deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parsePartnerSize(sizeStr);
-  if (deviceView === "mobile") {
-    const mobilePx = Math.max(10, Math.round(base * 0.45));
-    return { fontSize: `${mobilePx}px` };
-  }
-  if (deviceView === "tablet") {
-    const tabletPx = Math.max(14, Math.round(base * 0.70));
-    return { fontSize: `${tabletPx}px` };
-  }
-  // Desktop view: uses the exact font size number specified by the user
   return { fontSize: `${base}px` };
 }
 
 export function getEyebrowFontSizeStyle(
   sizeStr?: string,
-  deviceView?: "full" | "mobile" | "tablet"
+  _deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parseEyebrowSize(sizeStr);
-  if (deviceView === "mobile") {
-    return { fontSize: `${Math.max(8, Math.round(base * 0.88))}px` };
-  }
-  if (deviceView === "tablet") {
-    return { fontSize: `${Math.max(9, Math.round(base * 0.95))}px` };
-  }
   return { fontSize: `${base}px` };
 }
 
 export function getDateFontSizeStyle(
   sizeStr?: string,
-  deviceView?: "full" | "mobile" | "tablet"
+  _deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parseDateSize(sizeStr);
-  if (deviceView === "mobile") {
-    return { fontSize: `${Math.max(8, Math.round(base * 0.85))}px` };
-  }
-  if (deviceView === "tablet") {
-    return { fontSize: `${Math.max(9, Math.round(base * 0.92))}px` };
-  }
   return { fontSize: `${base}px` };
 }
 
 export function getQuoteFontSizeStyle(
   sizeStr?: string,
-  deviceView?: "full" | "mobile" | "tablet"
+  _deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parseQuoteSize(sizeStr);
-  if (deviceView === "mobile") {
-    return { fontSize: `${Math.max(12, Math.round(base * 0.82))}px` };
-  }
-  if (deviceView === "tablet") {
-    return { fontSize: `${Math.max(13, Math.round(base * 0.92))}px` };
-  }
   return { fontSize: `${base}px` };
 }

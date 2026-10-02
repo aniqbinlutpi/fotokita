@@ -11,7 +11,13 @@ export interface DraggableHeroItemProps {
   label: string;
   position?: Position;
   isEditor?: boolean;
+  /** When true, shows a persistent amber warning ring — element is outside mobile safe zone */
+  isOutsideMobile?: boolean;
   onPositionChange?: (id: string, pos: Position) => void;
+  onDragStart?: (id: string, initialPos: Position, rect?: DOMRect) => void;
+  onDragMove?: (id: string, rawOffset: Position, initialPos: Position, rect?: DOMRect) => Position | void;
+  /** finalRect is the element's DOMRect at the moment of pointer-up */
+  onDragEnd?: (id: string, finalPos: Position, finalRect?: DOMRect) => void;
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
@@ -22,11 +28,16 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
   label,
   position = { x: 0, y: 0 },
   isEditor = false,
+  isOutsideMobile = false,
   onPositionChange,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
   children,
   className = "",
   style = {},
 }) => {
+  const domRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [liveOffset, setLiveOffset] = useState<Position>({
     x: position?.x ?? 0,
@@ -57,6 +68,9 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
     hasMoved: false,
   });
 
+  const latestOffsetRef = useRef<Position>(liveOffset);
+  latestOffsetRef.current = liveOffset;
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (!isEditor) return;
@@ -81,6 +95,11 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
 
       setIsDragging(true);
 
+      const rect = domRef.current?.getBoundingClientRect();
+      if (onDragStart) {
+        onDragStart(id, { x: initialX, y: initialY }, rect);
+      }
+
       const handlePointerMove = (moveEvt: PointerEvent) => {
         const deltaX = moveEvt.clientX - startX;
         const deltaY = moveEvt.clientY - startY;
@@ -89,26 +108,35 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           dragStartRef.current.hasMoved = true;
         }
 
-        const newX = Math.round(initialX + deltaX);
-        const newY = Math.round(initialY + deltaY);
+        const rawX = Math.round(initialX + deltaX);
+        const rawY = Math.round(initialY + deltaY);
 
-        setLiveOffset({ x: newX, y: newY });
+        const currentRect = domRef.current?.getBoundingClientRect();
+        const snapped = onDragMove
+          ? onDragMove(id, { x: rawX, y: rawY }, { x: initialX, y: initialY }, currentRect)
+          : undefined;
+
+        const effectivePos = snapped || { x: rawX, y: rawY };
+        latestOffsetRef.current = effectivePos;
+        setLiveOffset(effectivePos);
       };
 
-      const handlePointerUp = (upEvt: PointerEvent) => {
+      const handlePointerUp = () => {
         window.removeEventListener("pointermove", handlePointerMove);
         window.removeEventListener("pointerup", handlePointerUp);
         window.removeEventListener("pointercancel", handlePointerUp);
 
         setIsDragging(false);
 
-        const deltaX = upEvt.clientX - startX;
-        const deltaY = upEvt.clientY - startY;
-        const finalX = Math.round(initialX + deltaX);
-        const finalY = Math.round(initialY + deltaY);
+        const finalPos = latestOffsetRef.current;
+        const finalRect = domRef.current?.getBoundingClientRect();
+
+        if (onDragEnd) {
+          onDragEnd(id, finalPos, finalRect);
+        }
 
         if (dragStartRef.current.hasMoved && onPositionChange) {
-          onPositionChange(id, { x: finalX, y: finalY });
+          onPositionChange(id, finalPos);
         }
       };
 
@@ -116,7 +144,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("pointercancel", handlePointerUp);
     },
-    [isEditor, liveOffset.x, liveOffset.y, id, onPositionChange]
+    [isEditor, liveOffset.x, liveOffset.y, id, onPositionChange, onDragStart, onDragMove, onDragEnd]
   );
 
   const handleResetPosition = (e: React.MouseEvent) => {
@@ -156,10 +184,13 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
 
   return (
     <div
+      ref={domRef}
       onPointerDown={handlePointerDown}
       className={`group relative pointer-events-auto select-none transition-shadow ${
         isDragging
           ? "z-50 cursor-grabbing ring-2 ring-primary/80 shadow-2xl rounded-xl bg-background/30 backdrop-blur-xs scale-[1.02]"
+          : isOutsideMobile && !isDragging
+          ? "cursor-grab outline outline-1 outline-dashed outline-amber-500/80 rounded-xl"
           : "cursor-grab hover:outline hover:outline-1 hover:outline-dashed hover:outline-primary/70 hover:bg-primary/[0.04] rounded-xl"
       } ${className}`}
       style={transformStyle}
@@ -191,6 +222,13 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           </>
         )}
       </div>
+
+      {/* Persistent "outside mobile" warning badge */}
+      {isOutsideMobile && !isDragging && (
+        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-sans font-semibold whitespace-nowrap bg-amber-500 text-white shadow-md pointer-events-none">
+          <span>⚠ Outside mobile</span>
+        </div>
+      )}
 
       {children}
     </div>
