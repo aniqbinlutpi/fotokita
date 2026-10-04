@@ -823,7 +823,7 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
             <ul className="space-y-2 text-xs text-foreground/90">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-accent shrink-0" />
-                <span>Custom wedding URL slug (e.g., fotokita.my/your-names)</span>
+                <span>Custom wedding URL slug (e.g., fotokita.com/your-names)</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-accent shrink-0" />

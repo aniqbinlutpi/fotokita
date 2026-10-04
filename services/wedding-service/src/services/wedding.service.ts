@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { weddings } from "../db/schema";
 import { and, eq, ne, or, sql } from "drizzle-orm";
+import { RESERVED_SLUGS } from "../validators/wedding.validator";
 
 export async function getWeddingBySlug(slug: string) {
   let decoded = slug;
@@ -28,6 +29,9 @@ export async function getWeddingBySlug(slug: string) {
 
 export async function isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
   const normalized = slug.trim().toLowerCase();
+  if (RESERVED_SLUGS.includes(normalized)) {
+    return false;
+  }
   const conditions = [
     or(
       eq(weddings.slug, slug),

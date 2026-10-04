@@ -456,7 +456,7 @@ export function AdminControlPage({
 
   const handleCopyLink = (slug: string, id: string) => {
     const origin = window.location.origin;
-    const url = `${origin}/?slug=${encodeURIComponent(slug)}`;
+    const url = `${origin}/${encodeURI(slug)}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     toast.success("Gallery link copied to clipboard!");
@@ -467,7 +467,7 @@ export function AdminControlPage({
     if (onOpenGallery) {
       onOpenGallery(slug);
     } else {
-      window.open(`/?slug=${encodeURIComponent(slug)}`, "_blank");
+      window.open(`/${encodeURI(slug)}`, "_blank");
     }
   };
 

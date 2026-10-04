@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 import weddings from "./routes/weddings";
 import { error } from "./lib/response";
 
-const app = new Hono();
+const app = new Hono({ strict: false });
 
 // Initialize PostgreSQL database tables on startup
 initDb().catch((err) => {
@@ -39,6 +39,7 @@ app.get("/health", async (c) => {
 });
 
 app.route("/weddings", weddings);
+app.route("/", weddings);
 
 export default {
   port: 3001,

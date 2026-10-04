@@ -15,7 +15,7 @@ import {
 } from "../validators/wedding.validator";
 import { success, error } from "../lib/response";
 
-const app = new Hono();
+const app = new Hono({ strict: false });
 
 app.get("/", async (c) => {
   const result = await getWeddings();
@@ -71,7 +71,7 @@ app.get("/check-slug", async (c) => {
   }
 });
 
-// Lookup wedding by slug (e.g. fotokita.my/ali-dan-siti)
+// Lookup wedding by slug (e.g. fotokita.com/ali-dan-siti)
 app.get("/slug/:slug", async (c) => {
   const slug = c.req.param("slug");
   const wedding = await getWeddingBySlug(slug);

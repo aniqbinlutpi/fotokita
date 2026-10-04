@@ -49,7 +49,7 @@ const indexRoute = createRoute({
       return (
         <AdminControlPage
           onNavigateHome={() => navigate({ to: "/" } as any)}
-          onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
+          onOpenGallery={(s) => openInNewTab(`/${encodeURI(s)}`)}
         />
       );
     }
@@ -60,7 +60,7 @@ const indexRoute = createRoute({
           slug={slug || undefined}
           weddingId={weddingId || undefined}
           onNavigateHome={() => navigate({ to: "/" } as any)}
-          onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
+          onOpenGallery={(s) => openInNewTab(`/${encodeURI(s)}`)}
         />
       );
     }
@@ -91,7 +91,7 @@ const indexRoute = createRoute({
           slug={slug || undefined}
           weddingId={weddingId || undefined}
           onNavigateHome={() => navigate({ to: "/" } as any)}
-          onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
+          onOpenGallery={(s) => openInNewTab(`/${encodeURI(s)}`)}
         />
       );
     }
@@ -154,7 +154,7 @@ const subAdminRoute = createRoute({
         slug={slug}
         weddingId={weddingId}
         onNavigateHome={() => navigate({ to: "/" } as any)}
-        onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
+        onOpenGallery={(s) => openInNewTab(`/${encodeURI(s)}`)}
       />
     );
   },
@@ -176,7 +176,7 @@ const portalRoute = createRoute({
         slug={slug}
         weddingId={weddingId}
         onNavigateHome={() => navigate({ to: "/" } as any)}
-        onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
+        onOpenGallery={(s) => openInNewTab(`/${encodeURI(s)}`)}
       />
     );
   },
@@ -199,7 +199,7 @@ const loginRoute = createRoute({
         weddingId={weddingId}
         onNavigateHome={() => navigate({ to: "/" } as any)}
         onLoginSuccess={() => navigate({ to: "/subadmin" } as any)}
-        onOpenGallery={(s) => openInNewTab(`/?slug=${encodeURIComponent(s)}`)}
+        onOpenGallery={(s) => openInNewTab(`/${encodeURI(s)}`)}
       />
     );
   },
@@ -233,7 +233,7 @@ const adminRoute = createRoute({
     return (
       <AdminControlPage
         onNavigateHome={() => navigate({ to: "/" } as any)}
-        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
+        onOpenGallery={(slug) => openInNewTab(`/${encodeURI(slug)}`)}
       />
     );
   },
@@ -247,7 +247,7 @@ const adminFotokitaRoute = createRoute({
     return (
       <AdminControlPage
         onNavigateHome={() => navigate({ to: "/" } as any)}
-        onOpenGallery={(slug) => openInNewTab(`/?slug=${encodeURIComponent(slug)}`)}
+        onOpenGallery={(slug) => openInNewTab(`/${encodeURI(slug)}`)}
       />
     );
   },
@@ -293,6 +293,24 @@ const weddingSlugRoute = createRoute({
   },
 });
 
+// 7b. Dynamic Wedding Root Slug Route (/$slug, e.g. /hamidah&lutpi or /hamidah-lutpi)
+const rootSlugRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/$slug",
+  component: function RootSlugComponent() {
+    const navigate = useNavigate();
+    const { slug } = useParams({ from: rootSlugRoute.id });
+
+    return (
+      <WeddingGalleryPage
+        slug={slug}
+        onOpenRegister={() => navigate({ to: "/register" } as any)}
+        onNavigateToLanding={() => navigate({ to: "/" } as any)}
+      />
+    );
+  },
+});
+
 // 8. Create Route Tree & Router Instance
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -305,6 +323,7 @@ const routeTree = rootRoute.addChildren([
   adminFotokitaRoute,
   galleryRoute,
   weddingSlugRoute,
+  rootSlugRoute,
 ]);
 
 export const router = createRouter({

@@ -38,7 +38,7 @@ export const PRICING_PLANS: PricingPlanItem[] = [
     code: "Whole Day (RM10)",
     features: [
       { text: "5 GB Cloud Storage (~1,500 HD photos)", highlight: true },
-      { text: "Custom URL (fotokita.my/your-name)" },
+      { text: "Custom URL (fotokita.com/your-name)" },
       { text: "Live Ballroom Screen & Projector Slideshow", highlight: true },
       { text: "Digital Photobooth & Signature Polaroid" },
       { text: "Print-ready table QR card templates" },
