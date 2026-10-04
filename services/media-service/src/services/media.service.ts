@@ -4,6 +4,7 @@ import { db } from "../db";
 import { media } from "../db/schema";
 import {
   deleteFromS3,
+  deleteObjectsFromS3,
   generatePresignedUrl,
   uploadToS3,
 } from "../lib/s3";
@@ -171,6 +172,31 @@ export async function deleteMedia(id: string, code?: string): Promise<DeleteMedi
       code: "DATABASE_ERROR",
       message: "Failed to delete media record from database",
     };
+  }
+}
+
+export async function deleteMediaByWeddingId(weddingId: string): Promise<{ deletedCount: number }> {
+  try {
+    const items = await db
+      .select({ id: media.id, storageKey: media.storageKey })
+      .from(media)
+      .where(eq(media.weddingId, weddingId));
+
+    if (items.length === 0) {
+      return { deletedCount: 0 };
+    }
+
+    // Delete S3 files
+    const keys = items.map((item) => item.storageKey);
+    await deleteObjectsFromS3(keys);
+
+    // Delete database records
+    await db.delete(media).where(eq(media.weddingId, weddingId));
+
+    return { deletedCount: items.length };
+  } catch (err) {
+    console.error(`Failed to delete media for weddingId ${weddingId}:`, err);
+    throw err;
   }
 }
 

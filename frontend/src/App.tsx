@@ -1,7 +1,8 @@
-import { WeddingGalleryPage } from "./pages/WeddingGalleryPage";
+import { RouterProvider } from "@tanstack/react-router";
+import { router } from "./router";
 
 export function App() {
-  return <WeddingGalleryPage />;
+  return <RouterProvider router={router} />;
 }
 
 export default App;

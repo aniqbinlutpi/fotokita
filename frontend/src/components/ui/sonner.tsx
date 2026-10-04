@@ -3,27 +3,28 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { theme = "system", resolvedTheme } = useTheme()
+  const activeTheme = (resolvedTheme || theme) as ToasterProps["theme"]
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={activeTheme}
       className="toaster group"
       icons={{
         success: (
-          <CircleCheckIcon className="size-4" />
+          <CircleCheckIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
         ),
         info: (
-          <InfoIcon className="size-4" />
+          <InfoIcon className="size-4 text-sky-600 dark:text-sky-400" />
         ),
         warning: (
-          <TriangleAlertIcon className="size-4" />
+          <TriangleAlertIcon className="size-4 text-amber-600 dark:text-amber-400" />
         ),
         error: (
-          <OctagonXIcon className="size-4" />
+          <OctagonXIcon className="size-4 text-rose-600 dark:text-rose-400" />
         ),
         loading: (
-          <Loader2Icon className="size-4 animate-spin" />
+          <Loader2Icon className="size-4 animate-spin text-accent" />
         ),
       }}
       style={
@@ -32,11 +33,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
+          "--description-color": "var(--muted-foreground)",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast: "cn-toast group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          title: "!text-foreground font-medium text-sm",
+          description: "!text-muted-foreground text-xs leading-normal mt-0.5",
         },
       }}
       {...props}

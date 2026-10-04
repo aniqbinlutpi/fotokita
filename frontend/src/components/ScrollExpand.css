@@ -58,12 +58,17 @@
   will-change: opacity, transform;
 }
 
+.scroll-expand__behind-orb:has(.cursor-grabbing) {
+  z-index: 999;
+}
+
 .scroll-expand__frame {
   position: absolute;
   inset: 0;
   will-change: clip-path;
   background-color: transparent;
   z-index: 2;
+  pointer-events: none;
 }
 
 .scroll-expand__media {
@@ -76,6 +81,7 @@
   transform-origin: center;
   user-select: none;
   -webkit-user-drag: none;
+  pointer-events: none;
 }
 
 .scroll-expand__orb {
@@ -89,6 +95,10 @@
   pointer-events: none;
   z-index: 5;
   will-change: opacity, transform;
+}
+
+.scroll-expand__orb:has(.cursor-grabbing) {
+  z-index: 999;
 }
 
 .scroll-expand__orb-inner {

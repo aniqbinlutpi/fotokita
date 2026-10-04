@@ -1,6 +1,45 @@
 import { db } from "../db";
 import { weddings } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, ne, or, sql } from "drizzle-orm";
+
+export async function getWeddingBySlug(slug: string) {
+  let decoded = slug;
+  try {
+    decoded = decodeURIComponent(slug);
+  } catch {
+    // ignore
+  }
+
+  const result = await db
+    .select()
+    .from(weddings)
+    .where(
+      or(
+        eq(weddings.slug, slug),
+        eq(weddings.slug, decoded),
+        sql`LOWER(${weddings.slug}) = ${slug.toLowerCase()}`,
+        sql`LOWER(${weddings.slug}) = ${decoded.toLowerCase()}`
+      )
+    )
+    .limit(1);
+
+  return result[0] ?? null;
+}
+
+export async function isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
+  const conditions = [eq(weddings.slug, slug)];
+  if (excludeId) {
+    conditions.push(ne(weddings.id, excludeId));
+  }
+
+  const result = await db
+    .select({ id: weddings.id })
+    .from(weddings)
+    .where(and(...conditions))
+    .limit(1);
+
+  return result.length === 0;
+}
 
 export async function getWeddings() {
   return db.select().from(weddings);

@@ -20,7 +20,11 @@ export interface ScrollExpandProps extends Omit<React.HTMLAttributes<HTMLDivElem
   orb?: React.ReactNode;
   orbSize?: number | string;
   orbOffset?: { x?: number; y?: number };
+  orbShift?: { x?: number; y?: number };
   orbBlendMode?: 'normal' | 'screen' | 'overlay';
+  behindOrbZIndex?: number;
+  orbZIndex?: number;
+  titleZIndex?: number;
   shape?: 'rect' | 'circle';
   circleSize?: number;
   startWidth?: number;
@@ -51,7 +55,11 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
   orb,
   orbSize,
   orbOffset,
+  orbShift,
   orbBlendMode = 'normal',
+  behindOrbZIndex,
+  orbZIndex,
+  titleZIndex,
   shape = 'rect',
   circleSize,
   startWidth = 42,
@@ -89,6 +97,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     circleSize,
     orbSize,
     orbOffset,
+    orbShift,
     startWidth,
     startHeight,
     startRadius,
@@ -129,8 +138,8 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
         D = Math.min(stageW, stageH) * fraction;
       }
 
-      const ox = c.orbOffset?.x ?? 0;
-      const oy = c.orbOffset?.y ?? 0;
+      const ox = (c.orbOffset?.x ?? 0) + (c.orbShift?.x ?? 0);
+      const oy = (c.orbOffset?.y ?? 0) + (c.orbShift?.y ?? 0);
 
       const r0 = D / 2;
       const originX = stageW / 2 + ox;
@@ -177,7 +186,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
         orbRef.current.style.opacity = `${1 - orbOut}`;
         orbRef.current.style.transform = `translate3d(${ox}px, ${oy}px, 0) scale(${orbScale.toFixed(3)})`;
         orbRef.current.style.display = p >= 0.52 ? 'none' : 'flex';
-        orbRef.current.style.pointerEvents = orbOut > 0.5 ? 'none' : 'auto';
+        orbRef.current.style.pointerEvents = 'none';
       }
     } else {
       media.style.opacity = '1';
@@ -189,6 +198,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       const out = smoothstep(0.12, 0.65, p);
       behindOrbRef.current.style.opacity = `${1 - out}`;
       behindOrbRef.current.style.transform = `translate3d(0, ${-24 * out}px, 0) scale(${1 + 0.05 * out})`;
+      behindOrbRef.current.style.display = p >= 0.65 ? 'none' : 'flex';
       behindOrbRef.current.style.pointerEvents = 'none';
     }
 
@@ -196,7 +206,8 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       const out = smoothstep(0.12, 0.65, p);
       titleRef.current.style.opacity = `${1 - out}`;
       titleRef.current.style.transform = `translate3d(0, ${-24 * out}px, 0) scale(${1 + 0.06 * out})`;
-      titleRef.current.style.pointerEvents = out > 0.4 ? 'none' : 'auto';
+      titleRef.current.style.display = p >= 0.65 ? 'none' : 'flex';
+      titleRef.current.style.pointerEvents = 'none';
     }
 
     if (hintRef.current) {
@@ -230,6 +241,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       circleSize,
       orbSize,
       orbOffset,
+      orbShift,
       startWidth,
       startHeight,
       startRadius,
@@ -249,6 +261,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     circleSize,
     orbSize,
     orbOffset,
+    orbShift,
     startWidth,
     startHeight,
     startRadius,
@@ -278,9 +291,28 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     let stageH = 0;
     let running = false;
 
+    const findScrollContainer = (el: HTMLElement | null): HTMLElement | Window => {
+      let cur = el?.parentElement;
+      while (cur && cur !== document.body && cur !== document.documentElement) {
+        const style = window.getComputedStyle(cur);
+        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+          return cur;
+        }
+        cur = cur.parentElement;
+      }
+      return window;
+    };
+
     const measure = () => {
       const c = propsRef.current;
-      stageH = c.useWindowScroll ? window.innerHeight : root.clientHeight;
+      const scrollParent = findScrollContainer(track);
+      if (scrollParent === window) {
+        stageH = window.innerHeight;
+      } else if (scrollParent instanceof HTMLElement) {
+        stageH = scrollParent.clientHeight || window.innerHeight;
+      } else {
+        stageH = root.clientHeight || window.innerHeight;
+      }
       if (stageH <= 0) return;
       stage.style.height = `${stageH}px`;
       track.style.height = `${stageH * (1 + Math.max(0, c.scrollDistance) + Math.max(0, c.holdDistance))}px`;
@@ -298,9 +330,16 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       const c = propsRef.current;
       if (!c.enabled) return 1;
       const span = stageH * Math.max(0.01, c.scrollDistance);
-      if (c.useWindowScroll) {
+      const scrollParent = findScrollContainer(track);
+      if (scrollParent === window) {
         const top = track.getBoundingClientRect().top;
         return clamp(-top / span, 0, 1);
+      }
+      if (scrollParent instanceof HTMLElement) {
+        const containerRect = scrollParent.getBoundingClientRect();
+        const trackRect = track.getBoundingClientRect();
+        const scrolled = containerRect.top - trackRect.top;
+        return clamp(scrolled / span, 0, 1);
       }
       return clamp(root.scrollTop / span, 0, 1);
     };
@@ -345,15 +384,20 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
     current = target;
     applyProgress(current);
 
-    const scroller = useWindowScroll ? window : root;
-    scroller.addEventListener('scroll', onScroll, { passive: true });
+    const scrollParent = findScrollContainer(track);
+    scrollParent.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
     window.addEventListener('resize', onResize);
     const ro = new ResizeObserver(onResize);
     ro.observe(root);
+    if (scrollParent instanceof HTMLElement) {
+      ro.observe(scrollParent);
+    }
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
-      scroller.removeEventListener('scroll', onScroll);
+      scrollParent.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onResize);
       ro.disconnect();
     };
@@ -396,8 +440,8 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
       const fraction = circleSize ?? (isMobile ? 0.82 : 0.52);
       D = Math.min(stageW, stageH) * fraction;
     }
-    const ox = orbOffset?.x ?? 0;
-    const oy = orbOffset?.y ?? 0;
+    const ox = (orbOffset?.x ?? 0) + (orbShift?.x ?? 0);
+    const oy = (orbOffset?.y ?? 0) + (orbShift?.y ?? 0);
     if (typeof window !== 'undefined') {
       const stageW = window.innerWidth;
       const stageH = window.innerHeight;
@@ -422,7 +466,11 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
             </div>
           ) : null}
           {behindOrb ? (
-            <div ref={behindOrbRef} className="scroll-expand__behind-orb">
+            <div
+              ref={behindOrbRef}
+              className="scroll-expand__behind-orb"
+              style={{ zIndex: behindOrbZIndex ?? 1 }}
+            >
               {behindOrb}
             </div>
           ) : null}
@@ -448,6 +496,7 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
               style={{
                 mixBlendMode: orbBlendMode,
                 transform: `translate3d(${orbOffset?.x ?? 0}px, ${orbOffset?.y ?? 0}px, 0)`,
+                zIndex: orbZIndex ?? 5,
               }}
             >
               <div
@@ -466,7 +515,11 @@ export const ScrollExpand: React.FC<ScrollExpandProps> = ({
             </div>
           ) : null}
           {title ? (
-            <div ref={titleRef} className="scroll-expand__title">
+            <div
+              ref={titleRef}
+              className="scroll-expand__title"
+              style={{ zIndex: titleZIndex ?? 20 }}
+            >
               {title}
             </div>
           ) : null}
