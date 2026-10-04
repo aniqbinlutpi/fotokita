@@ -52,6 +52,7 @@ export interface TenantCustomization {
   ampersandSize?: string;
   orbSize?: string;
   textPositions?: TextPositionMap | null;
+  mobileTextPositions?: TextPositionMap | null;
   slug?: string;
 }
 
@@ -151,6 +152,15 @@ export async function getTenantProfile(): Promise<TenantAccount> {
 export async function getTenantCustomization(weddingId: string): Promise<TenantCustomization> {
   const res = await fetch(`${TENANT_BASE_URL}/customization/${encodeURIComponent(weddingId)}`);
   const body = await handleApiResponse<TenantCustomization>(res);
+  if (body.textPositions && typeof body.textPositions === "object") {
+    const raw = body.textPositions as any;
+    if (raw._mobile) {
+      body.mobileTextPositions = raw._mobile;
+      const cleanDesktop = { ...raw };
+      delete cleanDesktop._mobile;
+      body.textPositions = cleanDesktop;
+    }
+  }
   return body;
 }
 
@@ -162,15 +172,33 @@ export async function updateTenantCustomization(
   customization: Partial<TenantCustomization>
 ): Promise<TenantCustomization> {
   const token = getStoredTenantToken();
+  const payload = { ...customization };
+  if (customization.textPositions !== undefined || customization.mobileTextPositions !== undefined) {
+    const desktopPos = { ...(customization.textPositions || {}) };
+    delete (desktopPos as any)._mobile;
+    payload.textPositions = {
+      ...desktopPos,
+      ...(customization.mobileTextPositions ? { _mobile: customization.mobileTextPositions } : {}),
+    };
+  }
   const res = await fetch(`${TENANT_BASE_URL}/customization/${encodeURIComponent(weddingId)}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify(customization),
+    body: JSON.stringify(payload),
   });
 
   const body = await handleApiResponse<TenantCustomization>(res);
+  if (body.textPositions && typeof body.textPositions === "object") {
+    const raw = body.textPositions as any;
+    if (raw._mobile) {
+      body.mobileTextPositions = raw._mobile;
+      const cleanDesktop = { ...raw };
+      delete cleanDesktop._mobile;
+      body.textPositions = cleanDesktop;
+    }
+  }
   return body;
 }

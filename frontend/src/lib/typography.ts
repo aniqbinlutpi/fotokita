@@ -161,44 +161,74 @@ export function parseOrbSize(sizeStr?: string): number {
   return 130;
 }
 
-// Dynamic CSS style generators ensuring typography matches user setting exactly across F12, real mobile, and preview
+// Dynamic CSS style generators ensuring typography matches user setting and scales gracefully on mobile
 export function getPartnerFontSizeStyle(
   sizeStr?: string,
-  _deviceView?: "full" | "mobile" | "tablet"
+  deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parsePartnerSize(sizeStr);
+  if (deviceView === "mobile") {
+    // Proportional mobile size: scaled down so names don't wrap or collide
+    const mobileSize = Math.max(24, Math.min(42, Math.round(base * 0.52)));
+    return { fontSize: `${mobileSize}px` };
+  }
+  if (deviceView === "tablet") {
+    const tabletSize = Math.max(32, Math.min(60, Math.round(base * 0.8)));
+    return { fontSize: `${tabletSize}px` };
+  }
   return { fontSize: `${base}px` };
 }
 
 export function getEyebrowFontSizeStyle(
   sizeStr?: string,
-  _deviceView?: "full" | "mobile" | "tablet"
+  deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parseEyebrowSize(sizeStr);
+  if (deviceView === "mobile") {
+    const mobileSize = Math.max(9, Math.min(11, Math.round(base * 0.85)));
+    return { fontSize: `${mobileSize}px` };
+  }
   return { fontSize: `${base}px` };
 }
 
 export function getDateFontSizeStyle(
   sizeStr?: string,
-  _deviceView?: "full" | "mobile" | "tablet"
+  deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parseDateSize(sizeStr);
+  if (deviceView === "mobile") {
+    const mobileSize = Math.max(10, Math.min(12, Math.round(base * 0.85)));
+    return { fontSize: `${mobileSize}px` };
+  }
   return { fontSize: `${base}px` };
 }
 
 export function getQuoteFontSizeStyle(
   sizeStr?: string,
-  _deviceView?: "full" | "mobile" | "tablet"
+  deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parseQuoteSize(sizeStr);
+  if (deviceView === "mobile") {
+    const mobileSize = Math.max(13, Math.min(16, Math.round(base * 0.85)));
+    return { fontSize: `${mobileSize}px` };
+  }
   return { fontSize: `${base}px` };
 }
 
 export function getAmpersandFontSizeStyle(
   sizeStr?: string,
-  _deviceView?: "full" | "mobile" | "tablet"
+  deviceView?: "full" | "mobile" | "tablet"
 ): { fontSize: string } {
   const base = parseAmpersandSize(sizeStr);
+  if (deviceView === "mobile") {
+    // Desktop default is 380px. On mobile, scale down to elegant 110px-130px range
+    const mobileSize = Math.max(70, Math.min(130, Math.round(base * 0.32)));
+    return { fontSize: `${mobileSize}px` };
+  }
+  if (deviceView === "tablet") {
+    const tabletSize = Math.max(160, Math.min(260, Math.round(base * 0.65)));
+    return { fontSize: `${tabletSize}px` };
+  }
   return { fontSize: `${base}px` };
 }
 

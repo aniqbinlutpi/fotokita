@@ -31,6 +31,8 @@ import {
 import { toast } from "sonner";
 import { SubAdminSidebar } from "@/components/tenant/SubAdminSidebar";
 import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
+import { SubAdminDesktopCanvas } from "@/components/tenant/SubAdminDesktopCanvas";
+import { SubAdminMobileCanvas } from "@/components/tenant/SubAdminMobileCanvas";
 import {
   getStoredTenantToken,
   getStoredTenantUser,
@@ -241,6 +243,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     ampersandSize: "380",
     orbSize: "130",
     textPositions: null,
+    mobileTextPositions: null,
     slug: activeSlug || tenant?.weddingSlug || "",
   }));
 
@@ -301,6 +304,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             ampersandSize: data.ampersandSize || prev.ampersandSize || "380",
             orbSize: data.orbSize || prev.orbSize || "130",
             textPositions: data.textPositions || prev.textPositions || null,
+            mobileTextPositions: data.mobileTextPositions || prev.mobileTextPositions || null,
             slug: data.slug || dbWedding?.slug || activeSlug || tenant?.weddingSlug || prev.slug,
           };
         });
@@ -333,6 +337,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
         {
           type: "FOTOKITA_PREVIEW_SYNC",
           customization,
+          deviceView: viewMode === "mobile" ? "mobile" : "full",
           guides: {
             showAlignmentGuides,
             showMobileBoundary: viewMode === "desktop" ? showMobileBoundary : false,
@@ -354,8 +359,9 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
       if (event.data?.type === "FOTOKITA_PREVIEW_READY") {
         syncCustomizationWithIframe();
       } else if (event.data?.type === "FOTOKITA_PREVIEW_POSITION_CHANGE" && event.data.textPositions) {
+        const key = event.data.targetKey || (viewMode === "mobile" ? "mobileTextPositions" : "textPositions");
         handleCustomizationChange({
-          textPositions: event.data.textPositions,
+          [key]: event.data.textPositions,
         });
       }
     };
@@ -477,7 +483,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   // Preview URL pointing to WeddingGalleryPage inside iframe
   const currentSlug = customization.slug || dbWedding?.slug || tenant?.weddingSlug || activeSlug || "wedding";
   const finalWeddingId = dbWedding?.id || tenant?.weddingId || customization.weddingId || activeWeddingId;
-  const previewIframeUrl = `/?slug=${encodeURIComponent(currentSlug)}${finalWeddingId ? `&weddingId=${encodeURIComponent(finalWeddingId)}` : ""}&preview=subadmin`;
+  const previewIframeUrl = `/?slug=${encodeURIComponent(currentSlug)}${finalWeddingId ? `&weddingId=${encodeURIComponent(finalWeddingId)}` : ""}&preview=subadmin&deviceView=${viewMode === "mobile" ? "mobile" : "full"}`;
 
   const guestPublicUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/?slug=${encodeURIComponent(currentSlug)}`;
 
@@ -677,167 +683,30 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             </div>
           </header>
 
-          {/* Main Visual Canvas: Responsive Desktop or Scaled Mobile Phone Simulator */}
+          {/* Main Visual Canvas: Dedicated Responsive Desktop or Scaled Mobile Phone Simulator */}
           <main className="flex-1 overflow-auto bg-[#F2EDE4] dark:bg-[#0D0B0A] p-4 sm:p-6 flex items-center justify-center transition-colors relative">
             {viewMode === "desktop" ? (
-              <div className="w-full h-full rounded-lg border border-border shadow-xs overflow-hidden bg-background">
-                <iframe
-                  ref={iframeRef}
-                  src={previewIframeUrl}
-                  key="desktop-preview"
-                  title="Live Guest View Simulator - Desktop"
-                  onLoad={() => syncCustomizationWithIframe()}
-                  className="w-full h-full border-0 bg-[#F8F5F0] dark:bg-[#12100E]"
-                />
-              </div>
+              <SubAdminDesktopCanvas
+                iframeRef={iframeRef}
+                previewIframeUrl={previewIframeUrl}
+                onIframeLoad={syncCustomizationWithIframe}
+              />
             ) : (
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 max-h-full">
-                {/* Clean Mobile Viewport (Tanpa Fake Bezel / Status Bar) */}
-                <div
-                  style={{
-                    width: `${Math.round(selectedPhone.width * activeScale)}px`,
-                    height: `${Math.round(totalPhoneHeight * activeScale)}px`,
-                  }}
-                  className="relative shrink-0 rounded-2xl shadow-2xl border border-border/80 overflow-hidden bg-background ring-1 ring-black/5 dark:ring-white/10"
-                >
-                  <div
-                    style={{
-                      width: `${selectedPhone.width}px`,
-                      height: `${totalPhoneHeight}px`,
-                      transform: `scale(${activeScale})`,
-                      transformOrigin: "top left",
-                    }}
-                    className="absolute top-0 left-0 transition-transform duration-200"
-                  >
-                    {/* Live Guest View Iframe (100% Full Mobile Viewport) */}
-                    <iframe
-                      ref={iframeRef}
-                      src={previewIframeUrl}
-                      key={selectedPhone.id}
-                      title="Live Guest View Simulator"
-                      onLoad={() => {
-                        syncCustomizationWithIframe();
-                      }}
-                      className="w-full h-full border-0 bg-[#F8F5F0] dark:bg-[#12100E]"
-                    />
-                  </div>
-                </div>
-
-                {/* Side Device Controller (Beside Device) */}
-                <div className="flex flex-col gap-3 bg-card/95 backdrop-blur-md border border-border shadow-xl rounded-2xl p-3.5 w-60 shrink-0 text-xs animate-in fade-in-50">
-                  {/* Header */}
-                  <div className="flex items-center justify-between pb-1 border-b border-border/50">
-                    <div className="flex items-center gap-1.5 text-foreground font-semibold">
-                      {selectedPhone.category === "tablet" ? (
-                        <Tablet className="size-3.5 text-primary" />
-                      ) : (
-                        <Smartphone className="size-3.5 text-primary" />
-                      )}
-                      <span>Select Device</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-muted-foreground bg-muted/70 px-1.5 py-0.5 rounded">
-                      {selectedPhone.resolutionLabel}
-                    </span>
-                  </div>
-
-                  {/* Device List */}
-                  <div className="space-y-1">
-                    {PHONE_PROFILES.map((phone) => {
-                      const isSelected = selectedPhoneId === phone.id;
-                      return (
-                        <button
-                          key={phone.id}
-                          type="button"
-                          onClick={() => setSelectedPhoneId(phone.id)}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer text-left ${
-                            isSelected
-                              ? "bg-foreground text-background font-medium shadow-xs"
-                              : "hover:bg-muted/70 text-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            {phone.category === "tablet" ? (
-                              <Tablet
-                                className={`size-3.5 shrink-0 ${
-                                  isSelected ? "text-background" : "text-blue-500 dark:text-blue-400"
-                                }`}
-                              />
-                            ) : phone.brand === "Apple" ? (
-                              <Apple
-                                className={`size-3.5 shrink-0 ${
-                                  isSelected ? "text-background" : "text-foreground"
-                                }`}
-                              />
-                            ) : (
-                              <Smartphone
-                                className={`size-3.5 shrink-0 ${
-                                  isSelected ? "text-emerald-300" : "text-emerald-500"
-                                }`}
-                              />
-                            )}
-                            <span className="truncate">{phone.name}</span>
-                          </div>
-                          {isSelected && (
-                            <Check className="size-3.5 shrink-0 ml-1 text-primary-foreground" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="h-px bg-border/60" />
-
-                  {/* Zoom Scale Switcher */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Display Zoom
-                      </span>
-                      <span className="text-[10px] font-mono text-muted-foreground">
-                        {Math.round(activeScale * 100)}%
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/50 text-[11px]">
-                      {(["fit", "65", "75", "100"] as const).map((z) => (
-                        <button
-                          key={z}
-                          type="button"
-                          onClick={() => setZoomLevel(z)}
-                          className={`py-1 rounded text-center transition-colors cursor-pointer capitalize ${
-                            zoomLevel === z
-                              ? "bg-background shadow-xs font-semibold text-foreground"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {z === "fit" ? "Fit" : `${z}%`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Quick Actions (Refresh / Test Phone) */}
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRefreshPreview}
-                      className="flex-1 text-xs h-7.5 cursor-pointer gap-1.5"
-                    >
-                      <RotateCcw className="size-3" />
-                      <span>Refresh</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsQrModalOpen(true)}
-                      className="flex-1 text-xs h-7.5 cursor-pointer gap-1.5"
-                    >
-                      <QrCode className="size-3" />
-                      <span>QR Code</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <SubAdminMobileCanvas
+                iframeRef={iframeRef}
+                previewIframeUrl={previewIframeUrl}
+                onIframeLoad={syncCustomizationWithIframe}
+                selectedPhone={selectedPhone}
+                selectedPhoneId={selectedPhoneId}
+                onSelectPhoneId={setSelectedPhoneId}
+                phoneProfiles={PHONE_PROFILES}
+                activeScale={activeScale}
+                totalPhoneHeight={totalPhoneHeight}
+                zoomLevel={zoomLevel}
+                onSelectZoomLevel={setZoomLevel}
+                onRefreshPreview={handleRefreshPreview}
+                onOpenQrModal={() => setIsQrModalOpen(true)}
+              />
             )}
           </main>
         </SidebarInset>

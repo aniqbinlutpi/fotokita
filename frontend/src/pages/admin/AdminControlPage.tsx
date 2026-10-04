@@ -597,6 +597,8 @@ export function AdminControlPage({
               <AdminDashboard
                 weddings={weddings}
                 inquiries={inquiries}
+                invites={invites}
+                tenantAccounts={tenantAccounts}
                 stats={stats}
                 systemPings={systemPings}
                 copiedId={copiedId}

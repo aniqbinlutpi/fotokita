@@ -120,22 +120,29 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  const isMobileLayout =
+    deviceView === "mobile" ||
+    (deviceView !== "tablet" && typeof window !== "undefined" && window.innerWidth < 768);
+
   const handleHeroPositionChange = (
     id: string,
     pos: { x: number; y: number; zIndex?: number; locked?: boolean }
   ) => {
-    const current = customization?.textPositions?.[id] || { x: 0, y: 0 };
+    const targetKey = isMobileLayout ? "mobileTextPositions" : "textPositions";
+    const currentPositions = (customization as any)?.[targetKey] || {};
+    const current = currentPositions[id] || { x: 0, y: 0 };
     const mergedPos = { ...current, ...pos };
     const updatedPositions = {
-      ...(customization?.textPositions || {}),
+      ...currentPositions,
       [id]: mergedPos,
     };
-    setCustomization((prev) => (prev ? { ...prev, textPositions: updatedPositions } : null));
+    setCustomization((prev) => (prev ? { ...prev, [targetKey]: updatedPositions } : null));
 
     if (window.parent && window.parent !== window) {
       window.parent.postMessage(
         {
           type: "FOTOKITA_PREVIEW_POSITION_CHANGE",
+          targetKey,
           textPositions: updatedPositions,
         },
         "*"
@@ -315,7 +322,7 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
             quoteSize={customization?.quoteSize}
             ampersandSize={customization?.ampersandSize}
             orbSize={customization?.orbSize}
-            textPositions={customization?.textPositions}
+            textPositions={isMobileLayout ? customization?.mobileTextPositions || null : customization?.textPositions || null}
             isEditor={isSubadminPreview}
             onTextPositionChange={handleHeroPositionChange}
             showAlignmentGuides={showAlignmentGuides}

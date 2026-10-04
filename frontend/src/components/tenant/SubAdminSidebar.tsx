@@ -545,9 +545,17 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const hasCustomPositions = customization.textPositions
-    ? Object.values(customization.textPositions).some((p) => p && (p.x !== 0 || p.y !== 0))
-    : false;
+  const currentPositionsKey = viewMode === "mobile" ? "mobileTextPositions" : "textPositions";
+  const activePositions: Record<string, any> =
+    (viewMode === "mobile" ? customization.mobileTextPositions : customization.textPositions) || {};
+
+  const hasCustomPositions = Object.values(activePositions).some((p) => p && (p.x !== 0 || p.y !== 0));
+
+  const updatePositions = (updated: Record<string, any>) => {
+    onChangeCustomization({
+      [currentPositionsKey]: updated,
+    });
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border" {...props}>
@@ -666,11 +674,11 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => onChangeCustomization({ textPositions: {} })}
+                onClick={() => updatePositions({})}
                 className="w-full h-7 text-[11px] cursor-pointer gap-1.5 border-dashed"
               >
                 <RotateCcw className="size-3" />
-                <span>Reset All Positions</span>
+                <span>Reset {viewMode === "mobile" ? "Mobile" : "Desktop"} Positions</span>
               </Button>
             </div>
           ) : (
@@ -729,18 +737,16 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
                       key={align}
                       type="button"
                       onClick={() => {
-                        onChangeCustomization({
-                          textPositions: {
-                            ...(customization.textPositions || {}),
-                            partner1: {
-                              ...(customization.textPositions?.partner1 || { x: 0, y: 0 }),
-                              textAlign: align,
-                            },
+                        updatePositions({
+                          ...activePositions,
+                          partner1: {
+                            ...(activePositions.partner1 || { x: 0, y: 0 }),
+                            textAlign: align,
                           },
                         });
                       }}
                       className={`flex-1 py-1 rounded flex items-center justify-center cursor-pointer transition-colors ${
-                        (customization.textPositions?.partner1?.textAlign || "right") === align
+                        (activePositions.partner1?.textAlign || "right") === align
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
@@ -762,18 +768,16 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
                       key={align}
                       type="button"
                       onClick={() => {
-                        onChangeCustomization({
-                          textPositions: {
-                            ...(customization.textPositions || {}),
-                            partner2: {
-                              ...(customization.textPositions?.partner2 || { x: 0, y: 0 }),
-                              textAlign: align,
-                            },
+                        updatePositions({
+                          ...activePositions,
+                          partner2: {
+                            ...(activePositions.partner2 || { x: 0, y: 0 }),
+                            textAlign: align,
                           },
                         });
                       }}
                       className={`flex-1 py-1 rounded flex items-center justify-center cursor-pointer transition-colors ${
-                        (customization.textPositions?.partner2?.textAlign || "left") === align
+                        (activePositions.partner2?.textAlign || "left") === align
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
@@ -801,62 +805,56 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={PARTNER_SIZE_CONFIG.step}
               parseValue={parsePartnerSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ partnerSize: sizeStr })}
-              position={customization.textPositions?.partner1 || customization.textPositions?.partner2}
-              isLocked={Boolean(customization.textPositions?.partner1?.locked || customization.textPositions?.partner2?.locked)}
+              position={activePositions.partner1 || activePositions.partner2}
+              isLocked={Boolean(activePositions.partner1?.locked || activePositions.partner2?.locked)}
               onLockToggle={() => {
-                const isCurrentlyLocked = Boolean(customization.textPositions?.partner1?.locked || customization.textPositions?.partner2?.locked);
+                const isCurrentlyLocked = Boolean(activePositions.partner1?.locked || activePositions.partner2?.locked);
                 const nextLocked = !isCurrentlyLocked;
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    partner1: {
-                      ...(customization.textPositions?.partner1 || { x: 0, y: 0 }),
-                      locked: nextLocked,
-                    },
-                    partner2: {
-                      ...(customization.textPositions?.partner2 || { x: 0, y: 0 }),
-                      locked: nextLocked,
-                    },
+                updatePositions({
+                  ...activePositions,
+                  partner1: {
+                    ...(activePositions.partner1 || { x: 0, y: 0 }),
+                    locked: nextLocked,
+                  },
+                  partner2: {
+                    ...(activePositions.partner2 || { x: 0, y: 0 }),
+                    locked: nextLocked,
                   },
                 });
               }}
               onBringToFront={() => {
-                const newZ = calculateBringToFront("partner1", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    partner1: {
-                      ...(customization.textPositions?.partner1 || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
-                    partner2: {
-                      ...(customization.textPositions?.partner2 || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateBringToFront("partner1", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  partner1: {
+                    ...(activePositions.partner1 || { x: 0, y: 0 }),
+                    zIndex: newZ,
+                  },
+                  partner2: {
+                    ...(activePositions.partner2 || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onSendToBack={() => {
-                const newZ = calculateSendToBack("partner1", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    partner1: {
-                      ...(customization.textPositions?.partner1 || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
-                    partner2: {
-                      ...(customization.textPositions?.partner2 || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateSendToBack("partner1", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  partner1: {
+                    ...(activePositions.partner1 || { x: 0, y: 0 }),
+                    zIndex: newZ,
+                  },
+                  partner2: {
+                    ...(activePositions.partner2 || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onResetPosition={() => {
-                const next = { ...(customization.textPositions || {}) };
+                const next = { ...activePositions };
                 delete next.partner1;
                 delete next.partner2;
-                onChangeCustomization({ textPositions: next });
+                updatePositions(next);
               }}
             />
 
@@ -886,48 +884,42 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={DATE_SIZE_CONFIG.step}
               parseValue={parseDateSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ dateSize: sizeStr })}
-              position={customization.textPositions?.date}
-              isLocked={Boolean(customization.textPositions?.date?.locked)}
+              position={activePositions.date}
+              isLocked={Boolean(activePositions.date?.locked)}
               onLockToggle={() => {
-                const isCurrentlyLocked = Boolean(customization.textPositions?.date?.locked);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    date: {
-                      ...(customization.textPositions?.date || { x: 0, y: 0 }),
-                      locked: !isCurrentlyLocked,
-                    },
+                const isCurrentlyLocked = Boolean(activePositions.date?.locked);
+                updatePositions({
+                  ...activePositions,
+                  date: {
+                    ...(activePositions.date || { x: 0, y: 0 }),
+                    locked: !isCurrentlyLocked,
                   },
                 });
               }}
               onBringToFront={() => {
-                const newZ = calculateBringToFront("date", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    date: {
-                      ...(customization.textPositions?.date || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateBringToFront("date", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  date: {
+                    ...(activePositions.date || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onSendToBack={() => {
-                const newZ = calculateSendToBack("date", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    date: {
-                      ...(customization.textPositions?.date || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateSendToBack("date", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  date: {
+                    ...(activePositions.date || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onResetPosition={() => {
-                const next = { ...(customization.textPositions || {}) };
+                const next = { ...activePositions };
                 delete next.date;
-                onChangeCustomization({ textPositions: next });
+                updatePositions(next);
               }}
             />
 
@@ -983,48 +975,42 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={EYEBROW_SIZE_CONFIG.step}
               parseValue={parseEyebrowSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ eyebrowSize: sizeStr })}
-              position={customization.textPositions?.eyebrow}
-              isLocked={Boolean(customization.textPositions?.eyebrow?.locked)}
+              position={activePositions.eyebrow}
+              isLocked={Boolean(activePositions.eyebrow?.locked)}
               onLockToggle={() => {
-                const isCurrentlyLocked = Boolean(customization.textPositions?.eyebrow?.locked);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    eyebrow: {
-                      ...(customization.textPositions?.eyebrow || { x: 0, y: 0 }),
-                      locked: !isCurrentlyLocked,
-                    },
+                const isCurrentlyLocked = Boolean(activePositions.eyebrow?.locked);
+                updatePositions({
+                  ...activePositions,
+                  eyebrow: {
+                    ...(activePositions.eyebrow || { x: 0, y: 0 }),
+                    locked: !isCurrentlyLocked,
                   },
                 });
               }}
               onBringToFront={() => {
-                const newZ = calculateBringToFront("eyebrow", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    eyebrow: {
-                      ...(customization.textPositions?.eyebrow || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateBringToFront("eyebrow", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  eyebrow: {
+                    ...(activePositions.eyebrow || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onSendToBack={() => {
-                const newZ = calculateSendToBack("eyebrow", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    eyebrow: {
-                      ...(customization.textPositions?.eyebrow || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateSendToBack("eyebrow", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  eyebrow: {
+                    ...(activePositions.eyebrow || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onResetPosition={() => {
-                const next = { ...(customization.textPositions || {}) };
+                const next = { ...activePositions };
                 delete next.eyebrow;
-                onChangeCustomization({ textPositions: next });
+                updatePositions(next);
               }}
             />
 
@@ -1052,48 +1038,42 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={QUOTE_SIZE_CONFIG.step}
               parseValue={parseQuoteSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ quoteSize: sizeStr })}
-              position={customization.textPositions?.quote}
-              isLocked={Boolean(customization.textPositions?.quote?.locked)}
+              position={activePositions.quote}
+              isLocked={Boolean(activePositions.quote?.locked)}
               onLockToggle={() => {
-                const isCurrentlyLocked = Boolean(customization.textPositions?.quote?.locked);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    quote: {
-                      ...(customization.textPositions?.quote || { x: 0, y: 0 }),
-                      locked: !isCurrentlyLocked,
-                    },
+                const isCurrentlyLocked = Boolean(activePositions.quote?.locked);
+                updatePositions({
+                  ...activePositions,
+                  quote: {
+                    ...(activePositions.quote || { x: 0, y: 0 }),
+                    locked: !isCurrentlyLocked,
                   },
                 });
               }}
               onBringToFront={() => {
-                const newZ = calculateBringToFront("quote", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    quote: {
-                      ...(customization.textPositions?.quote || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateBringToFront("quote", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  quote: {
+                    ...(activePositions.quote || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onSendToBack={() => {
-                const newZ = calculateSendToBack("quote", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    quote: {
-                      ...(customization.textPositions?.quote || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateSendToBack("quote", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  quote: {
+                    ...(activePositions.quote || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onResetPosition={() => {
-                const next = { ...(customization.textPositions || {}) };
+                const next = { ...activePositions };
                 delete next.quote;
-                onChangeCustomization({ textPositions: next });
+                updatePositions(next);
               }}
             />
           </SidebarGroupContent>
@@ -1118,48 +1098,42 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={AMPERSAND_SIZE_CONFIG.step}
               parseValue={parseAmpersandSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ ampersandSize: sizeStr })}
-              position={customization.textPositions?.ampersand}
-              isLocked={Boolean(customization.textPositions?.ampersand?.locked)}
+              position={activePositions.ampersand}
+              isLocked={Boolean(activePositions.ampersand?.locked)}
               onLockToggle={() => {
-                const isCurrentlyLocked = Boolean(customization.textPositions?.ampersand?.locked);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    ampersand: {
-                      ...(customization.textPositions?.ampersand || { x: 0, y: 0 }),
-                      locked: !isCurrentlyLocked,
-                    },
+                const isCurrentlyLocked = Boolean(activePositions.ampersand?.locked);
+                updatePositions({
+                  ...activePositions,
+                  ampersand: {
+                    ...(activePositions.ampersand || { x: 0, y: 0 }),
+                    locked: !isCurrentlyLocked,
                   },
                 });
               }}
               onBringToFront={() => {
-                const newZ = calculateBringToFront("ampersand", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    ampersand: {
-                      ...(customization.textPositions?.ampersand || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateBringToFront("ampersand", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  ampersand: {
+                    ...(activePositions.ampersand || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onSendToBack={() => {
-                const newZ = calculateSendToBack("ampersand", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    ampersand: {
-                      ...(customization.textPositions?.ampersand || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateSendToBack("ampersand", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  ampersand: {
+                    ...(activePositions.ampersand || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onResetPosition={() => {
-                const next = { ...(customization.textPositions || {}) };
+                const next = { ...activePositions };
                 delete next.ampersand;
-                onChangeCustomization({ textPositions: next });
+                updatePositions(next);
               }}
             />
 
@@ -1175,48 +1149,42 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               step={ORB_SIZE_CONFIG.step}
               parseValue={parseOrbSize}
               onSizeChange={(sizeStr) => onChangeCustomization({ orbSize: sizeStr })}
-              position={customization.textPositions?.orb}
-              isLocked={Boolean(customization.textPositions?.orb?.locked)}
+              position={activePositions.orb}
+              isLocked={Boolean(activePositions.orb?.locked)}
               onLockToggle={() => {
-                const isCurrentlyLocked = Boolean(customization.textPositions?.orb?.locked);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    orb: {
-                      ...(customization.textPositions?.orb || { x: 0, y: 0 }),
-                      locked: !isCurrentlyLocked,
-                    },
+                const isCurrentlyLocked = Boolean(activePositions.orb?.locked);
+                updatePositions({
+                  ...activePositions,
+                  orb: {
+                    ...(activePositions.orb || { x: 0, y: 0 }),
+                    locked: !isCurrentlyLocked,
                   },
                 });
               }}
               onBringToFront={() => {
-                const newZ = calculateBringToFront("orb", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    orb: {
-                      ...(customization.textPositions?.orb || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateBringToFront("orb", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  orb: {
+                    ...(activePositions.orb || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onSendToBack={() => {
-                const newZ = calculateSendToBack("orb", customization.textPositions);
-                onChangeCustomization({
-                  textPositions: {
-                    ...(customization.textPositions || {}),
-                    orb: {
-                      ...(customization.textPositions?.orb || { x: 0, y: 0 }),
-                      zIndex: newZ,
-                    },
+                const newZ = calculateSendToBack("orb", activePositions);
+                updatePositions({
+                  ...activePositions,
+                  orb: {
+                    ...(activePositions.orb || { x: 0, y: 0 }),
+                    zIndex: newZ,
                   },
                 });
               }}
               onResetPosition={() => {
-                const next = { ...(customization.textPositions || {}) };
+                const next = { ...activePositions };
                 delete next.orb;
-                onChangeCustomization({ textPositions: next });
+                updatePositions(next);
               }}
             />
           </SidebarGroupContent>
