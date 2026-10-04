@@ -14,6 +14,12 @@ export const RESERVED_SLUGS = [
   "privacy",
   "subscribe",
   "billing",
+  "demo",
+  "portal",
+  "subadmin",
+  "gallery",
+  "adminfotokita",
+  "w",
 ];
 
 export const slugSchema = z

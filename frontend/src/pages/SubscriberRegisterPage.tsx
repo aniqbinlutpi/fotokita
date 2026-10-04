@@ -57,6 +57,8 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   onSuccess,
   onCancel,
 }) => {
+  const displayDomain = typeof window !== "undefined" ? window.location.host : "fotokita.com";
+
   // Read token from props or URL
   const [token] = useState<string | null>(() => {
     if (propToken) return propToken;
@@ -292,7 +294,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
       try {
         await registerTenant({
           username: username.trim(),
-          email: subscriberEmail.trim() || `${username.trim()}@fotokita.my`,
+          email: subscriberEmail.trim() || `${username.trim()}@fotokita.com`,
           password: adminPassword.trim(),
           weddingId: newWedding.id,
           weddingSlug: newWedding.slug,
@@ -319,7 +321,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
           await redeemInviteToken({
             token,
             username: username.trim(),
-            email: subscriberEmail.trim() || `${username.trim()}@fotokita.my`,
+            email: subscriberEmail.trim() || `${username.trim()}@fotokita.com`,
             weddingId: newWedding.id,
             weddingSlug: newWedding.slug,
             weddingName: newWedding.name,
@@ -347,7 +349,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
       }
 
       toast.success("Registration successful!", {
-        description: `Your gallery is ready to launch at fotokita.my/${newWedding.slug}`,
+        description: `Your gallery is ready to launch at ${displayDomain}/${newWedding.slug}`,
       });
 
       // NO AUTO LOGIN: Transition to login prompt view
@@ -479,7 +481,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                 <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
                   Official Gallery URL
                 </span>
-                <span className="font-mono text-accent">fotokita.my/{registeredWedding.slug}</span>
+                <span className="font-mono text-accent">{displayDomain}/{registeredWedding.slug}</span>
               </div>
 
               <div className="flex justify-between items-center pb-2 border-b border-border">
@@ -577,7 +579,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
             <Globe className="size-4 text-accent shrink-0" />
             <div className="text-left">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Custom URL</p>
-              <p className="text-xs font-medium text-foreground">fotokita.my/slug</p>
+              <p className="text-xs font-medium text-foreground">{displayDomain}/slug</p>
             </div>
           </Card>
 
@@ -643,13 +645,13 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                   Gallery URL Slug (Must be unique) *
                 </label>
                 <span className="text-[11px] text-accent font-mono">
-                  fotokita.my/{slug || "your-slug"}
+                  {displayDomain}/{slug || "your-slug"}
                 </span>
               </div>
 
               <div className="relative flex rounded-lg shadow-2xs">
                 <span className="inline-flex items-center px-3.5 rounded-l-lg border border-r-0 border-input bg-muted/50 text-xs font-mono text-muted-foreground select-none">
-                  fotokita.my/
+                  {displayDomain}/
                 </span>
                 <input
                   type="text"

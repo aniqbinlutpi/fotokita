@@ -141,7 +141,7 @@ const PRICING_PLANS: PricingPlanItem[] = [
     code: "Whole Day (RM10)",
     features: [
       { text: "5 GB Cloud Storage (~1,500 HD photos)", highlight: true },
-      { text: "Custom URL (fotokita.my/your-name)" },
+      { text: "Custom URL (fotokita.com/your-name)" },
       { text: "Live Ballroom Screen & Projector Slideshow", highlight: true },
       { text: "Digital Photobooth & Signature Polaroid" },
       { text: "Print-ready table QR card templates" },
@@ -1013,7 +1013,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                           <div className="size-36 bg-foreground/5 rounded-lg border border-dashed border-border flex flex-col items-center justify-center gap-1.5 p-2 mx-auto">
                             <QrCode className="size-24 text-foreground/85" />
                             <span className="text-[9px] font-mono text-muted-foreground">
-                              fotokita.my/farhan-dania
+                              fotokita.com/farhan-dania
                             </span>
                           </div>
                         </div>
@@ -1077,7 +1077,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                             <span>9:41</span>
                             <div className="flex items-center gap-1.5">
                               <span className="size-1.5 rounded-full bg-emerald-500" />
-                              <span>fotokita.my</span>
+                              <span>fotokita.com</span>
                             </div>
                             <span>100%</span>
                           </div>

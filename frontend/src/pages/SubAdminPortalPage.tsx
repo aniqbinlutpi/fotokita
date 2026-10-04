@@ -547,16 +547,16 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     if (onOpenGallery) {
       onOpenGallery(slug);
     } else {
-      window.open(`/?slug=${encodeURIComponent(slug)}`, "_blank", "noopener,noreferrer");
+      window.open(`/${encodeURI(slug)}`, "_blank", "noopener,noreferrer");
     }
   };
 
   // Preview URL pointing to WeddingGalleryPage inside iframe
   const currentSlug = customization.slug || dbWedding?.slug || tenant?.weddingSlug || activeSlug || "wedding";
   const finalWeddingId = dbWedding?.id || tenant?.weddingId || customization.weddingId || activeWeddingId;
-  const previewIframeUrl = `/?slug=${encodeURIComponent(currentSlug)}${finalWeddingId ? `&weddingId=${encodeURIComponent(finalWeddingId)}` : ""}&preview=subadmin&deviceView=${viewMode === "mobile" ? "mobile" : "full"}`;
+  const previewIframeUrl = `/${encodeURI(currentSlug)}?preview=subadmin&deviceView=${viewMode === "mobile" ? "mobile" : "full"}${finalWeddingId ? `&weddingId=${encodeURIComponent(finalWeddingId)}` : ""}`;
 
-  const guestPublicUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/?slug=${encodeURIComponent(currentSlug)}`;
+  const guestPublicUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/${encodeURI(currentSlug)}`;
 
   const handleRefreshPreview = () => {
     if (iframeRef.current) {

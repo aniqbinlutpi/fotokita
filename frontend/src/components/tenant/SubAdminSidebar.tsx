@@ -541,7 +541,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   const [copied, setCopied] = React.useState(false);
 
   const weddingSlug = customization.slug || tenant?.weddingSlug || "wan-three";
-  const guestUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/?slug=${encodeURIComponent(weddingSlug)}`;
+  const guestUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/${encodeURI(weddingSlug)}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(guestUrl);
@@ -588,7 +588,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
         {/* Guest Link Pill */}
         <div className="mt-3 p-2 rounded-lg bg-sidebar-accent/50 border border-sidebar-border flex items-center justify-between gap-1.5 text-xs">
           <div className="truncate text-muted-foreground font-mono text-[11px]">
-            /?slug={weddingSlug}
+            /{weddingSlug}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button
@@ -977,7 +977,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
                 <span>Gallery URL Slug</span>
               </label>
               <div className="flex items-center rounded-md border border-input bg-sidebar-accent/30 px-2 h-8 text-xs font-mono text-muted-foreground">
-                <span className="shrink-0 select-none text-[11px]">/?slug=</span>
+                <span className="shrink-0 select-none text-[11px]">/</span>
                 <input
                   value={customization.slug ?? tenant?.weddingSlug ?? ""}
                   onChange={(e) =>
@@ -1316,7 +1316,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               @{tenant?.username || "subadmin"}
             </span>
             <span className="truncate text-[10px] text-muted-foreground">
-              {tenant?.email || "tenant@fotokita.my"}
+              {tenant?.email || "tenant@fotokita.com"}
             </span>
           </div>
           <button

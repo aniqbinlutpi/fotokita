@@ -80,7 +80,7 @@ authRoute.post("/register", async (c) => {
 
   const { username, email, password, weddingId, weddingSlug, weddingName } = parsed.data;
   const cleanUsername = username.trim().toLowerCase();
-  const cleanEmail = (email || `${cleanUsername}@fotokita.my`).trim().toLowerCase();
+  const cleanEmail = (email || `${cleanUsername}@fotokita.com`).trim().toLowerCase();
   const cleanPassword = password.trim();
   const planTier = (parsed.data.planTier || "1day").trim().toLowerCase();
   const { planExpiresAt, mediaExpiresAt } = calculatePlanDates(planTier);

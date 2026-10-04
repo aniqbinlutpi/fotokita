@@ -71,7 +71,7 @@ app.get("/check-slug", async (c) => {
   }
 });
 
-// Lookup wedding by slug (e.g. fotokita.my/ali-dan-siti)
+// Lookup wedding by slug (e.g. fotokita.com/ali-dan-siti)
 app.get("/slug/:slug", async (c) => {
   const slug = c.req.param("slug");
   const wedding = await getWeddingBySlug(slug);
