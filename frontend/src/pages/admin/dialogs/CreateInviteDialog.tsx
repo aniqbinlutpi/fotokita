@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,9 +21,18 @@ import {
   FileText,
   Trash2,
   AlertCircle,
+  Phone,
+  ExternalLink,
 } from "lucide-react";
 import type { AdminInvite, SubscriptionTier } from "@/api/admin";
-import { formatTierLabel, getWhatsAppShareUrl } from "../utils";
+import {
+  formatTierLabel,
+  getWhatsAppShareUrl,
+  getWhatsAppMessageText,
+  formatWhatsAppPhone,
+  extractPhoneFromText,
+} from "../utils";
+import { toast } from "sonner";
 
 export interface ReceiptUploadFile {
   data: string;
@@ -39,6 +48,8 @@ interface CreateInviteDialogProps {
   onInviteTierChange: (tier: SubscriptionTier) => void;
   inviteClientName: string;
   onInviteClientNameChange: (name: string) => void;
+  inviteClientPhone: string;
+  onInviteClientPhoneChange: (phone: string) => void;
   inviteNotes: string;
   onInviteNotesChange: (notes: string) => void;
   receiptFile: ReceiptUploadFile | null;
@@ -58,6 +69,8 @@ export function CreateInviteDialog({
   onInviteTierChange,
   inviteClientName,
   onInviteClientNameChange,
+  inviteClientPhone,
+  onInviteClientPhoneChange,
   inviteNotes,
   onInviteNotesChange,
   receiptFile,
@@ -72,6 +85,20 @@ export function CreateInviteDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [targetPhone, setTargetPhone] = useState(inviteClientPhone || "");
+  const [copiedMessage, setCopiedMessage] = useState(false);
+
+  useEffect(() => {
+    if (newlyCreatedInvite) {
+      const extracted =
+        newlyCreatedInvite.clientPhone ||
+        inviteClientPhone ||
+        extractPhoneFromText(newlyCreatedInvite.notes);
+      setTargetPhone(extracted || "");
+    } else {
+      setTargetPhone(inviteClientPhone || "");
+    }
+  }, [newlyCreatedInvite, inviteClientPhone]);
 
   const processFile = (file: File) => {
     setUploadError(null);
@@ -255,6 +282,28 @@ export function CreateInviteDialog({
               />
               <p className="text-[11px] text-muted-foreground">
                 This username will be locked to the link and non-modifiable during tenant registration.
+              </p>
+            </div>
+
+            {/* 2.5 Client WhatsApp Phone Number */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <Phone className="size-3.5 text-accent" />
+                  <span>Client WhatsApp Number (Optional)</span>
+                </label>
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  e.g. 0123456789
+                </span>
+              </div>
+              <Input
+                placeholder="e.g. 0123456789 or 60123456789"
+                value={inviteClientPhone}
+                onChange={(e) => onInviteClientPhoneChange(e.target.value)}
+                className="font-mono text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Allows launching WhatsApp directly with the pre-filled message and registration link.
               </p>
             </div>
 
@@ -453,22 +502,128 @@ export function CreateInviteDialog({
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
-              <a
-                href={getWhatsAppShareUrl(newlyCreatedInvite)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm"
-              >
-                <MessageCircle className="size-4" />
-                <span>Send to Client via WhatsApp</span>
-              </a>
+            {/* WhatsApp Direct Share Section */}
+            <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <MessageCircle className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                      Send Invitation via WhatsApp
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      Direct WhatsApp chat with pre-filled package details and 24h link
+                    </p>
+                  </div>
+                </div>
+              </div>
 
+              {/* Client WhatsApp Number Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Phone className="size-3 text-emerald-600 dark:text-emerald-400" />
+                    <span>Client WhatsApp Number</span>
+                  </label>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    e.g. 0123456789
+                  </span>
+                </div>
+                <Input
+                  placeholder="e.g. 0123456789 or 60123456789"
+                  value={targetPhone}
+                  onChange={(e) => setTargetPhone(e.target.value)}
+                  className="font-mono text-xs bg-background"
+                />
+                <div className="text-[10px] flex items-center justify-between">
+                  <span>
+                    {formatWhatsAppPhone(targetPhone) ? (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                        ✓ Will open chat with +{formatWhatsAppPhone(targetPhone)}
+                      </span>
+                    ) : (
+                      <span className="text-amber-600 dark:text-amber-400">
+                        ⚠️ Enter phone number to pre-fill message in WhatsApp
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-muted-foreground">Format: 01xxxxxxxx</span>
+                </div>
+              </div>
+
+              {/* Live Message Preview */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Message Preview
+                </label>
+                <div className="p-2.5 rounded-lg bg-background/80 border border-emerald-500/10 text-[11px] font-sans leading-relaxed text-foreground whitespace-pre-wrap select-all">
+                  {getWhatsAppMessageText(newlyCreatedInvite)}
+                </div>
+              </div>
+
+              {/* WhatsApp Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const cleanPhone = formatWhatsAppPhone(targetPhone);
+                    const message = getWhatsAppMessageText(newlyCreatedInvite);
+
+                    // Always copy message to clipboard as a fallback
+                    navigator.clipboard.writeText(message);
+
+                    if (!cleanPhone) {
+                      toast.error(
+                        "Please enter client's WhatsApp phone number above to open direct chat, or paste the copied message!",
+                        { duration: 4000 }
+                      );
+                      return;
+                    }
+
+                    const shareUrl = getWhatsAppShareUrl(newlyCreatedInvite, cleanPhone);
+                    window.open(shareUrl, "_blank", "noopener,noreferrer");
+                    toast.success(
+                      `Opening WhatsApp for +${cleanPhone}! (Full message also copied to clipboard)`,
+                      { duration: 3500 }
+                    );
+                  }}
+                  className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider h-10 shadow-sm cursor-pointer"
+                >
+                  <MessageCircle className="size-4" />
+                  <span>Send to Client via WhatsApp</span>
+                  <ExternalLink className="size-3.5 opacity-70" />
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const message = getWhatsAppMessageText(newlyCreatedInvite);
+                    navigator.clipboard.writeText(message);
+                    setCopiedMessage(true);
+                    toast.success("Full WhatsApp message copied to clipboard!");
+                    setTimeout(() => setCopiedMessage(false), 2000);
+                  }}
+                  className="gap-1.5 text-xs h-10 border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300 cursor-pointer"
+                >
+                  {copiedMessage ? (
+                    <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <Copy className="size-3.5" />
+                  )}
+                  <span>{copiedMessage ? "Message Copied!" : "Copy Full Message"}</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="pt-1">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onResetNewlyCreated}
-                className="text-xs uppercase tracking-wider"
+                className="w-full text-xs uppercase tracking-wider cursor-pointer"
               >
                 Generate Another
               </Button>

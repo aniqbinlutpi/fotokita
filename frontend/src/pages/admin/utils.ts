@@ -25,11 +25,42 @@ export const formatTierLabel = (tier: string): string => {
   }
 };
 
-export const getWhatsAppShareUrl = (invite: AdminInvite): string => {
+export const extractPhoneFromText = (text?: string): string => {
+  if (!text) return "";
+  const match = text.match(/(?:\+?60|0)1[0-9]{1}[- ]?[0-9]{7,8}/);
+  return match ? match[0] : "";
+};
+
+export const formatWhatsAppPhone = (phone?: string): string => {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("60")) return digits;
+  if (digits.startsWith("0")) return `60${digits.slice(1)}`;
+  return digits;
+};
+
+export const getWhatsAppMessageText = (invite: AdminInvite): string => {
   const url = `${window.location.origin}/register?token=${encodeURIComponent(invite.token)}`;
   const clientGreeting = invite.clientName ? `Hi ${invite.clientName}` : "Hi";
   const tierName = formatTierLabel(invite.tier);
-  const message = `${clientGreeting}! Thank you for your payment for the Fotokita ${tierName} package.\n\nPlease use this official link to register your Sub-Admin account and launch your wedding gallery:\n${url}\n\n⚠️ Notice: This link is valid for 24 hours only and is single-use. Please complete your registration before expiry.`;
+  return `${clientGreeting}! Thank you for your payment for the Fotokita ${tierName} package.\n\nPlease use this official link to register your Sub-Admin account and launch your wedding gallery:\n${url}\n\n⚠️ Notice: This link is valid for 24 hours only and is single-use. Please complete your registration before expiry.`;
+};
+
+export const getWhatsAppShareUrl = (
+  invite: AdminInvite,
+  customPhone?: string
+): string => {
+  const message = getWhatsAppMessageText(invite);
+  const phone =
+    customPhone ||
+    invite.clientPhone ||
+    extractPhoneFromText(invite.notes);
+  const formattedPhone = formatWhatsAppPhone(phone);
+
+  if (formattedPhone) {
+    return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+  }
   return `https://wa.me/?text=${encodeURIComponent(message)}`;
 };
 
@@ -38,12 +69,7 @@ export const getCustomerWhatsAppDirectUrl = (
   username: string,
   planName: string
 ): string => {
-  const digits = phone.replace(/\D/g, "");
-  const formatted = digits.startsWith("60")
-    ? digits
-    : digits.startsWith("0")
-    ? `60${digits.slice(1)}`
-    : digits;
+  const formatted = formatWhatsAppPhone(phone);
   const msg = `Hi ${username}! Thank you for your inquiry about Fotokita's ${planName} package. How can we assist you today?`;
   return `https://wa.me/${formatted}?text=${encodeURIComponent(msg)}`;
 };

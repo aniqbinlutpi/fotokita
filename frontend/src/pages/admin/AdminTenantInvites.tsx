@@ -30,7 +30,14 @@ import {
   Receipt,
 } from "lucide-react";
 import type { AdminInvite } from "@/api/admin";
-import { formatTierLabel, getWhatsAppShareUrl } from "./utils";
+import {
+  formatTierLabel,
+  getWhatsAppShareUrl,
+  getWhatsAppMessageText,
+  formatWhatsAppPhone,
+  extractPhoneFromText,
+} from "./utils";
+import { toast } from "sonner";
 
 interface AdminTenantInvitesProps {
   invites: AdminInvite[];
@@ -292,16 +299,42 @@ export function AdminTenantInvites({
                               <span className="hidden sm:inline">Copy Link</span>
                             </Button>
 
-                            <a
-                              href={getWhatsAppShareUrl(inv)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
-                              title="Send to WhatsApp"
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                const phone =
+                                  inv.clientPhone || extractPhoneFromText(inv.notes);
+                                const formattedPhone = formatWhatsAppPhone(phone);
+                                const message = getWhatsAppMessageText(inv);
+                                navigator.clipboard.writeText(message);
+
+                                if (formattedPhone) {
+                                  window.open(
+                                    `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`,
+                                    "_blank",
+                                    "noopener,noreferrer"
+                                  );
+                                  toast.success(
+                                    `Opening WhatsApp for +${formattedPhone}! (Full message also copied)`
+                                  );
+                                } else {
+                                  toast.info(
+                                    "Full WhatsApp message copied to clipboard! (Paste it directly into WhatsApp)"
+                                  );
+                                  window.open(
+                                    `https://wa.me/?text=${encodeURIComponent(message)}`,
+                                    "_blank",
+                                    "noopener,noreferrer"
+                                  );
+                                }
+                              }}
+                              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors cursor-pointer"
+                              title="Send or Copy WhatsApp Invitation"
                             >
                               <MessageCircle className="size-3.5" />
                               <span className="hidden sm:inline">WhatsApp</span>
-                            </a>
+                            </Button>
                           </>
                         )}
 

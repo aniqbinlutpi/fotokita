@@ -27,7 +27,13 @@ export async function getWeddingBySlug(slug: string) {
 }
 
 export async function isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
-  const conditions = [eq(weddings.slug, slug)];
+  const normalized = slug.trim().toLowerCase();
+  const conditions = [
+    or(
+      eq(weddings.slug, slug),
+      sql`LOWER(${weddings.slug}) = ${normalized}`
+    ),
+  ];
   if (excludeId) {
     conditions.push(ne(weddings.id, excludeId));
   }

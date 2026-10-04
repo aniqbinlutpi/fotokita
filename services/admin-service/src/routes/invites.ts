@@ -18,6 +18,7 @@ const invitesRoute = new Hono();
 const createInviteSchema = z.object({
   tier: z.string().min(1, "Please select a valid subscription plan"),
   clientName: z.string().optional(),
+  clientPhone: z.string().optional(),
   notes: z.string().optional(),
   receiptData: z.string().min(1, "Payment receipt evidence is required"),
   receiptFilename: z.string().optional(),
@@ -138,6 +139,7 @@ invitesRoute.post("/", requireAdminAuth, async (c) => {
   const invite = await createInviteToken({
     tier: parsed.data.tier as SubscriptionTier,
     clientName: parsed.data.clientName,
+    clientPhone: parsed.data.clientPhone,
     notes: parsed.data.notes,
     receiptData: parsed.data.receiptData,
     receiptFilename: parsed.data.receiptFilename,

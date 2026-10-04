@@ -175,6 +175,7 @@ export interface AdminInvite {
   token: string;
   tier: SubscriptionTier;
   clientName?: string;
+  clientPhone?: string;
   notes?: string;
   hasReceipt?: boolean;
   receiptFilename?: string;
@@ -221,6 +222,7 @@ export async function getAdminInvites(): Promise<AdminInvite[]> {
 export async function createAdminInvite(params: {
   tier: SubscriptionTier;
   clientName?: string;
+  clientPhone?: string;
   notes?: string;
   receiptData: string;
   receiptFilename?: string;

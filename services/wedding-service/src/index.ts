@@ -1,11 +1,16 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { db } from "./db";
+import { db, initDb } from "./db";
 import { sql } from "drizzle-orm";
 import weddings from "./routes/weddings";
 import { error } from "./lib/response";
 
 const app = new Hono();
+
+// Initialize PostgreSQL database tables on startup
+initDb().catch((err) => {
+  console.error("Failed to initialize wedding database tables on startup:", err);
+});
 
 app.use("*", cors());
 

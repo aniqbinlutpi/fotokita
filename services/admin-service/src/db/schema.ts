@@ -33,6 +33,7 @@ export const tenantInvites = pgTable("tenant_invites", {
   token: text("token").notNull().unique(),
   tier: text("tier").notNull(),
   clientName: text("client_name"),
+  clientPhone: text("client_phone"),
   notes: text("notes"),
   receiptData: text("receipt_data"),
   receiptFilename: text("receipt_filename"),

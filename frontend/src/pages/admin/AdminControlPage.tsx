@@ -99,6 +99,7 @@ export function AdminControlPage({
   const [isCreateInviteOpen, setIsCreateInviteOpen] = useState(false);
   const [inviteTier, setInviteTier] = useState<SubscriptionTier>("1day");
   const [inviteClientName, setInviteClientName] = useState("");
+  const [inviteClientPhone, setInviteClientPhone] = useState("");
   const [inviteNotes, setInviteNotes] = useState("");
   const [receiptFile, setReceiptFile] = useState<ReceiptUploadFile | null>(null);
   const [isCreatingInvite, setIsCreatingInvite] = useState(false);
@@ -299,6 +300,7 @@ export function AdminControlPage({
 
   const handleConvertInquiryToInvite = (inquiry: CustomerInquiry) => {
     setInviteClientName(inquiry.username);
+    setInviteClientPhone(inquiry.phone || "");
     setInviteNotes(`Inquiry phone: ${inquiry.phone} • Plan: ${inquiry.planName}`);
     const validTiers: SubscriptionTier[] = [
       "12h",
@@ -333,6 +335,7 @@ export function AdminControlPage({
       const res = await createAdminInvite({
         tier: inviteTier,
         clientName: inviteClientName.trim() || undefined,
+        clientPhone: inviteClientPhone.trim() || undefined,
         notes: inviteNotes.trim() || undefined,
         receiptData: receiptFile.data,
         receiptFilename: receiptFile.name,
@@ -701,6 +704,8 @@ export function AdminControlPage({
         onInviteTierChange={setInviteTier}
         inviteClientName={inviteClientName}
         onInviteClientNameChange={setInviteClientName}
+        inviteClientPhone={inviteClientPhone}
+        onInviteClientPhoneChange={setInviteClientPhone}
         inviteNotes={inviteNotes}
         onInviteNotesChange={setInviteNotes}
         receiptFile={receiptFile}
@@ -711,6 +716,7 @@ export function AdminControlPage({
         onResetNewlyCreated={() => {
           setNewlyCreatedInvite(null);
           setInviteClientName("");
+          setInviteClientPhone("");
           setInviteNotes("");
           setReceiptFile(null);
         }}
