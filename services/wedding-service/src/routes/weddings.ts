@@ -15,7 +15,7 @@ import {
 } from "../validators/wedding.validator";
 import { success, error } from "../lib/response";
 
-const app = new Hono();
+const app = new Hono({ strict: false });
 
 app.get("/", async (c) => {
   const result = await getWeddings();

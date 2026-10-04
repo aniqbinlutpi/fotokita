@@ -2,9 +2,12 @@ import { handleApiResponse } from "./client";
 import type { Wedding, CreateWeddingInput } from "@/types/wedding";
 
 const WEDDINGS_BASE_URL = import.meta.env.VITE_WEDDING_API_URL || "/api/weddings";
+const BASE_COLLECTION_URL = WEDDINGS_BASE_URL.endsWith("/")
+  ? WEDDINGS_BASE_URL
+  : `${WEDDINGS_BASE_URL}/`;
 
 export async function getWeddings(): Promise<Wedding[]> {
-  const response = await fetch(WEDDINGS_BASE_URL);
+  const response = await fetch(BASE_COLLECTION_URL);
   return handleApiResponse<Wedding[]>(response);
 }
 
@@ -30,7 +33,7 @@ export async function checkSlugAvailability(
 }
 
 export async function createWedding(input: CreateWeddingInput): Promise<Wedding> {
-  const response = await fetch(WEDDINGS_BASE_URL, {
+  const response = await fetch(BASE_COLLECTION_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
