@@ -32,7 +32,6 @@ import {
 import type { AdminInvite } from "@/api/admin";
 import {
   formatTierLabel,
-  getWhatsAppShareUrl,
   getWhatsAppMessageText,
   formatWhatsAppPhone,
   extractPhoneFromText,
