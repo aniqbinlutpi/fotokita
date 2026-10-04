@@ -524,7 +524,17 @@ export const WeddingHeroMobile: React.FC<WeddingHeroProps> = ({
                 onDragEnd={handleDragEnd}
                 className="mt-1"
               >
-                <p className="font-sans text-[11px] tracking-wider text-[#2F2926]/70 dark:text-[#F5EFEB]/70 whitespace-nowrap text-center">
+                <p
+                  style={{
+                    fontSize: `var(--custom-font-size, ${
+                      textPositions?.photoCount?.fontSize
+                        ? `${textPositions.photoCount.fontSize}px`
+                        : undefined
+                    })`,
+                    textAlign: textPositions?.photoCount?.textAlign || "center",
+                  }}
+                  className="font-sans text-[11px] tracking-wider text-[#2F2926]/70 dark:text-[#F5EFEB]/70 whitespace-nowrap text-center"
+                >
                   {photoCount} {photoCount === 1 ? "Photograph" : "Photographs"}
                 </p>
               </DraggableHeroItem>

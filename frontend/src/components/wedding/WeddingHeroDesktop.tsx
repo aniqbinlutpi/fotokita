@@ -619,6 +619,14 @@ export const WeddingHeroDesktop: React.FC<WeddingHeroProps> = ({
                   className={isTablet ? "mt-2.5" : "mt-1.5 sm:mt-3"}
                 >
                   <p
+                    style={{
+                      fontSize: `var(--custom-font-size, ${
+                        textPositions?.photoCount?.fontSize
+                          ? `${textPositions.photoCount.fontSize}px`
+                          : undefined
+                      })`,
+                      textAlign: textPositions?.photoCount?.textAlign || "left",
+                    }}
                     className={`font-sans text-[#2F2926]/75 dark:text-[#F5EFEB]/75 whitespace-nowrap ${
                       isTablet
                         ? "text-xs tracking-wider"

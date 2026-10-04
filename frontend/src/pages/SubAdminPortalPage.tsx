@@ -27,12 +27,14 @@ import {
   Check,
   X,
   Apple,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SubAdminSidebar } from "@/components/tenant/SubAdminSidebar";
 import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
 import { SubAdminDesktopCanvas } from "@/components/tenant/SubAdminDesktopCanvas";
 import { SubAdminMobileCanvas } from "@/components/tenant/SubAdminMobileCanvas";
+import { SubAdminLayoutGuideModal } from "@/components/tenant/SubAdminLayoutGuideModal";
 import {
   getStoredTenantToken,
   getStoredTenantUser,
@@ -249,6 +251,26 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
 
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isPostSaveGuideOpen, setIsPostSaveGuideOpen] = useState(false);
+  const [isLayoutGuideOpen, setIsLayoutGuideOpen] = useState(false);
+  const [postSaveSavedMode, setPostSaveSavedMode] = useState<"desktop" | "mobile">("desktop");
+  const [dontShowAgainSession, setDontShowAgainSession] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("fotokita_skip_layout_guide") === "true";
+    }
+    return false;
+  });
+
+  const handleToggleDontShowAgain = (checked: boolean) => {
+    setDontShowAgainSession(checked);
+    if (typeof window !== "undefined") {
+      if (checked) {
+        sessionStorage.setItem("fotokita_skip_layout_guide", "true");
+      } else {
+        sessionStorage.removeItem("fotokita_skip_layout_guide");
+      }
+    }
+  };
 
   // Fetch initial customization and live tenant profile
   useEffect(() => {
@@ -451,9 +473,24 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
       syncCustomizationWithIframe();
 
       setHasUnsavedChanges(false);
+      const savedMode = viewMode;
+      setPostSaveSavedMode(savedMode);
+
       toast.success("Changes Saved Successfully!", {
-        description: `Guests can view live updates at fotokita.my/?slug=${newSlug}`,
+        description:
+          savedMode === "desktop"
+            ? "Desktop layout saved! Remember to double-check Mobile view."
+            : "Mobile layout saved! Guests on smartphones will see live updates.",
+        action: {
+          label: savedMode === "desktop" ? "View Mobile" : "View Desktop",
+          onClick: () => setViewMode(savedMode === "desktop" ? "mobile" : "desktop"),
+        },
       });
+
+      // Prompt user with guide reminder if not muted for this session
+      if (!dontShowAgainSession) {
+        setIsPostSaveGuideOpen(true);
+      }
     } catch (err: any) {
       console.error("Save failed:", err);
       toast.error("Failed to Save Changes", {
@@ -567,6 +604,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
           showMobileBoundary={showMobileBoundary}
           onToggleMobileBoundary={() => setShowMobileBoundary((v) => !v)}
           viewMode={viewMode}
+          onSwitchViewMode={setViewMode}
         />
 
         {/* Main Content Area */}
@@ -629,6 +667,15 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                 >
                   <Smartphone className="size-3.5" />
                   <span className="hidden sm:inline">Mobile</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLayoutGuideOpen(true)}
+                  className="px-1.5 py-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-md hover:bg-background/60"
+                  title="Learn why Desktop and Mobile layouts are separate"
+                  aria-label="Responsive layout guide"
+                >
+                  <HelpCircle className="size-3.5" />
                 </button>
               </div>
 
@@ -769,6 +816,40 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             </div>
           </div>
         )}
+
+        {/* Post-Save Double-Check Review Modal */}
+        <SubAdminLayoutGuideModal
+          isOpen={isPostSaveGuideOpen}
+          onClose={() => setIsPostSaveGuideOpen(false)}
+          savedMode={postSaveSavedMode}
+          onSwitchViewMode={(mode) => {
+            setViewMode(mode);
+            setIsPostSaveGuideOpen(false);
+          }}
+          onOpenQrModal={() => {
+            setIsPostSaveGuideOpen(false);
+            setIsQrModalOpen(true);
+          }}
+          dontShowAgainSession={dontShowAgainSession}
+          onToggleDontShowAgain={handleToggleDontShowAgain}
+          isPostSaveReminder={true}
+        />
+
+        {/* Manual Layout Info Guide Modal */}
+        <SubAdminLayoutGuideModal
+          isOpen={isLayoutGuideOpen}
+          onClose={() => setIsLayoutGuideOpen(false)}
+          savedMode={viewMode}
+          onSwitchViewMode={(mode) => {
+            setViewMode(mode);
+            setIsLayoutGuideOpen(false);
+          }}
+          onOpenQrModal={() => {
+            setIsLayoutGuideOpen(false);
+            setIsQrModalOpen(true);
+          }}
+          isPostSaveReminder={false}
+        />
       </div>
     </SidebarProvider>
   );

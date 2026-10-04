@@ -27,6 +27,8 @@ import {
   Move,
   RotateCcw,
   Smartphone,
+  Monitor,
+  ArrowRight,
   Lock,
   Unlock,
   BringToFront,
@@ -71,6 +73,7 @@ interface SubAdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
   showMobileBoundary?: boolean;
   onToggleMobileBoundary?: () => void;
   viewMode?: "desktop" | "mobile";
+  onSwitchViewMode?: (mode: "desktop" | "mobile") => void;
 }
 
 const THEME_OPTIONS = [
@@ -532,6 +535,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   showMobileBoundary = true,
   onToggleMobileBoundary,
   viewMode = "desktop",
+  onSwitchViewMode,
   ...props
 }) => {
   const [copied, setCopied] = React.useState(false);
@@ -608,6 +612,50 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
       </SidebarHeader>
 
       <SidebarContent className="space-y-4 px-3 py-3">
+        {/* Active Layout Mode Banner */}
+        <div className="p-2.5 rounded-lg border border-sidebar-border bg-sidebar-accent/25 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
+              {viewMode === "mobile" ? (
+                <Smartphone className="size-3.5 text-sky-500" />
+              ) : (
+                <Monitor className="size-3.5 text-amber-500" />
+              )}
+              <span>{viewMode === "mobile" ? "Editing Mobile View" : "Editing Desktop View"}</span>
+            </span>
+            <span className="text-[9px] uppercase tracking-wider font-mono text-muted-foreground bg-background/80 px-1.5 py-0.5 rounded border border-border/50">
+              {viewMode === "mobile" ? "Phone" : "Widescreen"}
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            {viewMode === "mobile"
+              ? "Element positions and font sizes are saved specifically for smartphone visitors (< 768px). Desktop layout is kept independent."
+              : "Element positions and font sizes are saved specifically for widescreen visitors (≥ 768px). Mobile layout is kept independent."}
+          </p>
+          {onSwitchViewMode && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onSwitchViewMode(viewMode === "mobile" ? "desktop" : "mobile")}
+              className="w-full h-7 text-[11px] cursor-pointer gap-1.5 bg-background hover:bg-muted"
+            >
+              {viewMode === "mobile" ? (
+                <>
+                  <Monitor className="size-3 text-amber-500" />
+                  <span>Switch to Desktop View</span>
+                </>
+              ) : (
+                <>
+                  <Smartphone className="size-3 text-sky-500" />
+                  <span>Switch to Mobile View</span>
+                </>
+              )}
+              <ArrowRight className="size-3 text-muted-foreground ml-auto" />
+            </Button>
+          )}
+        </div>
+
         {/* Canvas Guides & Text Placement */}
         <div className="p-2.5 rounded-lg bg-sidebar-accent/30 border border-sidebar-border space-y-2.5">
           <div className="flex items-center justify-between">
