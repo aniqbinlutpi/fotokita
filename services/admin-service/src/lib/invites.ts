@@ -22,6 +22,7 @@ export interface InviteToken {
   token: string;
   tier: SubscriptionTier;
   clientName?: string;
+  clientPhone?: string;
   notes?: string;
   hasReceipt?: boolean;
   receiptFilename?: string;
@@ -47,6 +48,7 @@ function mapInviteRow(
     token: row.token,
     tier: row.tier as SubscriptionTier,
     clientName: row.clientName || undefined,
+    clientPhone: row.clientPhone || undefined,
     notes: row.notes || undefined,
     hasReceipt: Boolean(row.receiptData),
     receiptFilename: row.receiptFilename || undefined,
@@ -66,6 +68,7 @@ function mapInviteRow(
 export async function createInviteToken(params: {
   tier: SubscriptionTier;
   clientName?: string;
+  clientPhone?: string;
   notes?: string;
   receiptData: string;
   receiptFilename?: string;
@@ -84,6 +87,7 @@ export async function createInviteToken(params: {
       token,
       tier: params.tier,
       clientName: params.clientName?.trim().toLowerCase() || null,
+      clientPhone: params.clientPhone?.trim() || null,
       notes: params.notes?.trim() || null,
       receiptData: params.receiptData,
       receiptFilename: params.receiptFilename || null,

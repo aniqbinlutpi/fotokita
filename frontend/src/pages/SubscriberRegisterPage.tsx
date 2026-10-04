@@ -93,6 +93,8 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   const [slugStatus, setSlugStatus] = useState<{
     checked: boolean;
     available: boolean;
+    message?: string;
+    isError?: boolean;
   } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -185,27 +187,46 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   // Debounced slug check
   useEffect(() => {
     if (!slug || slug.length < 3) {
+      setSlugStatus(null);
+      setIsCheckingSlug(false);
       return;
     }
+
+    let active = true;
+    setIsCheckingSlug(true);
 
     const timer = setTimeout(async () => {
       try {
         const res = await checkSlugAvailability(slug);
+        if (!active) return;
         setSlugStatus({
           checked: true,
           available: res.available,
+          message: res.message,
         });
-      } catch {
+      } catch (err: any) {
+        if (!active) return;
+        console.warn("Failed to check slug availability:", err);
         setSlugStatus({
           checked: true,
           available: false,
+          isError: true,
+          message:
+            err?.message?.includes("Failed to fetch") || err?.status === 502 || err?.status === 504
+              ? "Cannot connect to wedding service. Please ensure the backend is running."
+              : err?.message || "Failed to verify URL slug availability.",
         });
       } finally {
-        setIsCheckingSlug(false);
+        if (active) {
+          setIsCheckingSlug(false);
+        }
       }
     }, 400);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [slug]);
 
   // Handle Form Submission
@@ -233,7 +254,11 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
     }
 
     if (slugStatus && !slugStatus.available) {
-      toast.error("This URL slug is invalid or already taken.");
+      if (slugStatus.isError) {
+        toast.error("Unable to verify URL slug. Please check connection to wedding service.");
+      } else {
+        toast.error(slugStatus.message || "This URL slug is invalid or already taken.");
+      }
       return;
     }
 
@@ -640,6 +665,8 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                   ) : slugStatus?.checked ? (
                     slugStatus.available ? (
                       <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                    ) : slugStatus.isError ? (
+                      <AlertTriangle className="size-4 text-amber-500" />
                     ) : (
                       <XCircle className="size-4 text-rose-500" />
                     )
@@ -653,18 +680,23 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                   className={`mt-2 text-xs flex items-center gap-1.5 ${
                     slugStatus.available
                       ? "text-emerald-600 dark:text-emerald-400"
+                      : slugStatus.isError
+                      ? "text-amber-600 dark:text-amber-400"
                       : "text-rose-600 dark:text-rose-400"
                   }`}
                 >
                   {slugStatus.available ? (
                     <CheckCircle2 className="size-3.5 shrink-0" />
+                  ) : slugStatus.isError ? (
+                    <AlertTriangle className="size-3.5 shrink-0" />
                   ) : (
                     <XCircle className="size-3.5 shrink-0" />
                   )}
                   <span>
-                    {slugStatus.available
-                      ? "This URL slug is available!"
-                      : "This URL slug has already been taken. Please choose another."}
+                    {slugStatus.message ||
+                      (slugStatus.available
+                        ? "This URL slug is available!"
+                        : "This URL slug has already been taken. Please choose another.")}
                   </span>
                 </div>
               )}
