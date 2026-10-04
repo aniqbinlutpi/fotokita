@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import {
   Sparkles,
   Smartphone,
-  Tablet,
   Monitor,
   Eye,
   Lock,
@@ -26,7 +25,6 @@ import {
   Copy,
   Check,
   X,
-  Apple,
   HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -144,7 +142,12 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   const [tenant, setTenant] = useState<TenantAccount | null>(() => {
     const token = getStoredTenantToken();
     const user = getStoredTenantUser();
-    return token && user ? user : null;
+    if (!token || !user) return null;
+    // If activeSlug is specified in the URL and does not match the stored user's wedding, require login for this wedding
+    if (activeSlug && user.weddingSlug && user.weddingSlug !== activeSlug) {
+      return null;
+    }
+    return user;
   });
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(!tenant);
@@ -158,11 +161,17 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   const [windowHeight, setWindowHeight] = useState<number>(() =>
     typeof window !== "undefined" ? window.innerHeight : 800
   );
+  const [windowWidth, setWindowWidth] = useState<number>(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [copiedQrLink, setCopiedQrLink] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => setWindowHeight(window.innerHeight);
+    const handleResize = () => {
+      setWindowHeight(window.innerHeight);
+      setWindowWidth(window.innerWidth);
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -174,18 +183,21 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
 
   const totalPhoneHeight = selectedPhone.height;
   const fitScale = useMemo(() => {
-    // Header is 56px, canvas padding and breathing room is ~130px
-    const availableH = Math.max(380, windowHeight - 130);
+    const isMobileViewport = windowWidth < 768;
+    // On mobile (<768), controls are floating at bottom (~60px) + padding (~32px)
+    // On desktop, side dock is ~260px wide + padding (~48px)
+    const availableW = isMobileViewport
+      ? Math.max(220, windowWidth - 24)
+      : Math.max(320, windowWidth - 280);
+    const availableH = isMobileViewport
+      ? Math.max(260, windowHeight - 140)
+      : Math.max(360, windowHeight - 120);
+
+    const widthScale = availableW / selectedPhone.width;
     const heightScale = availableH / totalPhoneHeight;
-    // For wider devices like iPad (820px wide), ensure it also fits comfortably horizontally beside control dock
-    const widthScale = 520 / selectedPhone.width;
-    const calculated =
-      selectedPhone.category === "tablet"
-        ? Math.min(heightScale, widthScale)
-        : heightScale;
-    // Cap fit scale between 0.42 and 0.78 so it comfortably fits any screen
-    return Math.min(0.78, Math.max(0.42, Number(calculated.toFixed(3))));
-  }, [windowHeight, totalPhoneHeight, selectedPhone.width, selectedPhone.category]);
+    const calculated = Math.min(widthScale, heightScale);
+    return Math.min(1.0, Math.max(0.28, Number(calculated.toFixed(3))));
+  }, [windowWidth, windowHeight, totalPhoneHeight, selectedPhone.width]);
 
   const activeScale =
     zoomLevel === "100"
@@ -277,13 +289,28 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     if (tenant) {
       getTenantProfile()
         .then((updatedTenant) => {
+          if (activeSlug && updatedTenant.weddingSlug && updatedTenant.weddingSlug !== activeSlug) {
+            clearStoredTenantSession();
+            setTenant(null);
+            setIsLoginModalOpen(true);
+            toast.info(`Please log in with credentials for the ${activeSlug} gallery.`);
+            return;
+          }
           setTenant(updatedTenant);
           const token = getStoredTenantToken();
           if (token) setStoredTenantSession(token, updatedTenant);
         })
-        .catch(() => {});
+        .catch((err: any) => {
+          console.warn("Sub-admin session validation failed or expired:", err);
+          clearStoredTenantSession();
+          setTenant(null);
+          setIsLoginModalOpen(true);
+          toast.error("Your sub-admin session has expired. Please log in again.");
+        });
+    } else {
+      setIsLoginModalOpen(true);
     }
-  }, []);
+  }, [activeSlug]);
 
   // Sync customization whenever dbWedding loads or updates
   useEffect(() => {
@@ -492,6 +519,13 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
         setIsPostSaveGuideOpen(true);
       }
     } catch (err: any) {
+      if (err?.status === 401 || err?.code === "UNAUTHORIZED" || err?.code === "INVALID_TOKEN") {
+        clearStoredTenantSession();
+        setTenant(null);
+        setIsLoginModalOpen(true);
+        toast.error("Your sub-admin session has expired. Please sign in again to save changes.");
+        return;
+      }
       console.error("Save failed:", err);
       toast.error("Failed to Save Changes", {
         description: err?.message || "Please check your database connection.",
@@ -537,6 +571,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <SubAdminLoginModal
           isOpen={isLoginModalOpen}
+          defaultIdentifier={activeSlug || ""}
           onOpenChange={(open) => {
             setIsLoginModalOpen(open);
             if (!open && !tenant) {
@@ -625,14 +660,14 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden sm:block" />
-                  <BreadcrumbItem>
+                  <BreadcrumbItem className="hidden md:block">
                     <BreadcrumbLink className="text-xs font-medium text-foreground">
                       Sub-Admin Portal
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator />
+                  <BreadcrumbSeparator className="hidden md:block" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="text-xs text-muted-foreground">
+                    <BreadcrumbPage className="text-xs text-muted-foreground truncate max-w-[110px] sm:max-w-none">
                       Live Guest View Editor
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -641,13 +676,13 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             </div>
 
             {/* Right Action Controls: Mode Switcher, Phone Selector, Zoom & Tools */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2.5">
               {/* Desktop vs Mobile Toggle */}
               <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs shadow-2xs">
                 <button
                   type="button"
                   onClick={() => setViewMode("desktop")}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                     viewMode === "desktop"
                       ? "bg-background shadow-xs font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -659,7 +694,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setViewMode("mobile")}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                     viewMode === "mobile"
                       ? "bg-background shadow-xs font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -718,20 +753,29 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                 onClick={handleSave}
                 disabled={isSaving}
                 size="sm"
-                className={`text-xs h-8 shadow-sm cursor-pointer shrink-0 ${
+                className={`text-xs h-8 shadow-sm cursor-pointer shrink-0 px-2.5 sm:px-3 ${
                   hasUnsavedChanges
                     ? "bg-accent hover:bg-accent/90 text-accent-foreground animate-pulse"
                     : ""
                 }`}
               >
                 <Sparkles className="size-3.5 mr-1" />
-                {isSaving ? "Saving..." : hasUnsavedChanges ? "Save Changes*" : "Saved"}
+                {isSaving ? (
+                  "Saving..."
+                ) : hasUnsavedChanges ? (
+                  <>
+                    <span className="hidden sm:inline">Save Changes*</span>
+                    <span className="sm:hidden">Save*</span>
+                  </>
+                ) : (
+                  "Saved"
+                )}
               </Button>
             </div>
           </header>
 
           {/* Main Visual Canvas: Dedicated Responsive Desktop or Scaled Mobile Phone Simulator */}
-          <main className="flex-1 overflow-auto bg-[#F2EDE4] dark:bg-[#0D0B0A] p-4 sm:p-6 flex items-center justify-center transition-colors relative">
+          <main className="flex-1 overflow-auto bg-[#F2EDE4] dark:bg-[#0D0B0A] p-2 sm:p-6 flex flex-col transition-colors relative">
             {viewMode === "desktop" ? (
               <SubAdminDesktopCanvas
                 iframeRef={iframeRef}

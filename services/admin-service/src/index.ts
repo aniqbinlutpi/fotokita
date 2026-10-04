@@ -28,7 +28,7 @@ app.onError((err, c) => {
   );
 });
 
-app.get("/health", async (c) => {
+const healthHandler = async (c: any) => {
   let dbStatus = "connected";
   try {
     await client`SELECT 1`;
@@ -43,7 +43,10 @@ app.get("/health", async (c) => {
       database: dbStatus,
     },
   });
-});
+};
+
+app.get("/health", healthHandler);
+app.get("/admin/health", healthHandler);
 
 // Admin API endpoints
 app.route("/admin/auth", authRoute);

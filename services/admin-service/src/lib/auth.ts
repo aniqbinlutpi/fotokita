@@ -34,7 +34,7 @@ export interface AdminPayload {
   exp: number;
 }
 
-export async function createToken(payload: Omit<AdminPayload, "exp">, expiresInSeconds = 86400): Promise<string> {
+export async function createToken(payload: Omit<AdminPayload, "exp">, expiresInSeconds = 86400 * 7): Promise<string> {
   const header = { alg: "HS256", typ: "JWT" };
   const fullPayload: AdminPayload = {
     ...payload,

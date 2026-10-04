@@ -143,6 +143,16 @@ export function AdminControlPage({
   const fetchData = async () => {
     setIsRefreshing(true);
 
+    const handleAuthError = (err: any) => {
+      if (err?.status === 401 || err?.code === "UNAUTHORIZED" || err?.code === "INVALID_TOKEN") {
+        clearStoredAdminSession();
+        setAdminUser(null);
+        toast.error("Your admin session has expired. Please log in again.");
+        return true;
+      }
+      return false;
+    };
+
     // 1. Fetch weddings directly or via admin
     try {
       const weddingsData = await getWeddings();
@@ -159,7 +169,11 @@ export function AdminControlPage({
         ...prev,
         adminService: "online",
       }));
-    } catch {
+    } catch (err: any) {
+      if (handleAuthError(err)) {
+        setIsRefreshing(false);
+        return;
+      }
       setSystemPings((prev) => ({
         ...prev,
         adminService: "offline",
@@ -170,7 +184,11 @@ export function AdminControlPage({
     try {
       const invitesData = await getAdminInvites();
       setInvites(invitesData);
-    } catch (err) {
+    } catch (err: any) {
+      if (handleAuthError(err)) {
+        setIsRefreshing(false);
+        return;
+      }
       console.warn("Could not fetch invites:", err);
     }
 
@@ -178,7 +196,11 @@ export function AdminControlPage({
     try {
       const inquiriesData = await getAdminInquiries();
       setInquiries(inquiriesData);
-    } catch (err) {
+    } catch (err: any) {
+      if (handleAuthError(err)) {
+        setIsRefreshing(false);
+        return;
+      }
       console.warn("Could not fetch customer inquiries:", err);
     }
 

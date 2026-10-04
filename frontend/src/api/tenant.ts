@@ -59,11 +59,32 @@ export interface TenantCustomization {
 const TOKEN_KEY = "fotokita_tenant_token";
 const USER_KEY = "fotokita_tenant_user";
 
+function isJwtExpired(token: string): boolean {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return true;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = JSON.parse(atob(base64));
+    if (!json.exp) return false;
+    return Date.now() >= json.exp * 1000;
+  } catch {
+    return true;
+  }
+}
+
 export function getStoredTenantToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return null;
+  if (isJwtExpired(token)) {
+    clearStoredTenantSession();
+    return null;
+  }
+  return token;
 }
 
 export function getStoredTenantUser(): TenantAccount | null {
+  const token = getStoredTenantToken();
+  if (!token) return null;
   const data = localStorage.getItem(USER_KEY);
   if (!data) return null;
   try {
@@ -179,7 +200,7 @@ export async function updateTenantCustomization(
     payload.textPositions = {
       ...desktopPos,
       ...(customization.mobileTextPositions ? { _mobile: customization.mobileTextPositions } : {}),
-    };
+    } as any;
   }
   const res = await fetch(`${TENANT_BASE_URL}/customization/${encodeURIComponent(weddingId)}`, {
     method: "PUT",

@@ -132,7 +132,7 @@ export function AdminDashboard({
   inquiries,
   tenantAccounts,
   stats,
-  systemPings,
+  systemPings: _systemPings,
   copiedId,
   onCopyLink,
   onViewGallery,
@@ -533,7 +533,7 @@ export function AdminDashboard({
                         const item = payload?.[0]?.payload;
                         return item ? `${item.plan} (RM ${item.price})` : "";
                       }}
-                      formatter={(value, name, item) => (
+                      formatter={(_value, _name, item) => (
                         <div className="flex flex-col gap-1 w-full text-xs">
                           <div className="flex items-center justify-between gap-4">
                             <span className="text-muted-foreground">Subscribers:</span>

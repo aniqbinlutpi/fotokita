@@ -16,22 +16,30 @@ interface SubAdminLoginModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (tenant: TenantAccount) => void;
+  defaultIdentifier?: string;
 }
 
 export const SubAdminLoginModal: React.FC<SubAdminLoginModalProps> = ({
   isOpen,
   onOpenChange,
   onSuccess,
+  defaultIdentifier = "",
 }) => {
-  const [identifier, setIdentifier] = useState("");
+  const [identifier, setIdentifier] = useState(defaultIdentifier);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (defaultIdentifier && !identifier) {
+      setIdentifier(defaultIdentifier);
+    }
+  }, [defaultIdentifier]);
+
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      setIdentifier("");
+      setIdentifier(defaultIdentifier || "");
       setPassword("");
       setErrorMessage(null);
     }

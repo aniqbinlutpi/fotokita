@@ -40,7 +40,7 @@ export interface TenantPayload {
 
 export async function createTenantToken(
   payload: Omit<TenantPayload, "exp" | "role">,
-  expiresInSeconds = 7 * 86400 // 7 days session
+  expiresInSeconds = Number(process.env.TENANT_SESSION_DURATION_SECONDS) || 12 * 3600 // 12 hours session (expires overnight)
 ): Promise<string> {
   const header = { alg: "HS256", typ: "JWT" };
   const fullPayload: TenantPayload = {

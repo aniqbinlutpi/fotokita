@@ -6,7 +6,6 @@ import {
   ArrowRight,
   QrCode,
   X,
-  Layers,
   CheckCircle2,
   HelpCircle,
 } from "lucide-react";
