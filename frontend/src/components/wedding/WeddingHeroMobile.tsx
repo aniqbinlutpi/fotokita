@@ -439,7 +439,7 @@ export const WeddingHeroMobile: React.FC<WeddingHeroProps> = ({
                     })`,
                     textAlign: "center",
                   }}
-                  className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-xs break-words whitespace-pre-wrap"
+                  className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-xs break-normal whitespace-pre-wrap"
                 >
                   {firstName}
                 </h1>
@@ -503,7 +503,7 @@ export const WeddingHeroMobile: React.FC<WeddingHeroProps> = ({
                     })`,
                     textAlign: "center",
                   }}
-                  className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-xs break-words whitespace-pre-wrap"
+                  className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-xs break-normal whitespace-pre-wrap"
                 >
                   {secondName}
                 </h1>

@@ -547,6 +547,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   onSelectView,
   mediaCount,
   totalMediaSize,
+  collapsible = "offcanvas",
   ...props
 }) => {
   const [copied, setCopied] = React.useState(false);
@@ -574,7 +575,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border" {...props}>
+    <Sidebar collapsible={collapsible} className="border-r border-sidebar-border" {...props}>
       {/* Header */}
       <SidebarHeader className="border-b border-sidebar-border p-3.5">
         <SidebarMenu>

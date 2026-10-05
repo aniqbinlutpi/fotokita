@@ -525,7 +525,7 @@ export const WeddingHeroDesktop: React.FC<WeddingHeroProps> = ({
                       })`,
                       textAlign: textPositions?.partner1?.textAlign || "right",
                     }}
-                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-sm break-words whitespace-pre-wrap"
+                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-sm break-normal whitespace-pre-wrap"
                   >
                     {firstName}
                   </h1>
@@ -598,7 +598,7 @@ export const WeddingHeroDesktop: React.FC<WeddingHeroProps> = ({
                       })`,
                       textAlign: textPositions?.partner2?.textAlign || "left",
                     }}
-                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-sm break-words whitespace-pre-wrap"
+                    className="font-normal text-[#2F2926] dark:text-[#F5EFEB] tracking-tight leading-[1.08] drop-shadow-sm break-normal whitespace-pre-wrap"
                   >
                     {secondName}
                   </h1>

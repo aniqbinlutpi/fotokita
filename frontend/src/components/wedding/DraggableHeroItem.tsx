@@ -268,7 +268,11 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
     e.preventDefault();
 
     const targetEl = e.currentTarget as HTMLElement;
-    targetEl?.setPointerCapture?.(e.pointerId);
+    try {
+      targetEl?.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Ignore if iframe/browser restricts pointer capture
+    }
 
     const startX = e.clientX;
     const limits = ITEM_CONFIGS[id] ?? { min: 50, max: 1400, default: 200, scaleFactor: 1 };
@@ -375,7 +379,11 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
 
-      targetEl?.releasePointerCapture?.(e.pointerId);
+      try {
+        targetEl?.releasePointerCapture?.(e.pointerId);
+      } catch {
+        // Ignore
+      }
       document.body.style.cursor = originalCursor;
       document.body.style.userSelect = originalUserSelect;
 
@@ -412,7 +420,11 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
     e.preventDefault();
 
     const targetEl = e.currentTarget as HTMLElement;
-    targetEl?.setPointerCapture?.(e.pointerId);
+    try {
+      targetEl?.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Ignore
+    }
 
     const cornerCursor =
       corner === "top-left" || corner === "bottom-right" ? "nwse-resize" : "nesw-resize";
@@ -473,7 +485,11 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
         window.removeEventListener("pointerup", handlePointerUp);
         window.removeEventListener("pointercancel", handlePointerUp);
 
-        targetEl?.releasePointerCapture?.(e.pointerId);
+        try {
+          targetEl?.releasePointerCapture?.(e.pointerId);
+        } catch {
+          // Ignore
+        }
         document.body.style.cursor = originalCursor;
         document.body.style.userSelect = originalUserSelect;
 
@@ -560,7 +576,11 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
 
-      targetEl?.releasePointerCapture?.(e.pointerId);
+      try {
+        targetEl?.releasePointerCapture?.(e.pointerId);
+      } catch {
+        // Ignore
+      }
       document.body.style.cursor = originalCursor;
       document.body.style.userSelect = originalUserSelect;
 
