@@ -575,9 +575,9 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   };
 
   return (
-    <Sidebar collapsible={collapsible} className="border-r border-sidebar-border" {...props}>
+    <Sidebar collapsible={collapsible} className="border-r border-sidebar-border bg-sidebar" {...props}>
       {/* Header */}
-      <SidebarHeader className="border-b border-sidebar-border p-3.5">
+      <SidebarHeader className="border-b border-sidebar-border p-3.5 bg-sidebar shrink-0 z-10">
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center gap-3">
@@ -624,7 +624,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="space-y-4 px-3 py-3">
+      <SidebarContent className="space-y-4 px-3 py-3 overflow-y-auto overscroll-contain">
         {/* Navigation Sections: Dashboard & Editing */}
         <div className="space-y-1 pb-1">
           {/* Dashboard Item */}
@@ -1407,14 +1407,13 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2">
+      <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2 bg-sidebar shrink-0 z-10">
         <Button
           onClick={onSave}
           disabled={isSaving}
           className="w-full text-xs font-medium shadow-sm cursor-pointer"
           size="sm"
         >
-          <Sparkles className="size-3.5 mr-1.5" />
           {isSaving ? "Saving Deco..." : "Save Customization"}
         </Button>
 

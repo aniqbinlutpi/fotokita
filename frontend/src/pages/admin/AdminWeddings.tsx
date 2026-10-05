@@ -30,7 +30,7 @@ export function AdminWeddings({
   isCleaningUp,
 }: AdminWeddingsProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -40,7 +40,7 @@ export function AdminWeddings({
             Monitor, manage, and configure all wedding gallery registrations.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
           {onTriggerCleanup && (
             <Button
               variant="outline"

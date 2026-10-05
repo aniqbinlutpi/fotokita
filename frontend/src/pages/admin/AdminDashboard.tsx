@@ -258,124 +258,128 @@ export function AdminDashboard({
   // Render
   // -------------------------------------------------------------------------
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
           Super Admin Dashboard
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
           Business overview, revenue metrics, and wedding gallery analytics.
         </p>
       </div>
 
-      {/* Metric KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Metric KPI Cards - 2x2 on mobile, 4 columns on desktop */}
+      <div className="grid gap-2.5 sm:gap-4 grid-cols-2 lg:grid-cols-4 min-w-0 w-full max-w-full">
         <Card
-          className="shadow-xs cursor-pointer hover:border-emerald-500/50 hover:bg-muted/20 transition-all"
+          className="shadow-xs cursor-pointer hover:border-emerald-500/50 hover:bg-muted/20 transition-all min-w-0"
           onClick={() => onNavigateToTab("inquiries")}
         >
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Customer Inquiries
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+              <span className="sm:hidden">Inquiries</span>
+              <span className="hidden sm:inline">Customer Inquiries</span>
             </CardTitle>
-            <MessageSquare className="size-4 text-emerald-600 dark:text-emerald-400" />
+            <MessageSquare className="size-3.5 sm:size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold">{inquiries.length}</span>
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="flex items-baseline gap-1.5 sm:gap-2">
+              <span className="text-lg sm:text-2xl font-bold">{inquiries.length}</span>
               {pendingInquiriesCount > 0 && (
                 <Badge
                   variant="outline"
-                  className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                  className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-medium"
                 >
                   {pendingInquiriesCount} new
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              WhatsApp leads &amp; orders
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              <span className="sm:hidden">WhatsApp leads</span>
+              <span className="hidden sm:inline">WhatsApp leads &amp; orders</span>
             </p>
           </CardContent>
         </Card>
 
         {/* MRR / Monthly Revenue Card */}
         <Card
-          className="shadow-xs cursor-pointer hover:border-violet-500/50 hover:bg-muted/20 transition-all"
+          className="shadow-xs cursor-pointer hover:border-violet-500/50 hover:bg-muted/20 transition-all min-w-0"
           onClick={() => onNavigateToTab("weddings")}
         >
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Revenue ({monthLabel})
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+              <span className="sm:hidden">Revenue</span>
+              <span className="hidden sm:inline">Revenue ({monthLabel})</span>
             </CardTitle>
-            <TrendingUp className="size-4 text-violet-500 dark:text-violet-400" />
+            <TrendingUp className="size-3.5 sm:size-4 text-violet-500 dark:text-violet-400 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold">
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="flex items-baseline gap-1 sm:gap-2">
+              <span className="text-lg sm:text-2xl font-bold font-mono">
                 RM {monthlyRevenue}
               </span>
               {monthlyRevenue === 0 && (
                 <Badge
                   variant="outline"
-                  className="text-[10px] text-muted-foreground border-muted-foreground/30"
+                  className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0 text-muted-foreground border-muted-foreground/30"
                 >
                   no sales
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              RM {totalRevenue} total &bull; {accounts.length} subscribers
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              RM {totalRevenue} total &bull; {accounts.length} subs
             </p>
           </CardContent>
         </Card>
 
         <Card
-          className="shadow-xs cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-all"
+          className="shadow-xs cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-all min-w-0"
           onClick={() => onNavigateToTab("weddings")}
         >
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Weddings
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+              <span className="sm:hidden">Weddings</span>
+              <span className="hidden sm:inline">Total Weddings</span>
             </CardTitle>
-            <Heart className="size-4 text-primary" />
+            <Heart className="size-3.5 sm:size-4 text-primary shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{weddings.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Active registered weddings
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{weddings.length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              Active registered
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <Card className="shadow-xs min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
               Total Media
             </CardTitle>
-            <Camera className="size-4 text-primary" />
+            <Camera className="size-3.5 sm:size-4 text-primary shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">
               {stats?.totalMedia ?? "—"}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Photos &amp; videos in S3 storage
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              Photos &amp; videos
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Revenue & Subscription Charts */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-w-0 w-full max-w-full">
         {/* Revenue Area Chart (Quarterly / Monthly) */}
-        <Card className="shadow-xs">
-          <CardHeader>
+        <Card className="shadow-xs overflow-hidden min-w-0 w-full max-w-full">
+          <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-base font-semibold">
+                <CardTitle className="text-sm sm:text-base font-semibold">
                   {revenuePeriod === "quarterly" ? `Quarterly Revenue (${currentYear})` : "Monthly Revenue"}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs">
                   {revenuePeriod === "quarterly"
                     ? `RM collected across Q1, Q2, Q3 & Q4 ${currentYear}`
                     : "RM collected per month across the last 12 months"}
@@ -383,12 +387,12 @@ export function AdminDashboard({
               </div>
 
               {/* View Switcher: Quarterly vs Monthly */}
-              <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg text-xs self-start sm:self-auto">
+              <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg text-xs self-start sm:self-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => setRevenuePeriod("quarterly")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer",
+                    "px-2 sm:px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer text-xs",
                     revenuePeriod === "quarterly"
                       ? "bg-background text-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -400,7 +404,7 @@ export function AdminDashboard({
                   type="button"
                   onClick={() => setRevenuePeriod("monthly")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer",
+                    "px-2 sm:px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer text-xs",
                     revenuePeriod === "monthly"
                       ? "bg-background text-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -411,66 +415,70 @@ export function AdminDashboard({
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={areaChartConfig} className="h-[240px] w-full">
-              <AreaChart data={revenueChartData} margin={{ top: 10, right: 12, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="fillRevenueArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.7} />
-                    <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  tick={{ fontSize: 11 }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={(v) => `RM${v}`}
-                />
-                <ChartTooltip
-                  cursor={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1, strokeDasharray: "3 3" }}
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(_, payload) => payload?.[0]?.payload?.fullLabel ?? ""}
-                      formatter={(value) => (
-                        <div className="flex w-full items-center justify-between gap-4">
-                          <span className="text-muted-foreground">Revenue:</span>
-                          <span className="font-mono font-medium text-foreground">
-                            RM {Number(value).toLocaleString()}
-                          </span>
-                        </div>
-                      )}
-                    />
-                  }
-                />
-                <Area
-                  dataKey="revenue"
-                  type="monotone"
-                  fill="url(#fillRevenueArea)"
-                  stroke="var(--color-revenue)"
-                  strokeWidth={2}
-                  dot={{ r: revenuePeriod === "quarterly" ? 4 : 2, fill: "var(--color-revenue)" }}
-                  activeDot={{ r: 6 }}
-                />
-              </AreaChart>
-            </ChartContainer>
+          <CardContent className="p-2 sm:p-6 pt-0 min-w-0 max-w-full overflow-hidden">
+            <div className="w-full max-w-full overflow-x-auto overscroll-x-contain pb-2">
+              <div className="min-w-[480px] sm:min-w-full">
+                <ChartContainer config={areaChartConfig} className="aspect-auto h-[200px] sm:h-[240px] w-full">
+                <AreaChart data={revenueChartData} margin={{ top: 10, right: 12, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="fillRevenueArea" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.7} />
+                      <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(v) => `RM${v}`}
+                  />
+                  <ChartTooltip
+                    cursor={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1, strokeDasharray: "3 3" }}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(_, payload) => payload?.[0]?.payload?.fullLabel ?? ""}
+                        formatter={(value) => (
+                          <div className="flex w-full items-center justify-between gap-4">
+                            <span className="text-muted-foreground">Revenue:</span>
+                            <span className="font-mono font-medium text-foreground">
+                              RM {Number(value).toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                      />
+                    }
+                  />
+                  <Area
+                    dataKey="revenue"
+                    type="monotone"
+                    fill="url(#fillRevenueArea)"
+                    stroke="var(--color-revenue)"
+                    strokeWidth={2}
+                    dot={{ r: revenuePeriod === "quarterly" ? 4 : 2, fill: "var(--color-revenue)" }}
+                    activeDot={{ r: 6 }}
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </div>
+            </div>
           </CardContent>
         </Card>
 
         {/* Subscriptions by Plan Bar Chart */}
-        <Card className="shadow-xs">
-          <CardHeader>
+        <Card className="shadow-xs overflow-hidden min-w-0 w-full max-w-full">
+          <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-base font-semibold">Subscriptions by Plan</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-sm sm:text-base font-semibold">Subscriptions by Plan</CardTitle>
+                <CardDescription className="text-xs">
                   {accounts.length === 0
                     ? "No active subscribers yet"
                     : `${accounts.length} active subscriber${accounts.length !== 1 ? "s" : ""} across all tiers`}
@@ -478,12 +486,12 @@ export function AdminDashboard({
               </div>
 
               {/* Metric Toggle */}
-              <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg text-xs self-start sm:self-auto">
+              <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg text-xs self-start sm:self-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => setPlanMetric("subscribers")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer",
+                    "px-2 sm:px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer text-xs",
                     planMetric === "subscribers"
                       ? "bg-background text-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -495,7 +503,7 @@ export function AdminDashboard({
                   type="button"
                   onClick={() => setPlanMetric("revenue")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer",
+                    "px-2 sm:px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer text-xs",
                     planMetric === "revenue"
                       ? "bg-background text-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -506,71 +514,75 @@ export function AdminDashboard({
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={planBarConfig} className="h-[240px] w-full">
-              <BarChart data={planBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
-                <XAxis
-                  dataKey="plan"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  tick={{ fontSize: 11 }}
-                  interval={0}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 11 }}
-                  allowDecimals={false}
-                  tickFormatter={(v) => (planMetric === "revenue" ? `RM${v}` : `${v}`)}
-                />
-                <ChartTooltip
-                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(_, payload) => {
-                        const item = payload?.[0]?.payload;
-                        return item ? `${item.plan} (RM ${item.price})` : "";
-                      }}
-                      formatter={(_value, _name, item) => (
-                        <div className="flex flex-col gap-1 w-full text-xs">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-muted-foreground">Subscribers:</span>
-                            <span className="font-mono font-medium text-foreground">
-                              {item.payload.subscribers} {item.payload.subscribers === 1 ? "user" : "users"}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-muted-foreground">Total Revenue:</span>
-                            <span className="font-mono font-medium text-foreground">
-                              RM {item.payload.revenue.toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+          <CardContent className="p-2 sm:p-6 pt-0 min-w-0 max-w-full overflow-hidden">
+            <div className="w-full max-w-full overflow-x-auto overscroll-x-contain pb-2">
+              <div className="min-w-[480px] sm:min-w-full">
+                <ChartContainer config={planBarConfig} className="aspect-auto h-[200px] sm:h-[240px] w-full">
+                  <BarChart data={planBarData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis
+                      dataKey="plan"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tick={{ fontSize: 10 }}
+                      interval={0}
                     />
-                  }
-                />
-                <Bar
-                  dataKey={planMetric}
-                  fill={planMetric === "subscribers" ? "var(--color-subscribers)" : "var(--color-revenue)"}
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 10 }}
+                      allowDecimals={false}
+                      tickFormatter={(v) => (planMetric === "revenue" ? `RM${v}` : `${v}`)}
+                    />
+                    <ChartTooltip
+                      cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(_, payload) => {
+                            const item = payload?.[0]?.payload;
+                            return item ? `${item.plan} (RM ${item.price})` : "";
+                          }}
+                          formatter={(_value, _name, item) => (
+                            <div className="flex flex-col gap-1 w-full text-xs">
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">Subscribers:</span>
+                                <span className="font-mono font-medium text-foreground">
+                                  {item.payload.subscribers} {item.payload.subscribers === 1 ? "user" : "users"}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">Total Revenue:</span>
+                                <span className="font-mono font-medium text-foreground">
+                                  RM {item.payload.revenue.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        />
+                      }
+                    />
+                    <Bar
+                      dataKey={planMetric}
+                      fill={planMetric === "subscribers" ? "var(--color-subscribers)" : "var(--color-revenue)"}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Recent Weddings Table */}
-      <Card className="shadow-xs">
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="shadow-xs overflow-hidden min-w-0 w-full max-w-full">
+        <CardHeader className="p-4 sm:p-6 flex flex-row items-center justify-between pb-3 min-w-0">
           <div>
-            <CardTitle className="text-base font-semibold">
+            <CardTitle className="text-sm sm:text-base font-semibold">
               Recent Weddings
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               Latest 5 registered wedding events.
             </CardDescription>
           </div>
@@ -578,19 +590,20 @@ export function AdminDashboard({
             variant="ghost"
             size="sm"
             onClick={() => onNavigateToTab("weddings")}
-            className="text-xs"
+            className="text-xs h-8 px-2 cursor-pointer"
           >
             View All ({weddings.length})
           </Button>
         </CardHeader>
-        <CardContent className="p-0">
-          <Table>
+        <CardContent className="p-0 overflow-hidden min-w-0 max-w-full">
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
+            <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Wedding Name</TableHead>
-                <TableHead>URL Slug</TableHead>
-                <TableHead>Event Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-xs whitespace-nowrap">Wedding Name</TableHead>
+                <TableHead className="text-xs whitespace-nowrap">URL Slug</TableHead>
+                <TableHead className="text-xs whitespace-nowrap hidden sm:table-cell">Event Date</TableHead>
+                <TableHead className="text-right text-xs whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -598,7 +611,7 @@ export function AdminDashboard({
                 <TableRow>
                   <TableCell
                     colSpan={4}
-                    className="text-center py-8 text-muted-foreground"
+                    className="text-center py-8 text-xs text-muted-foreground"
                   >
                     No weddings found. Create your first wedding.
                   </TableCell>
@@ -606,28 +619,29 @@ export function AdminDashboard({
               ) : (
                 weddings.slice(0, 5).map((w) => (
                   <TableRow key={w.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-xs whitespace-nowrap">
                       {w.name}
                     </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-xs px-2 py-0.5 rounded bg-muted">
+                    <TableCell className="whitespace-nowrap">
+                      <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-muted">
                         /{w.slug}
                       </span>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap hidden sm:table-cell">
                       {new Date(w.date).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
                       })}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="icon-xs"
                           onClick={() => onCopyLink(w.slug, w.id)}
                           title="Copy Link"
+                          className="size-7 cursor-pointer"
                         >
                           {copiedId === w.id ? (
                             <Check className="size-3 text-emerald-500" />
@@ -640,6 +654,7 @@ export function AdminDashboard({
                           size="icon-xs"
                           onClick={() => onViewGallery(w.slug)}
                           title="Open Gallery"
+                          className="size-7 cursor-pointer"
                         >
                           <ExternalLink className="size-3" />
                         </Button>
@@ -650,6 +665,7 @@ export function AdminDashboard({
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

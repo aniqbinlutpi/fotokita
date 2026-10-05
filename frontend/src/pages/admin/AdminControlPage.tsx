@@ -531,8 +531,8 @@ export function AdminControlPage({
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background text-foreground">
+    <SidebarProvider className="w-full max-w-full min-w-0 overflow-x-clip">
+      <div className="flex min-h-screen w-full max-w-full min-w-0 overflow-x-clip bg-background text-foreground">
         {/* Sidebar */}
         <AdminSidebar
           activeTab={activeTab}
@@ -544,13 +544,22 @@ export function AdminControlPage({
         />
 
         {/* Inset Main View */}
-        <SidebarInset className="flex flex-col flex-1 min-w-0">
+        <SidebarInset className="flex flex-col flex-1 min-w-0 w-full max-w-full overflow-x-clip">
           {/* Header */}
-          <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background/95 backdrop-blur-sm px-4 sm:px-6">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
+          <header className="sticky top-0 z-20 flex h-14 sm:h-16 shrink-0 items-center justify-between gap-1.5 sm:gap-2 border-b bg-background/95 backdrop-blur-sm px-2.5 sm:px-6 w-full max-w-full overflow-x-clip">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
+              <SidebarTrigger className="-ml-1 shrink-0 cursor-pointer" />
+              <Separator orientation="vertical" className="hidden sm:block mr-2 h-4 shrink-0" />
+              {/* Mobile concise label */}
+              <span className="text-xs font-semibold truncate sm:hidden">
+                {activeTab === "overview" && "Dashboard"}
+                {activeTab === "inquiries" && "Inquiries"}
+                {activeTab === "invites" && "Invites"}
+                {activeTab === "weddings" && "Weddings"}
+                {activeTab === "system" && "System"}
+              </span>
+              {/* Desktop breadcrumb */}
+              <Breadcrumb className="hidden sm:flex min-w-0">
                 <BreadcrumbList>
                   <BreadcrumbItem>
                     <BreadcrumbLink
@@ -559,14 +568,14 @@ export function AdminControlPage({
                         e.preventDefault();
                         setActiveTab("overview");
                       }}
-                      className="font-medium"
+                      className="font-medium text-xs cursor-pointer"
                     >
                       Fotokita Admin
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="capitalize">
+                  <BreadcrumbItem className="min-w-0">
+                    <BreadcrumbPage className="capitalize text-xs truncate">
                       {activeTab === "overview" && "Dashboard Overview"}
                       {activeTab === "inquiries" && "Customer Inquiries (WhatsApp Leads)"}
                       {activeTab === "invites" && "Tenant Invites (24h Single-Use)"}
@@ -578,18 +587,20 @@ export function AdminControlPage({
               </Breadcrumb>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={fetchData}
                 disabled={isRefreshing}
-                className="gap-1.5 text-xs h-8 cursor-pointer"
+                className="h-8 w-8 p-0 sm:w-auto sm:px-3 text-xs cursor-pointer shrink-0"
+                title="Refresh data"
+                aria-label="Refresh data"
               >
                 <RefreshCw
                   className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`}
                 />
-                <span className="hidden sm:inline">Refresh</span>
+                <span className="hidden sm:inline ml-1.5">Refresh</span>
               </Button>
 
               <Button
@@ -599,25 +610,29 @@ export function AdminControlPage({
                   setNewlyCreatedInvite(null);
                   setIsCreateInviteOpen(true);
                 }}
-                className="gap-1.5 text-xs h-8 border-accent/40 text-accent hover:bg-accent/10 cursor-pointer"
+                className="h-8 w-8 p-0 sm:w-auto sm:px-3 text-xs border-accent/40 text-accent hover:bg-accent/10 cursor-pointer shrink-0 sm:gap-1.5"
+                title="Generate single-use invite link"
+                aria-label="Generate invite link"
               >
-                <UserPlus className="size-3.5" />
-                <span>Generate Invite</span>
+                <UserPlus className="size-3.5 shrink-0" />
+                <span className="hidden sm:inline">Invite</span>
               </Button>
 
               <Button
                 size="sm"
                 onClick={() => setIsCreateOpen(true)}
-                className="gap-1.5 text-xs h-8 cursor-pointer"
+                className="h-8 px-2.5 sm:px-3 text-xs cursor-pointer shrink-0 gap-1 font-medium bg-primary text-primary-foreground"
+                title="Create new wedding event"
               >
-                <Plus className="size-3.5" />
-                <span>Create Wedding</span>
+                <Plus className="size-3.5 shrink-0" />
+                <span className="hidden sm:inline">Create </span>
+                <span>Wedding</span>
               </Button>
             </div>
           </header>
 
           {/* Main Content Area */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 max-w-7xl w-full mx-auto min-w-0 overflow-x-clip">
             {activeTab === "overview" && (
               <AdminDashboard
                 weddings={weddings}

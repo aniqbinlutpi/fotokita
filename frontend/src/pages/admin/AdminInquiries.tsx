@@ -73,7 +73,7 @@ export function AdminInquiries({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -108,77 +108,77 @@ export function AdminInquiries({
       </div>
 
       {/* Metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 min-w-0">
+        <Card className="shadow-xs min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
               Total Inquiries
             </CardTitle>
-            <MessageSquare className="size-4 text-primary" />
+            <MessageSquare className="size-3.5 sm:size-4 text-primary shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{inquiries.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              All received customer inquiries
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{inquiries.length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              All inquiries
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <Card className="shadow-xs min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
               Pending Action
             </CardTitle>
-            <Clock className="size-4 text-amber-500" />
+            <Clock className="size-3.5 sm:size-4 text-amber-500 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
               {inquiries.filter((i) => i.status === "pending").length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Awaiting reply or verification
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              Awaiting reply
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <Card className="shadow-xs min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
               Contacted
             </CardTitle>
-            <MessageCircle className="size-4 text-blue-500" />
+            <MessageCircle className="size-3.5 sm:size-4 text-blue-500 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
               {inquiries.filter((i) => i.status === "contacted").length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Engaged on WhatsApp
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              Engaged WhatsApp
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <Card className="shadow-xs min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
               Converted
             </CardTitle>
-            <CheckCircle2 className="size-4 text-emerald-500" />
+            <CheckCircle2 className="size-3.5 sm:size-4 text-emerald-500 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
               {inquiries.filter((i) => i.status === "converted").length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Paid &amp; registration link issued
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              Link issued
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filter and Table Card */}
-      <Card className="shadow-xs">
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-4">
+      <Card className="shadow-xs overflow-hidden min-w-0 w-full max-w-full">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-4 min-w-0">
           <div>
             <CardTitle className="text-base font-semibold">
               Inquiries Directory
@@ -239,8 +239,9 @@ export function AdminInquiries({
           </div>
         </CardHeader>
 
-        <CardContent className="p-0">
-          <Table>
+        <CardContent className="p-0 overflow-hidden min-w-0 max-w-full">
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
@@ -413,6 +414,7 @@ export function AdminInquiries({
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

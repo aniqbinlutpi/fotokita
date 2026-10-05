@@ -113,8 +113,9 @@ export const WeddingsDataTable: React.FC<WeddingsDataTableProps> = ({
       </div>
 
       {/* Table */}
-      <Card className="shadow-xs overflow-hidden">
-        <Table>
+      <Card className="shadow-xs overflow-hidden min-w-0 w-full max-w-full">
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>
@@ -305,6 +306,7 @@ export const WeddingsDataTable: React.FC<WeddingsDataTableProps> = ({
           )}
           </TableBody>
         </Table>
+        </div>
       </Card>
 
       {/* Pagination Controls */}

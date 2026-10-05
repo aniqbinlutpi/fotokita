@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
-  Sparkles,
   Smartphone,
   Monitor,
   Eye,
@@ -160,7 +159,9 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   const [activeView, setActiveView] = useState<"editor" | "dashboard">("editor");
 
   // View Mode: 'desktop' | 'mobile'
-  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">(() =>
+    typeof window !== "undefined" && window.innerWidth < 768 ? "mobile" : "desktop"
+  );
   const [selectedPhoneId, setSelectedPhoneId] = useState<string>("iphone-16-pro");
   const [zoomLevel, setZoomLevel] = useState<"fit" | "100" | "85" | "75" | "65">("fit");
   const [showAlignmentGuides, setShowAlignmentGuides] = useState<boolean>(true);
@@ -666,13 +667,18 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
         {/* Main Content Area */}
         <SidebarInset className="flex flex-col flex-1 h-screen overflow-hidden">
           {/* Top Bar Header */}
-          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card/60 backdrop-blur-md px-4 z-20">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1 cursor-pointer" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
+          <header className="flex h-14 shrink-0 items-center justify-between gap-1.5 sm:gap-2 border-b border-border bg-card/60 backdrop-blur-md px-2 sm:px-4 z-20 overflow-x-hidden">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <SidebarTrigger className="-ml-1 cursor-pointer shrink-0" />
+              <Separator orientation="vertical" className="hidden sm:block mr-2 h-4 shrink-0" />
+              {/* Mobile compact title */}
+              <span className="text-xs font-medium text-foreground truncate max-w-[85px] xs:max-w-[120px] sm:hidden">
+                {activeView === "dashboard" ? "Dashboard" : "Editor"}
+              </span>
+              {/* Desktop / Tablet Breadcrumbs */}
+              <Breadcrumb className="hidden sm:flex min-w-0">
                 <BreadcrumbList>
-                  <BreadcrumbItem className="hidden sm:block">
+                  <BreadcrumbItem>
                     <BreadcrumbLink
                       onClick={onNavigateHome}
                       className="cursor-pointer text-xs"
@@ -680,15 +686,15 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                       Fotokita
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden sm:block" />
+                  <BreadcrumbSeparator />
                   <BreadcrumbItem className="hidden md:block">
                     <BreadcrumbLink className="text-xs font-medium text-foreground">
                       Sub-Admin Portal
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="text-xs text-muted-foreground truncate max-w-[130px] sm:max-w-none">
+                  <BreadcrumbItem className="min-w-0">
+                    <BreadcrumbPage className="text-xs text-muted-foreground truncate">
                       {activeView === "dashboard"
                         ? "Guest Media & Downloads Dashboard"
                         : "Live Guest View Editor"}
@@ -699,14 +705,14 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
             </div>
 
             {/* Right Action Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {activeView === "dashboard" ? (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setActiveView("editor")}
-                    className="text-xs h-8 cursor-pointer gap-1.5 shrink-0"
+                    className="text-xs h-8 cursor-pointer gap-1.5 shrink-0 px-2 sm:px-3"
                   >
                     <Sliders className="size-3.5 text-muted-foreground" />
                     <span>Live Editor</span>
@@ -726,15 +732,16 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
               ) : (
                 <>
                   {/* Desktop vs Mobile Toggle */}
-                  <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs shadow-2xs">
+                  <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs shadow-2xs shrink-0">
                     <button
                       type="button"
                       onClick={() => setViewMode("desktop")}
-                      className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                      className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                         viewMode === "desktop"
                           ? "bg-background shadow-xs font-medium text-foreground"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
+                      title="Desktop preview"
                     >
                       <Monitor className="size-3.5" />
                       <span className="hidden sm:inline">Desktop</span>
@@ -742,11 +749,12 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     <button
                       type="button"
                       onClick={() => setViewMode("mobile")}
-                      className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                      className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                         viewMode === "mobile"
                           ? "bg-background shadow-xs font-medium text-foreground"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
+                      title="Mobile preview"
                     >
                       <Smartphone className="size-3.5" />
                       <span className="hidden sm:inline">Mobile</span>
@@ -754,7 +762,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsLayoutGuideOpen(true)}
-                      className="px-1.5 py-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-md hover:bg-background/60"
+                      className="hidden sm:block px-1.5 py-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-md hover:bg-background/60"
                       title="Learn why Desktop and Mobile layouts are separate"
                       aria-label="Responsive layout guide"
                     >
@@ -768,7 +776,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     size="icon"
                     onClick={handleRefreshPreview}
                     title="Refresh preview"
-                    className="size-8 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                    className="size-7.5 sm:size-8 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
                   >
                     <RotateCcw className="size-3.5" />
                   </Button>
@@ -779,7 +787,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     size="sm"
                     onClick={() => setIsQrModalOpen(true)}
                     title="Scan QR code to test on real phone"
-                    className="hidden sm:inline-flex text-xs h-8 cursor-pointer gap-1.5 shrink-0"
+                    className="hidden md:inline-flex text-xs h-8 cursor-pointer gap-1.5 shrink-0"
                   >
                     <QrCode className="size-3.5 text-muted-foreground" />
                     <span>Test Phone</span>
@@ -790,7 +798,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={handleOpenLiveGuestView}
-                    className="hidden sm:inline-flex text-xs h-8 cursor-pointer shrink-0"
+                    className="hidden lg:inline-flex text-xs h-8 cursor-pointer shrink-0"
                   >
                     <Eye className="size-3.5 mr-1 text-muted-foreground" />
                     <span>Guest View ↗</span>
@@ -801,19 +809,19 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     onClick={handleSave}
                     disabled={isSaving}
                     size="sm"
-                    className={`text-xs h-8 shadow-sm cursor-pointer shrink-0 px-2.5 sm:px-3 ${
+                    variant={hasUnsavedChanges ? "default" : "outline"}
+                    className={`text-xs h-8 shadow-xs cursor-pointer shrink-0 px-2.5 sm:px-3.5 font-medium transition-all ${
                       hasUnsavedChanges
-                        ? "bg-accent hover:bg-accent/90 text-accent-foreground animate-pulse"
-                        : ""
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+                        : "bg-background hover:bg-muted text-foreground border-border"
                     }`}
                   >
-                    <Sparkles className="size-3.5 mr-1" />
                     {isSaving ? (
                       "Saving..."
                     ) : hasUnsavedChanges ? (
                       <>
-                        <span className="hidden sm:inline">Save Changes*</span>
-                        <span className="sm:hidden">Save*</span>
+                        <span className="hidden sm:inline">Save Changes</span>
+                        <span className="sm:hidden">Save</span>
                       </>
                     ) : (
                       "Saved"

@@ -209,15 +209,15 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+    <div className="flex-1 overflow-y-auto bg-background p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto w-full">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-border pb-4 sm:pb-5">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-serif text-2xl sm:text-3xl font-medium tracking-tight text-foreground">
+          <div className="flex items-center gap-2">
+            <h1 className="font-serif text-xl sm:text-3xl font-medium tracking-tight text-foreground">
               Guest Uploads & Downloads
             </h1>
-            <Badge variant="outline" className="text-xs px-2 py-0.5 border-accent/40 text-accent font-mono">
+            <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 border-accent/40 text-accent font-mono shrink-0">
               Live Media
             </Badge>
           </div>
@@ -227,13 +227,13 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="text-xs h-8 cursor-pointer gap-1.5"
+            className="text-xs h-8 cursor-pointer gap-1.5 flex-1 sm:flex-initial"
           >
             <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin text-accent" : ""}`} />
             <span>Segarkan</span>
@@ -244,10 +244,11 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
               variant="outline"
               size="sm"
               onClick={onSwitchToEditor}
-              className="text-xs h-8 cursor-pointer gap-1.5"
+              className="text-xs h-8 cursor-pointer gap-1.5 flex-1 sm:flex-initial"
             >
               <Sliders className="size-3.5 text-muted-foreground" />
-              <span>Buka Editor Layout</span>
+              <span className="hidden xs:inline">Editor Layout</span>
+              <span className="xs:hidden">Editor</span>
             </Button>
           )}
 
@@ -256,7 +257,7 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
               variant="default"
               size="sm"
               onClick={onOpenGuestView}
-              className="text-xs h-8 cursor-pointer gap-1.5"
+              className="text-xs h-8 cursor-pointer gap-1.5 w-full xs:w-auto"
             >
               <ExternalLink className="size-3.5" />
               <span>Lihat Galeri Tetamu</span>
@@ -266,11 +267,11 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
       </div>
 
       {/* Top 3 Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4">
         {/* Total Photos */}
-        <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+        <div className="rounded-xl border border-border bg-card p-3.5 sm:p-5 shadow-xs flex items-center justify-between">
+          <div className="space-y-0.5 sm:space-y-1">
+            <span className="text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">
               Jumlah Gambar & Media
             </span>
             <div className="flex items-baseline gap-2">
@@ -280,15 +281,15 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
               <span className="text-xs text-muted-foreground">foto dimuat naik</span>
             </div>
           </div>
-          <div className="size-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <ImageIcon className="size-5" />
+          <div className="size-10 sm:size-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <ImageIcon className="size-4.5 sm:size-5" />
           </div>
         </div>
 
         {/* Total Storage Size */}
-        <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+        <div className="rounded-xl border border-border bg-card p-3.5 sm:p-5 shadow-xs flex items-center justify-between">
+          <div className="space-y-0.5 sm:space-y-1">
+            <span className="text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">
               Jumlah Saiz Keseluruhan
             </span>
             <div className="flex items-baseline gap-2">
@@ -298,15 +299,15 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
               <span className="text-xs text-muted-foreground">di storan S3</span>
             </div>
           </div>
-          <div className="size-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <HardDrive className="size-5" />
+          <div className="size-10 sm:size-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <HardDrive className="size-4.5 sm:size-5" />
           </div>
         </div>
 
         {/* Wishes & Signatures */}
-        <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+        <div className="rounded-xl border border-border bg-card p-3.5 sm:p-5 shadow-xs flex items-center justify-between">
+          <div className="space-y-0.5 sm:space-y-1">
+            <span className="text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">
               Ucapan & Tandatangan
             </span>
             <div className="flex items-baseline gap-2">
@@ -318,18 +319,18 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
               </span>
             </div>
           </div>
-          <div className="size-11 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <Heart className="size-5" />
+          <div className="size-10 sm:size-11 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+            <Heart className="size-4.5 sm:size-5" />
           </div>
         </div>
       </div>
 
       {/* Main Bulk Download Actions Banner */}
-      <div className="rounded-2xl border border-border bg-card/70 backdrop-blur-xs p-5 sm:p-6 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-4">
+      <div className="rounded-2xl border border-border bg-card/70 backdrop-blur-xs p-4 sm:p-6 shadow-sm space-y-3 sm:space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 border-b border-border/60 pb-3.5 sm:pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <FileArchive className="size-5 text-accent" />
+              <FileArchive className="size-5 text-accent shrink-0" />
               <h2 className="text-base sm:text-lg font-serif font-medium text-foreground">
                 Pilihan Muat Turun Pukal (Download All as ZIP)
               </h2>
@@ -339,8 +340,8 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-mono bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50 self-start md:self-auto">
-            <span className="text-muted-foreground">Saiz Total:</span>
+          <div className="flex items-center gap-2 text-xs font-mono bg-muted/50 px-2.5 sm:px-3 py-1.5 rounded-lg border border-border/50 self-start md:self-auto shrink-0">
+            <span className="text-muted-foreground">Total:</span>
             <span className="font-semibold text-foreground">{formattedTotalSize}</span>
             <span className="text-muted-foreground">•</span>
             <span className="text-foreground font-semibold">{totalCount} Foto</span>
@@ -348,13 +349,13 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
         </div>
 
         {/* The Two Download Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {/* Option 1: Raw ZIP */}
-          <div className="rounded-xl border border-border bg-sidebar-accent/25 hover:bg-sidebar-accent/40 p-4 transition-all flex flex-col justify-between space-y-3">
+          <div className="rounded-xl border border-border bg-sidebar-accent/25 hover:bg-sidebar-accent/40 p-3.5 sm:p-4 transition-all flex flex-col justify-between space-y-3">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Download className="size-3.5 text-accent" />
+                  <Download className="size-3.5 text-accent shrink-0" />
                   Format 1: Raw Asal
                 </span>
                 <Badge variant="secondary" className="text-[10px] font-mono">
@@ -377,24 +378,24 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
             >
               {downloadingMode === "raw" ? (
                 <>
-                  <Loader2 className="size-3.5 animate-spin" />
-                  <span>Sedang Memproses Raw ZIP...</span>
+                  <Loader2 className="size-3.5 animate-spin shrink-0" />
+                  <span className="truncate">Sedang Memproses Raw ZIP...</span>
                 </>
               ) : (
                 <>
-                  <Download className="size-3.5" />
-                  <span>Download Raw ZIP ({totalCount} Foto)</span>
+                  <Download className="size-3.5 shrink-0" />
+                  <span className="truncate">Download Raw ZIP ({totalCount} Foto)</span>
                 </>
               )}
             </Button>
           </div>
 
           {/* Option 2: With Portrait Template ZIP */}
-          <div className="rounded-xl border border-accent/40 bg-accent/5 hover:bg-accent/10 p-4 transition-all flex flex-col justify-between space-y-3 relative overflow-hidden">
+          <div className="rounded-xl border border-accent/40 bg-accent/5 hover:bg-accent/10 p-3.5 sm:p-4 transition-all flex flex-col justify-between space-y-3 relative overflow-hidden">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-accent flex items-center gap-1.5">
-                  <Sparkles className="size-3.5 text-accent" />
+                  <Sparkles className="size-3.5 text-accent shrink-0" />
                   Format 2: Kad Photobooth
                 </span>
                 <Badge variant="default" className="text-[10px] bg-accent text-accent-foreground">
@@ -416,13 +417,13 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
             >
               {downloadingMode === "portrait" ? (
                 <>
-                  <Loader2 className="size-3.5 animate-spin" />
-                  <span>Sedang Menjana Portrait ZIP...</span>
+                  <Loader2 className="size-3.5 animate-spin shrink-0" />
+                  <span className="truncate">Sedang Menjana Portrait ZIP...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="size-3.5" />
-                  <span>Download Portrait Template ZIP</span>
+                  <Sparkles className="size-3.5 shrink-0" />
+                  <span className="truncate">Download Portrait Template ZIP</span>
                 </>
               )}
             </Button>
@@ -431,14 +432,14 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
 
         {/* Live Progress Bar Indicator when downloading */}
         {progress && downloadingMode && (
-          <div className="rounded-xl border border-accent/30 bg-background/95 p-4 space-y-2.5 animate-in fade-in-50">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <Loader2 className="size-3.5 animate-spin text-accent" />
-                <span>{progress.statusText}</span>
+          <div className="rounded-xl border border-accent/30 bg-background/95 p-3.5 sm:p-4 space-y-2.5 animate-in fade-in-50">
+            <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 font-medium text-foreground truncate min-w-0">
+                <Loader2 className="size-3.5 animate-spin text-accent shrink-0" />
+                <span className="truncate">{progress.statusText}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-muted-foreground">
+              <div className="flex items-center justify-between xs:justify-end gap-3 shrink-0">
+                <span className="font-mono text-muted-foreground text-[11px] sm:text-xs">
                   {progress.percent}% ({progress.current}/{progress.total})
                 </span>
                 <Button
@@ -466,7 +467,7 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
 
       {/* Gallery List & Filtering Header */}
       <div className="space-y-4 pt-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h3 className="font-serif text-lg font-medium text-foreground">
               Senarai Gambar Tetamu
@@ -476,13 +477,13 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
             {/* Filter Pills */}
-            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
+            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setFilterType("all")}
-                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer text-center whitespace-nowrap ${
                   filterType === "all"
                     ? "bg-background shadow-xs font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -493,7 +494,7 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterType("wishes")}
-                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer text-center whitespace-nowrap ${
                   filterType === "wishes"
                     ? "bg-background shadow-xs font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -504,7 +505,7 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterType("signature")}
-                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer text-center whitespace-nowrap ${
                   filterType === "signature"
                     ? "bg-background shadow-xs font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -515,20 +516,20 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
             </div>
 
             {/* Search */}
-            <div className="relative min-w-[200px]">
+            <div className="relative w-full sm:w-60 md:w-64">
               <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Cari pengirim atau ucapan..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 text-xs bg-card"
+                className="h-8 pl-8 text-xs bg-card w-full"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   <X className="size-3" />
                 </button>
@@ -539,7 +540,7 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
 
         {/* Empty State */}
         {filteredList.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-12 text-center space-y-3 bg-card/30">
+          <div className="rounded-2xl border border-dashed border-border p-8 sm:p-12 text-center space-y-3 bg-card/30">
             <div className="size-12 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
               <ImageIcon className="size-6" />
             </div>
@@ -565,7 +566,7 @@ export const SubAdminMediaDashboard: React.FC<SubAdminMediaDashboardProps> = ({
           </div>
         ) : (
           /* Grid of Media Items */
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {filteredList.map((item, index) => (
               <MediaCardItem
                 key={item.id}
@@ -710,13 +711,13 @@ const MediaCardItem: React.FC<MediaCardItemProps> = ({
             variant="outline"
             onClick={onDownloadRaw}
             disabled={isDownloadingRaw || !imageUrl}
-            className="h-7 text-[10px] px-1.5 cursor-pointer gap-1 truncate"
+            className="h-7.5 text-[11px] px-2 cursor-pointer gap-1 truncate"
             title="Download foto asal (Raw)"
           >
             {isDownloadingRaw ? (
-              <Loader2 className="size-3 animate-spin" />
+              <Loader2 className="size-3 animate-spin shrink-0" />
             ) : (
-              <Download className="size-3" />
+              <Download className="size-3 shrink-0" />
             )}
             <span className="truncate">Raw</span>
           </Button>
@@ -726,13 +727,13 @@ const MediaCardItem: React.FC<MediaCardItemProps> = ({
             variant="default"
             onClick={onDownloadPortrait}
             disabled={isDownloadingPortrait || !imageUrl}
-            className="h-7 text-[10px] px-1.5 cursor-pointer gap-1 bg-accent hover:bg-accent/90 text-accent-foreground truncate font-medium"
+            className="h-7.5 text-[11px] px-2 cursor-pointer gap-1 bg-accent hover:bg-accent/90 text-accent-foreground truncate font-medium"
             title="Download dengan template photobooth portrait"
           >
             {isDownloadingPortrait ? (
-              <Loader2 className="size-3 animate-spin" />
+              <Loader2 className="size-3 animate-spin shrink-0" />
             ) : (
-              <Sparkles className="size-3" />
+              <Sparkles className="size-3 shrink-0" />
             )}
             <span className="truncate">Portrait</span>
           </Button>
