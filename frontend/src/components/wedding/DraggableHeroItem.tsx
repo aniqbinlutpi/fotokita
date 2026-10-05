@@ -253,6 +253,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       onDragStart,
       onDragMove,
       onDragEnd,
+      position?.textAlign,
     ]
   );
 
@@ -262,8 +263,12 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
   // Canva-style Side Handle Resizing (Adjusts Bounding Box Width & Wraps Text / Scales Orb)
   const handleSideResizeStart = (e: React.PointerEvent, side: "left" | "right") => {
     if (!isEditor || isLocked) return;
+    if (e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
+
+    const targetEl = e.currentTarget as HTMLElement;
+    targetEl?.setPointerCapture?.(e.pointerId);
 
     const startX = e.clientX;
     const limits = ITEM_CONFIGS[id] ?? { min: 50, max: 1400, default: 200, scaleFactor: 1 };
@@ -272,28 +277,107 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       domRef.current?.getBoundingClientRect().width ??
       200;
     const initialWidth = liveWidth ?? (position?.width ? position.width : Math.round(currentDomWidth));
+    const initialOffset = { ...latestOffsetRef.current };
+    const initialX = initialOffset.x;
+    const initialY = initialOffset.y;
+
+    // Detect layout anchor alignment
+    const parent = domRef.current?.parentElement;
+    let alignMode: "flex-start" | "flex-end" | "center" = "flex-start";
+    if (parent) {
+      const computedParent = window.getComputedStyle(parent);
+      if (computedParent.alignItems === "flex-end" || computedParent.alignItems === "end") {
+        alignMode = "flex-end";
+      } else if (computedParent.alignItems === "center") {
+        alignMode = "center";
+      } else {
+        alignMode = "flex-start";
+      }
+    }
+    const computedSelf = domRef.current ? window.getComputedStyle(domRef.current) : null;
+    if (computedSelf?.alignSelf === "flex-end" || computedSelf?.alignSelf === "end") {
+      alignMode = "flex-end";
+    } else if (computedSelf?.alignSelf === "flex-start" || computedSelf?.alignSelf === "start") {
+      alignMode = "flex-start";
+    } else if (computedSelf?.alignSelf === "center") {
+      alignMode = "center";
+    }
+
+    const originalCursor = document.body.style.cursor;
+    const originalUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
 
     setIsResizingWidth(true);
     setResizeIndicator({ type: "width", value: `${initialWidth}px` });
 
     let latestW = initialWidth;
+    let latestX = initialX;
+    let rafId: number | null = null;
 
     const handlePointerMove = (moveEvt: PointerEvent) => {
-      const deltaX = moveEvt.clientX - startX;
-      // Right handle: moving right expands width; Left handle: moving left expands width
-      const change = side === "right" ? deltaX : -deltaX;
-      const minW = isObjectItem ? limits.min : 50;
-      const maxW = isObjectItem ? limits.max : 1400;
-      const computed = Math.max(minW, Math.min(maxW, Math.round(initialWidth + change)));
-      latestW = computed;
-      setLiveWidth(computed);
-      setResizeIndicator({ type: "width", value: `${computed}px` });
+      const clientX = moveEvt.clientX;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = requestAnimationFrame(() => {
+        const deltaX = clientX - startX;
+        // Right handle: moving right expands width; Left handle: moving left expands width
+        const change = side === "right" ? deltaX : -deltaX;
+        const minW = isObjectItem ? limits.min : 50;
+        const maxW = isObjectItem ? limits.max : 1400;
+        const computedW = Math.max(minW, Math.min(maxW, Math.round(initialWidth + change)));
+        const actualDeltaW = computedW - initialWidth;
+
+        let newX = initialX;
+        if (alignMode === "flex-end") {
+          // Right-anchored (e.g. Partner 1):
+          // Dragging right handle expands to the right; shift x right so left edge stays pinned
+          // Dragging left handle expands to the left; x stays same because right edge is already pinned!
+          if (side === "right") {
+            newX = initialX + actualDeltaW;
+          } else {
+            newX = initialX;
+          }
+        } else if (alignMode === "flex-start") {
+          // Left-anchored (e.g. Partner 2):
+          // Dragging right handle expands to the right; x stays same because left edge is pinned!
+          // Dragging left handle expands to the left; shift x left so right edge stays pinned
+          if (side === "left") {
+            newX = initialX - actualDeltaW;
+          } else {
+            newX = initialX;
+          }
+        } else {
+          // Center-anchored (e.g. Eyebrow, mobile items):
+          // Symmetrical expansion by default; shift x by half delta so opposite edge stays pinned!
+          if (side === "right") {
+            newX = initialX + Math.round(actualDeltaW / 2);
+          } else {
+            newX = initialX - Math.round(actualDeltaW / 2);
+          }
+        }
+
+        latestW = computedW;
+        latestX = newX;
+        latestOffsetRef.current = { x: newX, y: initialY };
+        setLiveWidth(computedW);
+        setLiveOffset({ x: newX, y: initialY });
+        setResizeIndicator({ type: "width", value: `${computedW}px` });
+      });
     };
 
     const handlePointerUp = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
+
+      targetEl?.releasePointerCapture?.(e.pointerId);
+      document.body.style.cursor = originalCursor;
+      document.body.style.userSelect = originalUserSelect;
 
       setIsResizingWidth(false);
       setResizeIndicator(null);
@@ -301,8 +385,8 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       if (onPositionChange) {
         onPositionChange(id, {
           ...latestOffsetRef.current,
-          x: Math.round(latestOffsetRef.current.x),
-          y: Math.round(latestOffsetRef.current.y),
+          x: Math.round(latestX),
+          y: Math.round(initialY),
           zIndex: position?.zIndex,
           locked: position?.locked,
           fontSize: isObjectItem ? undefined : liveFontSize,
@@ -323,8 +407,19 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
     corner: "top-left" | "top-right" | "bottom-left" | "bottom-right"
   ) => {
     if (!isEditor || isLocked) return;
+    if (e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
+
+    const targetEl = e.currentTarget as HTMLElement;
+    targetEl?.setPointerCapture?.(e.pointerId);
+
+    const cornerCursor =
+      corner === "top-left" || corner === "bottom-right" ? "nwse-resize" : "nesw-resize";
+    const originalCursor = document.body.style.cursor;
+    const originalUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = cornerCursor;
+    document.body.style.userSelect = "none";
 
     const startX = e.clientX;
     const startY = e.clientY;
@@ -341,35 +436,46 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       setResizeIndicator({ type: "width", value: `${initialSize}px` });
 
       let latestW = initialSize;
+      let rafId: number | null = null;
 
       const handlePointerMove = (moveEvt: PointerEvent) => {
-        const deltaX = moveEvt.clientX - startX;
-        const deltaY = moveEvt.clientY - startY;
+        const clientX = moveEvt.clientX;
+        const clientY = moveEvt.clientY;
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          const deltaX = clientX - startX;
+          const deltaY = clientY - startY;
 
-        let directionDelta = 0;
-        if (corner === "bottom-right") {
-          directionDelta = (deltaX + deltaY) / 2;
-        } else if (corner === "bottom-left") {
-          directionDelta = (-deltaX + deltaY) / 2;
-        } else if (corner === "top-right") {
-          directionDelta = (deltaX - deltaY) / 2;
-        } else if (corner === "top-left") {
-          directionDelta = (-deltaX - deltaY) / 2;
-        }
+          let directionDelta = 0;
+          if (corner === "bottom-right") {
+            directionDelta = (deltaX + deltaY) / 2;
+          } else if (corner === "bottom-left") {
+            directionDelta = (-deltaX + deltaY) / 2;
+          } else if (corner === "top-right") {
+            directionDelta = (deltaX - deltaY) / 2;
+          } else if (corner === "top-left") {
+            directionDelta = (-deltaX - deltaY) / 2;
+          }
 
-        const computed = Math.max(
-          limits.min,
-          Math.min(limits.max, Math.round(initialSize + directionDelta * limits.scaleFactor))
-        );
-        latestW = computed;
-        setLiveWidth(computed);
-        setResizeIndicator({ type: "width", value: `${computed}px` });
+          const computed = Math.max(
+            limits.min,
+            Math.min(limits.max, Math.round(initialSize + directionDelta * limits.scaleFactor))
+          );
+          latestW = computed;
+          setLiveWidth(computed);
+          setResizeIndicator({ type: "width", value: `${computed}px` });
+        });
       };
 
       const handlePointerUp = () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
         window.removeEventListener("pointermove", handlePointerMove);
         window.removeEventListener("pointerup", handlePointerUp);
         window.removeEventListener("pointercancel", handlePointerUp);
+
+        targetEl?.releasePointerCapture?.(e.pointerId);
+        document.body.style.cursor = originalCursor;
+        document.body.style.userSelect = originalUserSelect;
 
         setIsResizingWidth(false);
         setResizeIndicator(null);
@@ -417,35 +523,46 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
     setResizeIndicator({ type: "font", value: `${initialFs}px` });
 
     let latestFs = initialFs;
+    let rafId: number | null = null;
 
     const handlePointerMove = (moveEvt: PointerEvent) => {
-      const deltaX = moveEvt.clientX - startX;
-      const deltaY = moveEvt.clientY - startY;
+      const clientX = moveEvt.clientX;
+      const clientY = moveEvt.clientY;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
 
-      let directionDelta = 0;
-      if (corner === "bottom-right") {
-        directionDelta = (deltaX + deltaY) / 2;
-      } else if (corner === "bottom-left") {
-        directionDelta = (-deltaX + deltaY) / 2;
-      } else if (corner === "top-right") {
-        directionDelta = (deltaX - deltaY) / 2;
-      } else if (corner === "top-left") {
-        directionDelta = (-deltaX - deltaY) / 2;
-      }
+        let directionDelta = 0;
+        if (corner === "bottom-right") {
+          directionDelta = (deltaX + deltaY) / 2;
+        } else if (corner === "bottom-left") {
+          directionDelta = (-deltaX + deltaY) / 2;
+        } else if (corner === "top-right") {
+          directionDelta = (deltaX - deltaY) / 2;
+        } else if (corner === "top-left") {
+          directionDelta = (-deltaX - deltaY) / 2;
+        }
 
-      const computed = Math.max(
-        limits.min,
-        Math.min(limits.max, Math.round(initialFs + directionDelta * limits.scaleFactor))
-      );
-      latestFs = computed;
-      setLiveFontSize(computed);
-      setResizeIndicator({ type: "font", value: `${computed}px` });
+        const computed = Math.max(
+          limits.min,
+          Math.min(limits.max, Math.round(initialFs + directionDelta * limits.scaleFactor))
+        );
+        latestFs = computed;
+        setLiveFontSize(computed);
+        setResizeIndicator({ type: "font", value: `${computed}px` });
+      });
     };
 
     const handlePointerUp = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
+
+      targetEl?.releasePointerCapture?.(e.pointerId);
+      document.body.style.cursor = originalCursor;
+      document.body.style.userSelect = originalUserSelect;
 
       setIsResizingFont(false);
       setResizeIndicator(null);
@@ -543,12 +660,19 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
     ...style,
     zIndex: isDragging ? 999 : currentZIndex !== undefined ? currentZIndex : style.zIndex,
     transform:
-      isShifted || isDragging
+      isShifted || isDragging || isResizingWidth
         ? `translate3d(${Math.round(liveOffset.x)}px, ${Math.round(liveOffset.y)}px, 0)`
         : style.transform,
     width: effectiveWidth ? `${effectiveWidth}px` : undefined,
-    maxWidth: "100%",
+    maxWidth: effectiveWidth || isResizingWidth ? "none" : undefined,
     textAlign: effectiveTextAlign,
+    willChange:
+      isDragging || isResizingWidth || isResizingFont
+        ? "transform, width"
+        : isShifted
+        ? "transform"
+        : undefined,
+    transition: isDragging || isResizingWidth || isResizingFont ? "none" : undefined,
     ...(effectiveFontSize ? ({ "--custom-font-size": `${effectiveFontSize}px` } as React.CSSProperties) : {}),
   };
 
@@ -793,35 +917,35 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           <div
             onPointerDown={(e) => handleSideResizeStart(e, "left")}
             onDoubleClick={handleResetWidth}
-            className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-2 h-5 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-ew-resize z-50 transition-transform flex items-center justify-center"
+            className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-2 h-5 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-ew-resize z-50 transition-transform flex items-center justify-center before:absolute before:-inset-2 before:content-['']"
             title={
               isObjectItem
                 ? "Drag to adjust size. Double click to reset."
                 : "Drag to expand / shrink width (wrap text to 2 lines). Double click to reset."
             }
           >
-            <span className="w-0.5 h-2 bg-primary/70 rounded-full" />
+            <span className="w-0.5 h-2 bg-primary/70 rounded-full pointer-events-none" />
           </div>
 
           {/* 2. Right Side Handle (Pill - Width / Expand / Wrap) */}
           <div
             onPointerDown={(e) => handleSideResizeStart(e, "right")}
             onDoubleClick={handleResetWidth}
-            className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-2 h-5 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-ew-resize z-50 transition-transform flex items-center justify-center"
+            className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-2 h-5 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-ew-resize z-50 transition-transform flex items-center justify-center before:absolute before:-inset-2 before:content-['']"
             title={
               isObjectItem
                 ? "Drag to adjust size. Double click to reset."
                 : "Drag to expand / shrink width (wrap text to 2 lines). Double click to reset."
             }
           >
-            <span className="w-0.5 h-2 bg-primary/70 rounded-full" />
+            <span className="w-0.5 h-2 bg-primary/70 rounded-full pointer-events-none" />
           </div>
 
           {/* 3. Top-Left Corner Handle */}
           <div
             onPointerDown={(e) => handleCornerResizeStart(e, "top-left")}
             onDoubleClick={isObjectItem ? handleResetWidth : handleResetFontSize}
-            className="absolute -top-1.5 -left-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nwse-resize z-50 transition-transform"
+            className="absolute -top-1.5 -left-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nwse-resize z-50 transition-transform before:absolute before:-inset-1.5 before:content-['']"
             title={
               isObjectItem
                 ? "Drag to scale size bigger / smaller. Double click to reset."
@@ -833,7 +957,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           <div
             onPointerDown={(e) => handleCornerResizeStart(e, "top-right")}
             onDoubleClick={isObjectItem ? handleResetWidth : handleResetFontSize}
-            className="absolute -top-1.5 -right-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nesw-resize z-50 transition-transform"
+            className="absolute -top-1.5 -right-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nesw-resize z-50 transition-transform before:absolute before:-inset-1.5 before:content-['']"
             title={
               isObjectItem
                 ? "Drag to scale size bigger / smaller. Double click to reset."
@@ -845,7 +969,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           <div
             onPointerDown={(e) => handleCornerResizeStart(e, "bottom-left")}
             onDoubleClick={isObjectItem ? handleResetWidth : handleResetFontSize}
-            className="absolute -bottom-1.5 -left-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nesw-resize z-50 transition-transform"
+            className="absolute -bottom-1.5 -left-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nesw-resize z-50 transition-transform before:absolute before:-inset-1.5 before:content-['']"
             title={
               isObjectItem
                 ? "Drag to scale size bigger / smaller. Double click to reset."
@@ -857,7 +981,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
           <div
             onPointerDown={(e) => handleCornerResizeStart(e, "bottom-right")}
             onDoubleClick={isObjectItem ? handleResetWidth : handleResetFontSize}
-            className="absolute -bottom-1.5 -right-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nwse-resize z-50 transition-transform"
+            className="absolute -bottom-1.5 -right-1.5 size-3 rounded-full bg-white dark:bg-zinc-900 border-2 border-primary shadow-md hover:scale-125 cursor-nwse-resize z-50 transition-transform before:absolute before:-inset-1.5 before:content-['']"
             title={
               isObjectItem
                 ? "Drag to scale size bigger / smaller. Double click to reset."
@@ -877,7 +1001,7 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
       <div
         ref={contentRef}
         data-draggable-content="true"
-        className={id === "orb" ? "size-full flex items-center justify-center" : undefined}
+        className={id === "orb" ? "size-full flex items-center justify-center" : "w-full"}
       >
         {children}
       </div>
