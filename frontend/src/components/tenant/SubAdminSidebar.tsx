@@ -37,6 +37,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  LayoutDashboard,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { calculateBringToFront, calculateSendToBack } from "@/lib/layers";
 import { Button } from "@/components/ui/button";
@@ -74,6 +77,10 @@ interface SubAdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onToggleMobileBoundary?: () => void;
   viewMode?: "desktop" | "mobile";
   onSwitchViewMode?: (mode: "desktop" | "mobile") => void;
+  activeView?: "editor" | "dashboard";
+  onSelectView?: (view: "editor" | "dashboard") => void;
+  mediaCount?: number;
+  totalMediaSize?: string;
 }
 
 const THEME_OPTIONS = [
@@ -536,9 +543,14 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   onToggleMobileBoundary,
   viewMode = "desktop",
   onSwitchViewMode,
+  activeView = "editor",
+  onSelectView,
+  mediaCount,
+  totalMediaSize,
   ...props
 }) => {
   const [copied, setCopied] = React.useState(false);
+  const [isEditingExpanded, setIsEditingExpanded] = React.useState(true);
 
   const weddingSlug = customization.slug || tenant?.weddingSlug || "wan-three";
   const guestUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/${encodeURI(weddingSlug)}`;
@@ -612,7 +624,100 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
       </SidebarHeader>
 
       <SidebarContent className="space-y-4 px-3 py-3">
-        {/* Active Layout Mode Banner */}
+        {/* Navigation Sections: Dashboard & Editing */}
+        <div className="space-y-1 pb-1">
+          {/* Dashboard Item */}
+          <button
+            type="button"
+            onClick={() => onSelectView?.("dashboard")}
+            className={`w-full flex items-center justify-between p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+              activeView === "dashboard"
+                ? "border-accent bg-accent/15 text-foreground shadow-xs ring-1 ring-accent/30 font-medium"
+                : "border-sidebar-border hover:border-sidebar-border/80 hover:bg-sidebar-accent/30 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`p-1.5 rounded-md shrink-0 ${
+                  activeView === "dashboard"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-sidebar-accent text-muted-foreground"
+                }`}
+              >
+                <LayoutDashboard className="size-4" />
+              </div>
+              <div className="min-w-0 truncate">
+                <span className="text-xs font-semibold block text-foreground truncate">
+                  Dashboard
+                </span>
+                <span className="text-[10px] text-muted-foreground block truncate">
+                  Media & muat turun tetamu
+                </span>
+              </div>
+            </div>
+            {mediaCount !== undefined && (
+              <Badge
+                variant={activeView === "dashboard" ? "default" : "secondary"}
+                className="text-[10px] font-mono shrink-0 ml-1.5 px-1.5 py-0"
+              >
+                {mediaCount} {totalMediaSize ? `• ${totalMediaSize}` : ""}
+              </Badge>
+            )}
+          </button>
+
+          {/* Editing Accordion Header */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditingExpanded((prev) => !prev);
+                if (activeView !== "editor") {
+                  onSelectView?.("editor");
+                }
+              }}
+              className={`w-full flex items-center justify-between p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                activeView === "editor"
+                  ? "border-primary/40 bg-primary/10 text-foreground font-medium"
+                  : "border-sidebar-border hover:border-sidebar-border/80 hover:bg-sidebar-accent/30 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={`p-1.5 rounded-md shrink-0 ${
+                    activeView === "editor"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-sidebar-accent text-muted-foreground"
+                  }`}
+                >
+                  <Sliders className="size-4" />
+                </div>
+                <div className="min-w-0 truncate">
+                  <span className="text-xs font-semibold block text-foreground truncate">
+                    Editing
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block truncate">
+                    Sesuaikan reka bentuk galeri
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 text-muted-foreground shrink-0 ml-1.5">
+                <span className="text-[9px] uppercase font-mono tracking-wider">
+                  {isEditingExpanded ? "Tutup" : "Buka"}
+                </span>
+                {isEditingExpanded ? (
+                  <ChevronDown className="size-3.5 text-foreground transition-transform" />
+                ) : (
+                  <ChevronRight className="size-3.5 text-foreground transition-transform" />
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable Editing Sub-sections */}
+        {isEditingExpanded && (
+          <div className="space-y-4 animate-in fade-in-50 duration-200">
+            {/* Active Layout Mode Banner */}
         <div className="p-2.5 rounded-lg border border-sidebar-border bg-sidebar-accent/25 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
@@ -1296,6 +1401,8 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
+          </div>
+        )}
       </SidebarContent>
 
       {/* Footer */}

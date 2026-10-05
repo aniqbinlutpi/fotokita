@@ -26,6 +26,7 @@ import {
   Check,
   X,
   HelpCircle,
+  Sliders,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SubAdminSidebar } from "@/components/tenant/SubAdminSidebar";
@@ -33,6 +34,9 @@ import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
 import { SubAdminDesktopCanvas } from "@/components/tenant/SubAdminDesktopCanvas";
 import { SubAdminMobileCanvas } from "@/components/tenant/SubAdminMobileCanvas";
 import { SubAdminLayoutGuideModal } from "@/components/tenant/SubAdminLayoutGuideModal";
+import { SubAdminMediaDashboard } from "@/components/tenant/SubAdminMediaDashboard";
+import { useMedia } from "@/hooks/queries/useMedia";
+import { formatBytes } from "@/lib/mediaZip";
 import {
   getStoredTenantToken,
   getStoredTenantUser,
@@ -152,6 +156,9 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(!tenant);
 
+  // Active View: 'editor' | 'dashboard'
+  const [activeView, setActiveView] = useState<"editor" | "dashboard">("editor");
+
   // View Mode: 'desktop' | 'mobile'
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [selectedPhoneId, setSelectedPhoneId] = useState<string>("iphone-16-pro");
@@ -218,6 +225,16 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     slug: activeSlug || tenant?.weddingSlug,
     weddingId: activeWeddingId || tenant?.weddingId,
   });
+
+  // Media query for guest uploads & downloads stats
+  const activeWeddingIdentifier = dbWedding?.id || activeWeddingId || tenant?.weddingId || "";
+  const { data: mediaList = [] } = useMedia(activeWeddingIdentifier);
+  const mediaCount = mediaList.length;
+  const totalMediaBytes = useMemo(
+    () => mediaList.reduce((sum, item) => sum + (Number(item.size) || 0), 0),
+    [mediaList]
+  );
+  const totalMediaSize = useMemo(() => formatBytes(totalMediaBytes), [totalMediaBytes]);
 
   // Parse partner names helper
   const parsedPartnerNames = useMemo(() => {
@@ -640,6 +657,10 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
           onToggleMobileBoundary={() => setShowMobileBoundary((v) => !v)}
           viewMode={viewMode}
           onSwitchViewMode={setViewMode}
+          activeView={activeView}
+          onSelectView={setActiveView}
+          mediaCount={mediaCount}
+          totalMediaSize={totalMediaSize}
         />
 
         {/* Main Content Area */}
@@ -667,137 +688,178 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="text-xs text-muted-foreground truncate max-w-[110px] sm:max-w-none">
-                      Live Guest View Editor
+                    <BreadcrumbPage className="text-xs text-muted-foreground truncate max-w-[130px] sm:max-w-none">
+                      {activeView === "dashboard"
+                        ? "Guest Media & Downloads Dashboard"
+                        : "Live Guest View Editor"}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
 
-            {/* Right Action Controls: Mode Switcher, Phone Selector, Zoom & Tools */}
+            {/* Right Action Controls */}
             <div className="flex items-center gap-1.5 sm:gap-2.5">
-              {/* Desktop vs Mobile Toggle */}
-              <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("desktop")}
-                  className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                    viewMode === "desktop"
-                      ? "bg-background shadow-xs font-medium text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Monitor className="size-3.5" />
-                  <span className="hidden sm:inline">Desktop</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("mobile")}
-                  className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                    viewMode === "mobile"
-                      ? "bg-background shadow-xs font-medium text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Smartphone className="size-3.5" />
-                  <span className="hidden sm:inline">Mobile</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsLayoutGuideOpen(true)}
-                  className="px-1.5 py-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-md hover:bg-background/60"
-                  title="Learn why Desktop and Mobile layouts are separate"
-                  aria-label="Responsive layout guide"
-                >
-                  <HelpCircle className="size-3.5" />
-                </button>
-              </div>
+              {activeView === "dashboard" ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveView("editor")}
+                    className="text-xs h-8 cursor-pointer gap-1.5 shrink-0"
+                  >
+                    <Sliders className="size-3.5 text-muted-foreground" />
+                    <span>Live Editor</span>
+                  </Button>
 
-              {/* Refresh Preview Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefreshPreview}
-                title="Refresh preview"
-                className="size-8 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-              >
-                <RotateCcw className="size-3.5" />
-              </Button>
+                  {/* View as Guest link */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenLiveGuestView}
+                    className="hidden sm:inline-flex text-xs h-8 cursor-pointer shrink-0"
+                  >
+                    <Eye className="size-3.5 mr-1 text-muted-foreground" />
+                    <span>Guest View ↗</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Desktop vs Mobile Toggle */}
+                  <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("desktop")}
+                      className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                        viewMode === "desktop"
+                          ? "bg-background shadow-xs font-medium text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Monitor className="size-3.5" />
+                      <span className="hidden sm:inline">Desktop</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("mobile")}
+                      className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                        viewMode === "mobile"
+                          ? "bg-background shadow-xs font-medium text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Smartphone className="size-3.5" />
+                      <span className="hidden sm:inline">Mobile</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsLayoutGuideOpen(true)}
+                      className="px-1.5 py-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-md hover:bg-background/60"
+                      title="Learn why Desktop and Mobile layouts are separate"
+                      aria-label="Responsive layout guide"
+                    >
+                      <HelpCircle className="size-3.5" />
+                    </button>
+                  </div>
 
-              {/* Scan on Phone / QR Code */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsQrModalOpen(true)}
-                title="Scan QR code to test on real phone"
-                className="hidden sm:inline-flex text-xs h-8 cursor-pointer gap-1.5 shrink-0"
-              >
-                <QrCode className="size-3.5 text-muted-foreground" />
-                <span>Test Phone</span>
-              </Button>
+                  {/* Refresh Preview Button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRefreshPreview}
+                    title="Refresh preview"
+                    className="size-8 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                  >
+                    <RotateCcw className="size-3.5" />
+                  </Button>
 
-              {/* View as Guest link */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleOpenLiveGuestView}
-                className="hidden sm:inline-flex text-xs h-8 cursor-pointer shrink-0"
-              >
-                <Eye className="size-3.5 mr-1 text-muted-foreground" />
-                <span>Guest View ↗</span>
-              </Button>
+                  {/* Scan on Phone / QR Code */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsQrModalOpen(true)}
+                    title="Scan QR code to test on real phone"
+                    className="hidden sm:inline-flex text-xs h-8 cursor-pointer gap-1.5 shrink-0"
+                  >
+                    <QrCode className="size-3.5 text-muted-foreground" />
+                    <span>Test Phone</span>
+                  </Button>
 
-              {/* Save Button */}
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                size="sm"
-                className={`text-xs h-8 shadow-sm cursor-pointer shrink-0 px-2.5 sm:px-3 ${
-                  hasUnsavedChanges
-                    ? "bg-accent hover:bg-accent/90 text-accent-foreground animate-pulse"
-                    : ""
-                }`}
-              >
-                <Sparkles className="size-3.5 mr-1" />
-                {isSaving ? (
-                  "Saving..."
-                ) : hasUnsavedChanges ? (
-                  <>
-                    <span className="hidden sm:inline">Save Changes*</span>
-                    <span className="sm:hidden">Save*</span>
-                  </>
-                ) : (
-                  "Saved"
-                )}
-              </Button>
+                  {/* View as Guest link */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenLiveGuestView}
+                    className="hidden sm:inline-flex text-xs h-8 cursor-pointer shrink-0"
+                  >
+                    <Eye className="size-3.5 mr-1 text-muted-foreground" />
+                    <span>Guest View ↗</span>
+                  </Button>
+
+                  {/* Save Button */}
+                  <Button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    size="sm"
+                    className={`text-xs h-8 shadow-sm cursor-pointer shrink-0 px-2.5 sm:px-3 ${
+                      hasUnsavedChanges
+                        ? "bg-accent hover:bg-accent/90 text-accent-foreground animate-pulse"
+                        : ""
+                    }`}
+                  >
+                    <Sparkles className="size-3.5 mr-1" />
+                    {isSaving ? (
+                      "Saving..."
+                    ) : hasUnsavedChanges ? (
+                      <>
+                        <span className="hidden sm:inline">Save Changes*</span>
+                        <span className="sm:hidden">Save*</span>
+                      </>
+                    ) : (
+                      "Saved"
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
           </header>
 
-          {/* Main Visual Canvas: Dedicated Responsive Desktop or Scaled Mobile Phone Simulator */}
-          <main className="flex-1 overflow-auto bg-[#F2EDE4] dark:bg-[#0D0B0A] p-2 sm:p-6 flex flex-col transition-colors relative">
-            {viewMode === "desktop" ? (
-              <SubAdminDesktopCanvas
-                iframeRef={iframeRef}
-                previewIframeUrl={previewIframeUrl}
-                onIframeLoad={syncCustomizationWithIframe}
+          {/* Main Visual Canvas or Media Dashboard */}
+          <main className="flex-1 overflow-auto bg-[#F2EDE4] dark:bg-[#0D0B0A] flex flex-col transition-colors relative">
+            {activeView === "dashboard" ? (
+              <SubAdminMediaDashboard
+                weddingId={activeWeddingIdentifier}
+                wedding={dbWedding}
+                customization={customization}
+                onSwitchToEditor={() => setActiveView("editor")}
+                onOpenGuestView={handleOpenLiveGuestView}
               />
             ) : (
-              <SubAdminMobileCanvas
-                iframeRef={iframeRef}
-                previewIframeUrl={previewIframeUrl}
-                onIframeLoad={syncCustomizationWithIframe}
-                selectedPhone={selectedPhone}
-                selectedPhoneId={selectedPhoneId}
-                onSelectPhoneId={setSelectedPhoneId}
-                phoneProfiles={PHONE_PROFILES}
-                activeScale={activeScale}
-                totalPhoneHeight={totalPhoneHeight}
-                zoomLevel={zoomLevel}
-                onSelectZoomLevel={setZoomLevel}
-                onRefreshPreview={handleRefreshPreview}
-                onOpenQrModal={() => setIsQrModalOpen(true)}
-              />
+              <div className="p-2 sm:p-6 flex-1 flex flex-col">
+                {viewMode === "desktop" ? (
+                  <SubAdminDesktopCanvas
+                    iframeRef={iframeRef}
+                    previewIframeUrl={previewIframeUrl}
+                    onIframeLoad={syncCustomizationWithIframe}
+                  />
+                ) : (
+                  <SubAdminMobileCanvas
+                    iframeRef={iframeRef}
+                    previewIframeUrl={previewIframeUrl}
+                    onIframeLoad={syncCustomizationWithIframe}
+                    selectedPhone={selectedPhone}
+                    selectedPhoneId={selectedPhoneId}
+                    onSelectPhoneId={setSelectedPhoneId}
+                    phoneProfiles={PHONE_PROFILES}
+                    activeScale={activeScale}
+                    totalPhoneHeight={totalPhoneHeight}
+                    zoomLevel={zoomLevel}
+                    onSelectZoomLevel={setZoomLevel}
+                    onRefreshPreview={handleRefreshPreview}
+                    onOpenQrModal={() => setIsQrModalOpen(true)}
+                  />
+                )}
+              </div>
             )}
           </main>
         </SidebarInset>
