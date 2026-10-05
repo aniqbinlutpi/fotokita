@@ -684,7 +684,9 @@ export const DraggableHeroItem: React.FC<DraggableHeroItemProps> = ({
         ? `translate3d(${Math.round(liveOffset.x)}px, ${Math.round(liveOffset.y)}px, 0)`
         : style.transform,
     width: effectiveWidth ? `${effectiveWidth}px` : undefined,
+    minWidth: effectiveWidth ? `${effectiveWidth}px` : undefined,
     maxWidth: effectiveWidth || isResizingWidth ? "none" : undefined,
+    flexShrink: 0,
     textAlign: effectiveTextAlign,
     willChange:
       isDragging || isResizingWidth || isResizingFont
