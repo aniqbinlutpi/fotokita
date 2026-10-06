@@ -13,6 +13,7 @@ import { useMedia, useDeleteMedia } from "@/hooks/queries/useMedia";
 import { useQueryClient } from "@tanstack/react-query";
 import { PricingModal } from "@/components/pricing/PricingModal";
 import { extractSlugFromSearch } from "@/lib/slug";
+import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import type { Wedding } from "@/types/wedding";
 
 
@@ -204,9 +205,9 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
             <button
               type="button"
               onClick={onNavigateToLanding}
-              className="font-serif tracking-widest text-lg font-medium text-[#2F2926] dark:text-[#F5EFEB] uppercase hover:text-[#A67C6B] transition-colors cursor-pointer text-left"
+              className="flex items-center group cursor-pointer text-left"
             >
-              Fotokita
+              <FotokitaLogo variant="full" size="sm" />
             </button>
             <span className="hidden sm:inline-block w-px h-3.5 bg-[#E7DED5] dark:bg-[#332B25]" />
             <span className="hidden sm:inline-block text-[11px] uppercase tracking-widest text-[#7A7069] dark:text-[#A89F97]">

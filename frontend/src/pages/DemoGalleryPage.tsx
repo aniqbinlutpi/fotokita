@@ -8,6 +8,7 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import {
   UploadCloud,
   ChevronDown,
@@ -222,9 +223,9 @@ export const DemoGalleryPage: React.FC<DemoGalleryPageProps> = ({
             <button
               type="button"
               onClick={onNavigateToLanding}
-              className="font-serif tracking-widest text-lg font-medium text-[#2F2926] dark:text-[#F5EFEB] uppercase hover:text-[#A67C6B] transition-colors cursor-pointer text-left"
+              className="flex items-center group cursor-pointer text-left"
             >
-              Fotokita
+              <FotokitaLogo variant="full" size="sm" />
             </button>
             <span className="hidden sm:inline-block w-px h-3.5 bg-[#E7DED5] dark:bg-[#332B25]" />
             <span className="hidden sm:inline-block text-[11px] uppercase tracking-widest text-[#7A7069] dark:text-[#A89F97]">

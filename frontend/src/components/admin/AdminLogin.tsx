@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  ShieldCheck,
   Lock,
   User,
   Eye,
@@ -14,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { loginAdmin, type AdminUser } from "@/api/admin";
+import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 
 interface AdminLoginProps {
   onLoginSuccess: (user: AdminUser) => void;
@@ -73,8 +73,8 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
       <div className="w-full max-w-md relative z-10">
         <Card className="border-border/60 shadow-xl backdrop-blur-sm bg-card/95">
           <CardHeader className="text-center pb-4">
-            <div className="mx-auto size-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-3 text-primary shadow-xs">
-              <ShieldCheck className="size-6" />
+            <div className="mx-auto flex items-center justify-center mb-3">
+              <FotokitaLogo variant="mark" size="xl" className="shadow-xs rounded-xl" />
             </div>
 
             <div className="flex items-center justify-center gap-2 mb-1">

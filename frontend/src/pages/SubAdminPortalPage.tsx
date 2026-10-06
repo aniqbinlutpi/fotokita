@@ -28,6 +28,7 @@ import {
   Sliders,
 } from "lucide-react";
 import { toast } from "sonner";
+import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import { SubAdminSidebar } from "@/components/tenant/SubAdminSidebar";
 import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
 import { SubAdminDesktopCanvas } from "@/components/tenant/SubAdminDesktopCanvas";
@@ -681,9 +682,10 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                   <BreadcrumbItem>
                     <BreadcrumbLink
                       onClick={onNavigateHome}
-                      className="cursor-pointer text-xs"
+                      className="cursor-pointer text-xs flex items-center gap-1.5"
                     >
-                      Fotokita
+                      <FotokitaLogo variant="mark" size="xs" />
+                      <span>Fotokita</span>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />

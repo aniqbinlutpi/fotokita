@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { WhatsAppInquiryModal } from "@/components/pricing/WhatsAppInquiryModal";
 import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
+import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -570,18 +571,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             {/* Brand Logo */}
             <div className="flex items-center gap-3">
-              <a href="#" className="flex items-center gap-2.5 group">
-                <div className="size-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent group-hover:scale-105 transition-transform">
-                  <Camera className="size-4" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-serif tracking-widest text-xl font-normal uppercase text-foreground leading-none">
-                    Fotokita
-                  </span>
-                  <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-sans mt-0.5">
-                    Live Wedding Gallery
-                  </span>
-                </div>
+              <a href="#" className="flex items-center group">
+                <FotokitaLogo variant="full" size="md" />
               </a>
             </div>
 
@@ -2143,9 +2134,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <footer className="bg-card/60 border-t border-border/80 py-12 px-4 sm:px-6 lg:px-8 text-xs text-muted-foreground transition-colors duration-300">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
-              <span className="font-serif tracking-widest text-lg uppercase text-foreground font-medium">
-                Fotokita
-              </span>
+              <div className="flex items-center justify-center md:justify-start mb-2">
+                <FotokitaLogo variant="full" size="sm" />
+              </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
                 The Live Wedding Guest Gallery & Instant Ballroom Screen Experience.
               </p>

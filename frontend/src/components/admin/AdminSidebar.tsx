@@ -18,11 +18,11 @@ import {
   Server,
   LogOut,
   Globe,
-  Camera,
   ShieldCheck,
   UserPlus,
   MessageSquare,
 } from "lucide-react";
+import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import type { AdminUser } from "@/api/admin";
 
 interface AdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -49,9 +49,7 @@ export function AdminSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="hover:bg-transparent">
-              <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Camera className="size-5" />
-              </div>
+              <FotokitaLogo variant="mark" size="md" className="shrink-0" />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold tracking-tight">
                   Fotokita
