@@ -756,7 +756,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto"
             >
-              Zero app downloadsaaaa. Guests simply scan a table QR code to snap selfies
+              Zero app downloads. Guests simply scan a table QR code to snap selfies
               with your custom digital frame. Photos stream immediately to your
               ballroom screens and preserve in high-definition cloud storage.
             </motion.p>
