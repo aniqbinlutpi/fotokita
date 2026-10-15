@@ -18,7 +18,7 @@ export interface CleanupResult {
 }
 
 export async function runMediaRetentionCleanup(): Promise<CleanupResult> {
-  const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || "http://localhost:3002";
+  const mediaServiceUrl = process.env.MEDIA_SERVICE_URL || "http://localhost:3000";
   const now = new Date();
 
   console.log(`🧹 [Retention Cleanup] Checking for expired media at ${now.toISOString()}...`);
@@ -58,6 +58,7 @@ export async function runMediaRetentionCleanup(): Promise<CleanupResult> {
       // Call Media Service batch delete endpoint
       const res = await fetch(`${mediaServiceUrl}/media/wedding/${encodeURIComponent(tenant.weddingId)}`, {
         method: "DELETE",
+        headers: { "x-service-key": process.env.INTERNAL_API_KEY || "" },
       });
 
       if (!res.ok && res.status !== 404) {

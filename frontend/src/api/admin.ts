@@ -443,6 +443,7 @@ export async function purgeEntireWedding(weddingId: string): Promise<void> {
   try {
     await fetch(`${MEDIA_API_URL}/wedding/${encodeURIComponent(weddingId)}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
   } catch (err) {
     console.warn("Failed to purge media during wedding deletion:", err);
@@ -452,6 +453,7 @@ export async function purgeEntireWedding(weddingId: string): Promise<void> {
   try {
     await fetch(`${TENANT_API_URL}/accounts/${encodeURIComponent(weddingId)}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
   } catch (err) {
     console.warn("Failed to delete tenant account during wedding deletion:", err);

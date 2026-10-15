@@ -17,6 +17,8 @@ import {
   validateMediaUpload,
 } from "../validators/media.validator";
 import { error, success } from "../lib/response";
+import { requireAdminOrService } from "../lib/internal-auth";
+import { isProxyUrlAllowed } from "../utils/proxy";
 
 
 const mediaRoutes = new Hono();
@@ -59,7 +61,14 @@ mediaRoutes.get("/proxy-image", async (c) => {
       );
     }
 
-    const response = await fetch(targetUrl);
+    if (!isProxyUrlAllowed(parsed)) {
+      return c.json(
+        error("FORBIDDEN", "URL host is not allowed"),
+        403,
+      );
+    }
+
+    const response = await fetch(parsed, { redirect: "error" });
     if (!response.ok) {
       return c.json(
         error(
@@ -71,6 +80,9 @@ mediaRoutes.get("/proxy-image", async (c) => {
     }
 
     const contentType = response.headers.get("content-type") || "image/jpeg";
+    if (!contentType.startsWith("image/")) {
+      return c.json(error("INVALID_FILE_TYPE", "Upstream is not an image"), 415);
+    }
     const arrayBuffer = await response.arrayBuffer();
 
     return c.body(arrayBuffer, 200, {
@@ -231,7 +243,7 @@ mediaRoutes.delete("/:id", async (c) => {
   return c.json(success(result.data));
 });
 
-mediaRoutes.delete("/wedding/:weddingId", async (c) => {
+mediaRoutes.delete("/wedding/:weddingId", requireAdminOrService, async (c) => {
   const weddingId = c.req.param("weddingId");
   if (!weddingId) {
     return c.json(error("VALIDATION_ERROR", "Wedding ID is required"), 400);
