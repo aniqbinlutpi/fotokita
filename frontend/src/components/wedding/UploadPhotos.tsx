@@ -68,6 +68,15 @@ interface UploadPhotosProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onUploadSuccess: (newMedia: MediaItem) => void;
+  onCustomUpload?: (payload: {
+    weddingId: string;
+    file: File;
+    from: string;
+    wishes: string;
+    signature?: string;
+    code: string;
+    onProgress?: (percent: number) => void;
+  }) => Promise<MediaItem>;
 }
 
 export const UploadPhotos: React.FC<UploadPhotosProps> = ({
@@ -76,6 +85,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
   isOpen,
   onOpenChange,
   onUploadSuccess,
+  onCustomUpload,
 }) => {
   // Original selected file and its object URL for cropping
   const [rawFile, setRawFile] = useState<File | null>(null);
@@ -396,15 +406,25 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
       setIsUploading(true);
       setValidationError(null);
 
-      const createdMedia = await uploadMedia({
-        weddingId,
-        file: fileToUpload,
-        from: fromName.trim(),
-        wishes: wishes.trim(),
-        signature: formattedSignaturePayload,
-        code: secretCode.trim(),
-        onProgress: (percent) => setUploadProgress(percent),
-      });
+      const createdMedia = onCustomUpload
+        ? await onCustomUpload({
+            weddingId,
+            file: fileToUpload,
+            from: fromName.trim(),
+            wishes: wishes.trim(),
+            signature: formattedSignaturePayload,
+            code: secretCode.trim(),
+            onProgress: (percent) => setUploadProgress(percent),
+          })
+        : await uploadMedia({
+            weddingId,
+            file: fileToUpload,
+            from: fromName.trim(),
+            wishes: wishes.trim(),
+            signature: formattedSignaturePayload,
+            code: secretCode.trim(),
+            onProgress: (percent) => setUploadProgress(percent),
+          });
 
       // Save secret code locally for user convenience when deleting this specific photo
       try {

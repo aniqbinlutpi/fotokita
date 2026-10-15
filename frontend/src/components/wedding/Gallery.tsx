@@ -58,7 +58,7 @@ export const Gallery: React.FC<GalleryProps> = ({
     if (!selectedMedia || selectedMedia.index >= mediaList.length - 1) return;
     const nextIndex = selectedMedia.index + 1;
     const nextItem = mediaList[nextIndex];
-    const cachedUrl = urlCache[nextItem.id] || "";
+    const cachedUrl = urlCache[nextItem.id] || nextItem.url || "";
 
     setSelectedMedia({
       item: nextItem,
@@ -85,7 +85,7 @@ export const Gallery: React.FC<GalleryProps> = ({
     if (!selectedMedia || selectedMedia.index <= 0) return;
     const prevIndex = selectedMedia.index - 1;
     const prevItem = mediaList[prevIndex];
-    const cachedUrl = urlCache[prevItem.id] || "";
+    const cachedUrl = urlCache[prevItem.id] || prevItem.url || "";
 
     setSelectedMedia({
       item: prevItem,
@@ -122,7 +122,7 @@ export const Gallery: React.FC<GalleryProps> = ({
     }
 
     targets.forEach((target) => {
-      const existingUrl = urlCache[target.id];
+      const existingUrl = urlCache[target.id] || target.url;
       if (existingUrl) {
         // Pre-warm browser image cache
         const img = new Image();

@@ -2,16 +2,13 @@ import React, { useState, useMemo } from "react";
 import { WeddingHero } from "@/components/wedding/WeddingHero";
 import { Gallery } from "@/components/wedding/Gallery";
 import { UploadPhotos } from "@/components/wedding/UploadPhotos";
-import { AdminModal } from "@/components/wedding/AdminModal";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { deleteMedia } from "@/api/media";
 import { getTenantCustomization, type TenantCustomization } from "@/api/tenant";
-import { useActiveWedding, weddingKeys } from "@/hooks/queries/useWeddings";
+import { useActiveWedding } from "@/hooks/queries/useWeddings";
 import { useMedia, useDeleteMedia } from "@/hooks/queries/useMedia";
-import { useQueryClient } from "@tanstack/react-query";
-import { PricingModal } from "@/components/pricing/PricingModal";
 import { extractSlugFromSearch } from "@/lib/slug";
 import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import type { Wedding } from "@/types/wedding";
@@ -36,13 +33,6 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
   const isSubadminPreview = urlParams.get("preview") === "subadmin";
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
-  const initialAdminOpen =
-    urlParams.get("login") === "subadmin" ||
-    urlParams.get("admin") === "true" ||
-    urlParams.get("action") === "login";
-  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(initialAdminOpen);
-  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
-  const queryClient = useQueryClient();
 
   // TanStack Query for Wedding
   const {
@@ -216,35 +206,14 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            {onNavigateToLanding && (
-              <button
-                type="button"
-                onClick={onNavigateToLanding}
-                className="hidden md:inline-flex text-xs uppercase tracking-wider text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-colors cursor-pointer"
-              >
-                Home
-              </button>
-            )}
-
             {effectiveWedding && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-[#7A7069] dark:text-[#A89F97] hidden md:inline-block">
-                  Archive: <span className="text-[#2F2926] dark:text-[#F5EFEB] font-medium">
-                    {customization?.partner1 && customization?.partner2
-                      ? `${customization.partner1} & ${customization.partner2}`
-                      : effectiveWedding.name}
-                  </span>
+              <span className="text-xs text-[#7A7069] dark:text-[#A89F97] hidden md:inline-block">
+                Archive: <span className="text-[#2F2926] dark:text-[#F5EFEB] font-medium">
+                  {customization?.partner1 && customization?.partner2
+                    ? `${customization.partner1} & ${customization.partner2}`
+                    : effectiveWedding.name}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsAdminOpen(true)}
-                  title="Admin Access (Edit Names & Date)"
-                  className="w-5 h-5 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] text-[#8C7E74] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:border-[#2F2926] dark:hover:border-[#F5EFEB] hover:bg-[#EFE9DF]/50 dark:hover:bg-[#25211E] flex items-center justify-center text-xs font-serif italic transition-all duration-150 cursor-pointer shadow-2xs select-none"
-                  aria-label="Admin Access"
-                >
-                  ?
-                </button>
-              </div>
+              </span>
             )}
 
             {/* Dark / Light Mode Switcher */}
@@ -255,15 +224,6 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
               title="Toggle dark / light mode"
               aria-label="Toggle dark / light mode"
             />
-
-            {/* CTA: Book Now */}
-            <button
-              type="button"
-              onClick={() => setIsPricingModalOpen(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#A67C6B]/40 hover:border-[#A67C6B] bg-[#A67C6B]/10 hover:bg-[#A67C6B]/20 text-[11px] uppercase tracking-wider text-[#A67C6B] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] transition-all cursor-pointer font-medium"
-            >
-              <span>Book Now</span>
-            </button>
 
             <button
               onClick={() => setIsUploadOpen(true)}
@@ -357,18 +317,6 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
         />
       )}
 
-      {/* Admin Settings Modal */}
-      {effectiveWedding && (
-        <AdminModal
-          wedding={effectiveWedding}
-          isOpen={isAdminOpen}
-          onOpenChange={setIsAdminOpen}
-          onWeddingUpdated={(_updated) => {
-            queryClient.invalidateQueries({ queryKey: weddingKeys.all });
-          }}
-        />
-      )}
-
       {/* Minimal Editorial Footer */}
       <footer className="border-t border-[#E7DED5] dark:border-[#332B25] bg-[#FFFCF8] dark:bg-[#1A1715] py-8 px-6 text-center text-xs text-[#7A7069] dark:text-[#A89F97] transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -377,22 +325,9 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
           </p>
           <div className="flex items-center gap-4 text-[11px] uppercase tracking-widest">
             <span>Photography & Art Direction</span>
-            <span className="w-1 h-1 rounded-full bg-[#A67C6B]" />
-            <button
-              onClick={() => setIsPricingModalOpen(true)}
-              className="text-[#A67C6B] hover:underline font-semibold cursor-pointer"
-            >
-              Book Now
-            </button>
           </div>
         </div>
       </footer>
-
-      {/* Pricing & Booking Dialog */}
-      <PricingModal
-        isOpen={isPricingModalOpen}
-        onOpenChange={setIsPricingModalOpen}
-      />
     </div>
   );
 };

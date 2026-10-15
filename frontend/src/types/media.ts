@@ -9,6 +9,7 @@ export interface MediaItem {
   signature?: string;
   code?: string;
   createdAt: string;
+  url?: string;
 }
 
 export interface MediaUrlData {

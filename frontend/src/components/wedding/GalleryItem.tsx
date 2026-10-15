@@ -50,6 +50,13 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
   useEffect(() => {
     let isMounted = true;
 
+    if (media.url) {
+      setUrl(media.url);
+      setIsLoading(false);
+      onUrlLoaded?.(media.id, media.url);
+      return;
+    }
+
     getMediaUrl(media.id)
       .then((data) => {
         if (isMounted) {
@@ -68,7 +75,7 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [media.id, onUrlLoaded]);
+  }, [media.id, media.url, onUrlLoaded]);
 
   const handleOpenDelete = (e: React.MouseEvent) => {
     e.stopPropagation();

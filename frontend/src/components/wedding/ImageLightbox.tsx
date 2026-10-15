@@ -68,6 +68,11 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
       return;
     }
 
+    if (item.url) {
+      setFetchedUrl(item.url);
+      return;
+    }
+
     let isCurrent = true;
     getMediaUrl(item.id)
       .then((data) => {
