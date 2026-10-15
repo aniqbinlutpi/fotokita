@@ -421,7 +421,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
               )}
               {item.fromName && (
                 <p className="text-[10px] uppercase tracking-[0.2em] text-[#7A7069] dark:text-[#A89F97] font-medium">
-                  — With Love, {item.fromName}
+                  {item.fromName}
                 </p>
               )}
             </div>

@@ -351,7 +351,7 @@ export async function createPhotoboothComposite(
     ctx.fillStyle = "#7A7069";
     ctx.font = `500 ${Math.round(cardWidth * 0.015)}px Inter, system-ui, sans-serif`;
     ctx.letterSpacing = "2px";
-    ctx.fillText(`— WITH LOVE, ${options.from.toUpperCase()}`, cardWidth / 2, fromY);
+    ctx.fillText(options.from.toUpperCase(), cardWidth / 2, fromY);
   }
 
   return new Promise((resolve, reject) => {

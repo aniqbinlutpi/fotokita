@@ -27,6 +27,7 @@ interface GalleryItemProps {
   onSelect: (media: MediaItem, url: string) => void;
   onDelete: (id: string, code?: string) => Promise<void>;
   onUrlLoaded?: (id: string, url: string) => void;
+  layoutMode?: 1 | 3;
 }
 
 export const GalleryItem: React.FC<GalleryItemProps> = ({
@@ -35,6 +36,7 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
   onSelect,
   onDelete,
   onUrlLoaded,
+  layoutMode = 3,
 }) => {
   const [url, setUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -135,15 +137,30 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
   };
 
   const isVideo = media.mimeType?.startsWith("video/");
+  const isSingleCol = layoutMode === 1;
 
   return (
     <div
       onClick={() => url && onSelect(media, url)}
-      className="group relative bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-[0_2px_8px_-2px_rgba(47,41,38,0.06)] dark:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_12px_28px_-6px_rgba(47,41,38,0.12)] dark:hover:shadow-[0_14px_32px_-6px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-300 flex flex-col justify-start cursor-pointer"
+      className={`group relative bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] shadow-[0_2px_8px_-2px_rgba(47,41,38,0.06)] dark:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_12px_28px_-6px_rgba(47,41,38,0.12)] dark:hover:shadow-[0_14px_32px_-6px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-300 flex flex-col justify-start cursor-pointer ${
+        isSingleCol
+          ? "rounded-[2px] p-2.5 pb-3 sm:p-3 sm:pb-3.5"
+          : "rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5"
+      }`}
     >
       {/* Top tiny embossed branding like the photobooth print */}
-      <div className="text-center pb-1 sm:pb-2 select-none shrink-0 h-4 sm:h-6 flex items-center justify-center">
-        <span className="text-[6.5px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.25em] text-[#7A7069]/60 dark:text-[#A89F97]/60 font-sans font-medium line-clamp-1 block">
+      <div
+        className={`text-center select-none shrink-0 flex items-center justify-center ${
+          isSingleCol ? "pb-2 h-6" : "pb-1 sm:pb-2 h-4 sm:h-6"
+        }`}
+      >
+        <span
+          className={`uppercase font-sans font-medium line-clamp-1 block text-[#7A7069]/60 dark:text-[#A89F97]/60 ${
+            isSingleCol
+              ? "text-[9px] tracking-[0.25em]"
+              : "text-[6.5px] sm:text-[9px] tracking-[0.1em] sm:tracking-[0.25em]"
+          }`}
+        >
           Fotobooth Kita
         </span>
       </div>
@@ -182,19 +199,27 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
 
             {/* Subtle hover overlay */}
             <div className="absolute inset-0 bg-[#2F2926]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
-              <span className="p-1 sm:p-2 rounded-full bg-[#FFFCF8]/95 text-[#2F2926] shadow-sm transform translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
-                <Maximize2 className="size-2.5 sm:size-4" />
+              <span
+                className={`rounded-full bg-[#FFFCF8]/95 text-[#2F2926] shadow-sm transform translate-y-1 group-hover:translate-y-0 transition-transform duration-300 ${
+                  isSingleCol ? "p-2" : "p-1 sm:p-2"
+                }`}
+              >
+                <Maximize2 className={isSingleCol ? "size-4" : "size-2.5 sm:size-4"} />
               </span>
             </div>
           </>
         )}
 
-        {/* Hover Action Buttons */}
+        {/* Action Buttons */}
         <div
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 z-10 flex items-center gap-0.5 sm:gap-1"
+          className={`absolute transition-opacity duration-200 z-10 flex items-center ${
+            isSingleCol
+              ? "top-2 right-2 gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100"
+              : "top-1 right-1 sm:top-2 sm:right-2 gap-0.5 sm:gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+          }`}
         >
           {url && (
             <Button
@@ -209,10 +234,12 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
               onPointerDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
               aria-label={`Download ${media.filename} with border`}
-              className="size-5 sm:size-7 bg-[#FFFCF8]/90 dark:bg-[#1A1715]/90 hover:bg-[#FFFCF8] dark:hover:bg-[#25211E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] rounded-xs shadow-xs"
+              className={`bg-[#FFFCF8]/90 dark:bg-[#1A1715]/90 hover:bg-[#FFFCF8] dark:hover:bg-[#25211E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] rounded-xs shadow-xs ${
+                isSingleCol ? "size-7" : "size-5 sm:size-7"
+              }`}
               title="Download Photobooth Print"
             >
-              <Download className="size-2.5 sm:size-3.5" />
+              <Download className={isSingleCol ? "size-3.5" : "size-2.5 sm:size-3.5"} />
             </Button>
           )}
 
@@ -234,9 +261,11 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
                   onPointerDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
                   aria-label={`Delete ${media.filename}`}
-                  className="size-5 sm:size-7 bg-[#FFFCF8]/90 dark:bg-[#1A1715]/90 hover:bg-[#FFFCF8] dark:hover:bg-[#25211E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#9E3E3E] rounded-xs shadow-xs"
+                  className={`bg-[#FFFCF8]/90 dark:bg-[#1A1715]/90 hover:bg-[#FFFCF8] dark:hover:bg-[#25211E] text-[#7A7069] dark:text-[#A89F97] hover:text-[#9E3E3E] rounded-xs shadow-xs ${
+                    isSingleCol ? "size-7" : "size-5 sm:size-7"
+                  }`}
                 >
-                  <Trash2 className="size-2.5 sm:size-3.5" />
+                  <Trash2 className={isSingleCol ? "size-3.5" : "size-2.5 sm:size-3.5"} />
                 </Button>
               }
             />
@@ -300,10 +329,18 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
       </div>
 
       {/* Signature below right of picture (snug to photo, right-aligned) */}
-      <div className="min-h-[14px] sm:min-h-[18px] w-full flex items-center justify-end px-0.5 mt-0.5 select-none shrink-0">
+      <div
+        className={`w-full flex items-center justify-end px-0.5 mt-0.5 select-none shrink-0 ${
+          isSingleCol ? "min-h-[18px]" : "min-h-[14px] sm:min-h-[18px]"
+        }`}
+      >
         {parsedSignature ? (
           parsedSignature.type === "image" ? (
-            <div className="flex items-center gap-0.5 sm:gap-1 justify-end">
+            <div
+              className={`flex items-center justify-end ${
+                isSingleCol ? "gap-1" : "gap-0.5 sm:gap-1"
+              }`}
+            >
               <span
                 style={{
                   color:
@@ -314,14 +351,18 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
                       ? parsedSignature.color
                       : "#2F2926",
                 }}
-                className="font-signature text-xs sm:text-sm select-none leading-none shrink-0"
+                className={`font-signature select-none leading-none shrink-0 ${
+                  isSingleCol ? "text-sm" : "text-xs sm:text-sm"
+                }`}
               >
                 -
               </span>
               <TrimmedSignatureImage
                 src={parsedSignature.data}
                 alt="Signature"
-                className="h-2.5 sm:h-3.5 max-w-[60%] object-contain object-right block"
+                className={`max-w-[60%] object-contain object-right block ${
+                  isSingleCol ? "h-3.5" : "h-2.5 sm:h-3.5"
+                }`}
               />
               <span
                 style={{
@@ -333,7 +374,9 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
                       ? parsedSignature.color
                       : "#2F2926",
                 }}
-                className="font-signature text-xs sm:text-sm select-none leading-none shrink-0"
+                className={`font-signature select-none leading-none shrink-0 ${
+                  isSingleCol ? "text-sm" : "text-xs sm:text-sm"
+                }`}
               >
                 -
               </span>
@@ -349,7 +392,9 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
                     ? parsedSignature.color
                     : "#2F2926",
               }}
-              className="font-signature text-xs sm:text-base leading-none truncate max-w-[65%]"
+              className={`font-signature leading-none truncate max-w-[65%] ${
+                isSingleCol ? "text-sm sm:text-base" : "text-xs sm:text-base"
+              }`}
             >
               {parsedSignature.data}
             </p>
@@ -358,17 +403,39 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
       </div>
 
       {/* Photobooth Card Chin — Displaying Guest Wishes & Sender */}
-      <div className="pt-0.5 sm:pt-1 pb-1 min-h-[36px] sm:min-h-[48px] flex flex-col justify-start items-center text-center select-none font-sans shrink-0 overflow-hidden">
+      <div
+        className={`select-none font-sans shrink-0 overflow-hidden flex flex-col justify-start items-center text-center ${
+          isSingleCol
+            ? "pt-1 pb-1.5 min-h-[48px]"
+            : "pt-0.5 sm:pt-1 pb-1 min-h-[36px] sm:min-h-[48px]"
+        }`}
+      >
         {media.wishes || media.fromName ? (
-          <div className="w-full space-y-0.5 sm:space-y-1 px-1">
+          <div
+            className={`w-full ${
+              isSingleCol ? "space-y-1 px-1.5" : "space-y-0.5 sm:space-y-1 px-1"
+            }`}
+          >
             {media.wishes && (
-              <p className="font-serif italic text-[7.5px] sm:text-xs md:text-[13px] text-[#433B37] dark:text-[#E2D8D0] leading-tight line-clamp-2 px-0.5">
+              <p
+                className={`font-serif italic text-[#433B37] dark:text-[#E2D8D0] px-0.5 ${
+                  isSingleCol
+                    ? "text-xs sm:text-xs md:text-[13px] leading-relaxed line-clamp-3"
+                    : "text-[7.5px] sm:text-xs md:text-[13px] leading-tight line-clamp-2"
+                }`}
+              >
                 "{media.wishes}"
               </p>
             )}
             {media.fromName && (
-              <p className="text-[6px] sm:text-[9.5px] uppercase tracking-[0.08em] sm:tracking-[0.18em] text-[#7A7069] dark:text-[#A89F97] font-medium truncate">
-                — With Love, {media.fromName}
+              <p
+                className={`uppercase font-medium truncate ${
+                  isSingleCol
+                    ? "text-[9px] sm:text-[9.5px] tracking-[0.15em] sm:tracking-[0.18em] text-[#7A7069] dark:text-[#A89F97]"
+                    : "text-[6px] sm:text-[9.5px] tracking-[0.08em] sm:tracking-[0.18em] text-[#7A7069] dark:text-[#A89F97]"
+                }`}
+              >
+                {media.fromName}
               </p>
             )}
           </div>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 185 34" width="100%" height="100%">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700&amp;display=swap");
+    .fk-text {
+      font-family: "Plus Jakarta Sans", "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 27px;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      fill: #2F2926;
+    }
+    .fk-domain {
+      font-weight: 500;
+      letter-spacing: -0.015em;
+      opacity: 0.85;
+    }
+    @media (prefers-color-scheme: dark) {
+      .fk-text { fill: #F5EFEB; }
+    }
+  </style>
+  <text x="0" y="25" class="fk-text">fotokita<tspan class="fk-domain">.com</tspan></text>
+</svg>

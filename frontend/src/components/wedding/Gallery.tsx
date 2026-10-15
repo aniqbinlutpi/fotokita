@@ -3,7 +3,7 @@ import { GalleryItem } from "./GalleryItem";
 import { ImageLightbox } from "./ImageLightbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Camera, AlertCircle, RefreshCw, UploadCloud } from "lucide-react";
+import { Camera, AlertCircle, RefreshCw, UploadCloud, Grid3X3, Square } from "lucide-react";
 import { getMediaUrl } from "@/api/media";
 import type { MediaItem } from "@/types/media";
 import type { Wedding } from "@/types/wedding";
@@ -28,6 +28,27 @@ export const Gallery: React.FC<GalleryProps> = ({
   onDeleteMedia,
   onOpenUpload,
 }) => {
+  const [columns, setColumns] = useState<1 | 3>(() => {
+    try {
+      const saved = localStorage.getItem("fotokita_gallery_layout");
+      if (saved === "1" || saved === "3") {
+        return Number(saved) as 1 | 3;
+      }
+    } catch {
+      // ignore
+    }
+    return 3;
+  });
+
+  const handleSelectColumns = (cols: 1 | 3) => {
+    setColumns(cols);
+    try {
+      localStorage.setItem("fotokita_gallery_layout", String(cols));
+    } catch {
+      // ignore
+    }
+  };
+
   const [urlCache, setUrlCache] = useState<Record<string, string>>({});
   const [selectedMedia, setSelectedMedia] = useState<{
     item: MediaItem;
@@ -159,40 +180,112 @@ export const Gallery: React.FC<GalleryProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-[#7A7069] dark:text-[#A89F97] font-sans tabular-nums tracking-wide">
-            {mediaList.length} {mediaList.length === 1 ? "moment" : "moments"}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:bg-[#FFFCF8] dark:hover:bg-[#1A1715] rounded-xs h-8 px-2.5 text-xs transition-colors"
-            title="Refresh gallery"
-          >
-            <RefreshCw
-              className={`size-3.5 ${isLoading ? "animate-spin" : ""}`}
-            />
-          </Button>
+        <div className="flex items-center justify-between md:justify-end gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#7A7069] dark:text-[#A89F97] font-sans tabular-nums tracking-wide">
+              {mediaList.length} {mediaList.length === 1 ? "moment" : "moments"}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isLoading}
+              className="text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB] hover:bg-[#FFFCF8] dark:hover:bg-[#1A1715] rounded-xs h-7 w-7 p-0 text-xs transition-colors"
+              title="Refresh gallery"
+            >
+              <RefreshCw
+                className={`size-3.5 ${isLoading ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Layout Toggle (1 photo vs 3 photos per line) */}
+            <div
+              role="group"
+              aria-label="Susunan galeri foto"
+              className="inline-flex items-center p-0.5 rounded-xs border border-[#E7DED5] dark:border-[#332B25] bg-[#F8F5F0]/80 dark:bg-[#12100E]/80 shadow-2xs"
+            >
+              <button
+                type="button"
+                onClick={() => handleSelectColumns(1)}
+                className={`px-2 py-1 rounded-[1px] text-[11px] font-sans font-medium flex items-center gap-1.5 transition-all ${
+                  columns === 1
+                    ? "bg-[#FFFCF8] dark:bg-[#1A1715] text-[#2F2926] dark:text-[#F5EFEB] shadow-xs"
+                    : "text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB]"
+                }`}
+                title="1 gambar selajur (lebih jelas)"
+                aria-label="1 gambar selajur"
+                aria-pressed={columns === 1}
+              >
+                <Square className="size-3" />
+                <span className="text-[10px]">1</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectColumns(3)}
+                className={`px-2 py-1 rounded-[1px] text-[11px] font-sans font-medium flex items-center gap-1.5 transition-all ${
+                  columns === 3
+                    ? "bg-[#FFFCF8] dark:bg-[#1A1715] text-[#2F2926] dark:text-[#F5EFEB] shadow-xs"
+                    : "text-[#7A7069] dark:text-[#A89F97] hover:text-[#2F2926] dark:hover:text-[#F5EFEB]"
+                }`}
+                title="3 gambar selajur (padat)"
+                aria-label="3 gambar selajur"
+                aria-pressed={columns === 3}
+              >
+                <Grid3X3 className="size-3" />
+                <span className="text-[10px]">3</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Loading Skeleton Grid */}
       {isLoading && mediaList.length === 0 && (
-        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 items-start gap-1.5 sm:gap-4 md:gap-6 lg:gap-8">
-          {Array.from({ length: 9 }).map((_, i) => (
+        <div
+          className={
+            columns === 1
+              ? "grid grid-cols-1 items-start gap-6 sm:gap-8 max-w-[320px] sm:max-w-[350px] mx-auto px-1 sm:px-0"
+              : "grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 items-start gap-1.5 sm:gap-4 md:gap-6 lg:gap-8"
+          }
+        >
+          {Array.from({ length: columns === 1 ? 3 : 9 }).map((_, i) => (
             <div
               key={i}
-              className="bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5 shadow-xs flex flex-col justify-start"
+              className={`bg-[#FFFCF8] dark:bg-[#1A1715] border border-[#E7DED5] dark:border-[#332B25] shadow-xs flex flex-col justify-start ${
+                columns === 1
+                  ? "rounded-[2px] p-2.5 pb-3 sm:p-3 sm:pb-3.5"
+                  : "rounded-[1.5px] sm:rounded-[2px] p-1.5 pb-2 sm:p-3 sm:pb-3.5"
+              }`}
             >
-              <div className="text-center pb-1 sm:pb-2 shrink-0 h-4 sm:h-6 flex items-center justify-center">
-                <Skeleton className="h-1.5 sm:h-2 w-10 sm:w-24 bg-[#EDE6DC]/40 dark:bg-[#2C2622]/60" />
+              <div
+                className={`text-center shrink-0 flex items-center justify-center ${
+                  columns === 1 ? "pb-2 h-6" : "pb-1 sm:pb-2 h-4 sm:h-6"
+                }`}
+              >
+                <Skeleton
+                  className={`bg-[#EDE6DC]/40 dark:bg-[#2C2622]/60 ${
+                    columns === 1 ? "h-2 w-24" : "h-1.5 sm:h-2 w-10 sm:w-24"
+                  }`}
+                />
               </div>
               <Skeleton className="aspect-square w-full bg-[#EDE6DC]/60 dark:bg-[#2C2622]/80 animate-pulse rounded-[1px] shrink-0" />
-              <div className="h-[54px] sm:h-[84px] shrink-0 space-y-1.5 text-center flex flex-col items-center justify-center">
-                <Skeleton className="h-2 sm:h-3 w-20 sm:w-36 bg-[#EDE6DC]/60 dark:bg-[#2C2622]/80" />
-                <Skeleton className="h-1.5 sm:h-2 w-12 sm:w-24 bg-[#EDE6DC]/40 dark:bg-[#2C2622]/60" />
+              <div
+                className={`shrink-0 space-y-1.5 text-center flex flex-col items-center justify-center ${
+                  columns === 1 ? "h-[72px] pt-1" : "h-[54px] sm:h-[84px]"
+                }`}
+              >
+                <Skeleton
+                  className={`bg-[#EDE6DC]/60 dark:bg-[#2C2622]/80 ${
+                    columns === 1 ? "h-3 w-36" : "h-2 sm:h-3 w-20 sm:w-36"
+                  }`}
+                />
+                <Skeleton
+                  className={`bg-[#EDE6DC]/40 dark:bg-[#2C2622]/60 ${
+                    columns === 1 ? "h-2 w-24" : "h-1.5 sm:h-2 w-12 sm:w-24"
+                  }`}
+                />
               </div>
             </div>
           ))}
@@ -248,7 +341,13 @@ export const Gallery: React.FC<GalleryProps> = ({
 
       {/* Populated Gallery Grid */}
       {mediaList.length > 0 && (
-        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 items-start gap-1.5 sm:gap-4 md:gap-6 lg:gap-8">
+        <div
+          className={
+            columns === 1
+              ? "grid grid-cols-1 items-start gap-6 sm:gap-8 max-w-[320px] sm:max-w-[350px] mx-auto px-1 sm:px-0"
+              : "grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 items-start gap-1.5 sm:gap-4 md:gap-6 lg:gap-8"
+          }
+        >
           {mediaList.map((media) => (
             <GalleryItem
               key={media.id}
@@ -257,6 +356,7 @@ export const Gallery: React.FC<GalleryProps> = ({
               onSelect={handleSelectMedia}
               onDelete={onDeleteMedia}
               onUrlLoaded={handleUrlLoaded}
+              layoutMode={columns}
             />
           ))}
         </div>

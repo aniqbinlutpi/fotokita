@@ -731,7 +731,7 @@ export const UploadPhotos: React.FC<UploadPhotosProps> = ({
                         )}
                         {fromName && (
                           <p className="text-[8px] uppercase tracking-[0.15em] text-[#7A7069] font-medium">
-                            — With Love, {fromName}
+                            {fromName}
                           </p>
                         )}
                       </div>

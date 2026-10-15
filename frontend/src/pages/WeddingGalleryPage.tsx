@@ -199,10 +199,6 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
             >
               <FotokitaLogo variant="full" size="sm" />
             </button>
-            <span className="hidden sm:inline-block w-px h-3.5 bg-[#E7DED5] dark:bg-[#332B25]" />
-            <span className="hidden sm:inline-block text-[11px] uppercase tracking-widest text-[#7A7069] dark:text-[#A89F97]">
-              Editorial Wedding Gallery
-            </span>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
