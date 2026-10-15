@@ -6,6 +6,7 @@ import { success, error } from "../lib/response";
 import { db } from "../db";
 import { tenantAccounts, tenantCustomizations } from "../db/schema";
 import { calculatePlanDates } from "../utils/duration";
+import { hashPassword, verifyPassword } from "../lib/password";
 
 type Env = {
   Variables: {
@@ -124,7 +125,7 @@ authRoute.post("/register", async (c) => {
       .values({
         username: cleanUsername,
         email: cleanEmail,
-        password: cleanPassword,
+        password: await hashPassword(cleanPassword),
         weddingId,
         weddingSlug: weddingSlug.trim().toLowerCase(),
         weddingName: weddingName.trim(),
@@ -140,7 +141,7 @@ authRoute.post("/register", async (c) => {
       .onConflictDoUpdate({
         target: tenantAccounts.username,
         set: {
-          password: cleanPassword,
+          password: await hashPassword(cleanPassword),
           email: cleanEmail,
           weddingId,
           weddingSlug: weddingSlug.trim().toLowerCase(),
@@ -273,7 +274,7 @@ authRoute.post("/login", async (c) => {
   }
 
   // Strictly validate registered password / PIN from database
-  const isMatch = tenant.password === inputPassword;
+  const { isMatch, needsRehash } = await verifyPassword(tenant.password, inputPassword);
 
   if (!isMatch) {
     return c.json(
@@ -283,6 +284,18 @@ authRoute.post("/login", async (c) => {
       ),
       401
     );
+  }
+
+  // Upgrade legacy plaintext passwords to a hash on first successful login
+  if (needsRehash) {
+    try {
+      await db
+        .update(tenantAccounts)
+        .set({ password: await hashPassword(inputPassword) })
+        .where(eq(tenantAccounts.id, tenant.id));
+    } catch (rehashErr) {
+      console.warn("Failed to upgrade legacy password to hash:", rehashErr);
+    }
   }
 
   // Enforce subscription plan expiry check
