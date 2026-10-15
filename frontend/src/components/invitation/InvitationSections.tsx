@@ -7,6 +7,7 @@ import {
   googleCalendarUrl,
   googleMapsEmbedUrl,
   googleMapsUrl,
+  MY_TIME_ZONE,
   mapsQuery,
   telUrl,
   timeLeft,
@@ -20,8 +21,8 @@ interface SectionProps {
   titleFont: string;
 }
 
-const dateFmt = new Intl.DateTimeFormat("ms-MY", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-const timeFmt = new Intl.DateTimeFormat("ms-MY", { hour: "numeric", minute: "2-digit", hour12: true });
+const dateFmt = new Intl.DateTimeFormat("ms-MY", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: MY_TIME_ZONE });
+const timeFmt = new Intl.DateTimeFormat("ms-MY", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: MY_TIME_ZONE });
 
 const btn =
   "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition active:scale-95";

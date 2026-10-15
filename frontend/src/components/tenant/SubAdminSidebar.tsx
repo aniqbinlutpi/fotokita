@@ -740,7 +740,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
         </div>
 
         {/* Expandable Editing Sub-sections */}
-        {isEditingExpanded && (
+        {isEditingExpanded && activeView !== "invitation" && (
           <div className="space-y-4 animate-in fade-in-50 duration-200">
             {/* Active Layout Mode Banner */}
         <div className="p-2.5 rounded-lg border border-sidebar-border bg-sidebar-accent/25 space-y-2">
@@ -1432,14 +1432,16 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
 
       {/* Footer */}
       <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2 bg-sidebar shrink-0 z-10">
-        <Button
-          onClick={onSave}
-          disabled={isSaving}
-          className="w-full text-xs font-medium shadow-sm cursor-pointer"
-          size="sm"
-        >
-          {isSaving ? "Saving Deco..." : "Save Customization"}
-        </Button>
+        {activeView !== "invitation" && (
+          <Button
+            onClick={onSave}
+            disabled={isSaving}
+            className="w-full text-xs font-medium shadow-sm cursor-pointer"
+            size="sm"
+          >
+            {isSaving ? "Saving Deco..." : "Save Customization"}
+          </Button>
+        )}
 
         <div className="flex items-center justify-between p-2 rounded-lg bg-muted/40 text-xs">
           <div className="grid leading-tight truncate">

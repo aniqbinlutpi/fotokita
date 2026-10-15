@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Camera } from "lucide-react";
 import { getTenantCustomization } from "@/api/tenant";
 import { useInvitation } from "@/hooks/queries/useInvitation";
+import { MY_TIME_ZONE } from "@/lib/invitation";
 import { getCardPalette } from "@/lib/themes";
 import { getFontFamilyCss } from "@/lib/typography";
 import { InvitationCover } from "@/components/invitation/InvitationCover";
@@ -22,7 +23,7 @@ interface Props {
   slug: string;
 }
 
-const coverDateFmt = new Intl.DateTimeFormat("ms-MY", { day: "numeric", month: "long", year: "numeric" });
+const coverDateFmt = new Intl.DateTimeFormat("ms-MY", { day: "numeric", month: "long", year: "numeric", timeZone: MY_TIME_ZONE });
 
 export const InvitationPage: React.FC<Props> = ({ slug }) => {
   const isPreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("preview");

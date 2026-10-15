@@ -23,32 +23,57 @@ type CreateMediaInput = {
   secretCode?: string;
 };
 
+export class MediaError extends Error {
+  constructor(
+    public code: "S3_UPLOAD_FAILED" | "DATABASE_ERROR",
+    message: string,
+  ) {
+    super(message);
+    this.name = "MediaError";
+  }
+}
+
 export async function createMedia(input: CreateMediaInput) {
   const storageKey = generateStorageKey(
     input.weddingId,
     input.filename,
   );
 
-  await uploadToS3({
-    key: storageKey,
-    file: input.file,
-    contentType: input.mimeType,
-  });
+  try {
+    await uploadToS3({
+      key: storageKey,
+      file: input.file,
+      contentType: input.mimeType,
+    });
+  } catch (err) {
+    console.error("S3 upload failed:", err);
+    throw new MediaError("S3_UPLOAD_FAILED", "Failed to store the uploaded file");
+  }
 
-  const [createdMedia] = await db
-    .insert(media)
-    .values({
-      weddingId: input.weddingId,
-      storageKey,
-      filename: input.filename,
-      mimeType: input.mimeType,
-      size: input.size,
-      wishes: input.wishes,
-      fromName: input.fromName,
-      signature: input.signature,
-      secretCode: input.secretCode,
-    })
-    .returning();
+  let createdMedia;
+  try {
+    [createdMedia] = await db
+      .insert(media)
+      .values({
+        weddingId: input.weddingId,
+        storageKey,
+        filename: input.filename,
+        mimeType: input.mimeType,
+        size: input.size,
+        wishes: input.wishes,
+        fromName: input.fromName,
+        signature: input.signature,
+        secretCode: input.secretCode,
+      })
+      .returning();
+  } catch (err) {
+    console.error("Media insert failed, removing uploaded object:", err);
+    // Never leave an object in storage without a database row
+    await deleteFromS3(storageKey).catch((cleanupErr) => {
+      console.error(`Failed to remove orphaned object ${storageKey}:`, cleanupErr);
+    });
+    throw new MediaError("DATABASE_ERROR", "Failed to save the uploaded media");
+  }
 
   return createdMedia;
 }

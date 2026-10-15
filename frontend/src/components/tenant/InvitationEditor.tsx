@@ -4,6 +4,7 @@ import { Check, Copy, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { fromMyInput, toMyInput } from "@/lib/invitation";
 import { useInvitation, useUpdateInvitation } from "@/hooks/queries/useInvitation";
 import { DEFAULT_INVITATION, MUSIC_PRESETS, type CardStyle, type InvitationInput } from "@/types/invitation";
 
@@ -17,15 +18,6 @@ const CARD_STYLES: { id: CardStyle; label: string }[] = [
   { id: "floral", label: "Floral (sudut)" },
   { id: "minimal", label: "Minimal" },
 ];
-
-/** ISO string <-> value of <input type="datetime-local"> (local time) */
-const toLocalInput = (iso: string | null) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const off = d.getTimezoneOffset() * 60_000;
-  return new Date(d.getTime() - off).toISOString().slice(0, 16);
-};
-const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null);
 
 const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
   <label className="block space-y-1.5">
@@ -44,6 +36,7 @@ export const InvitationEditor: React.FC<Props> = ({ weddingId, slug }) => {
   const [form, setForm] = useState<InvitationInput>(DEFAULT_INVITATION);
   const [copied, setCopied] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -118,11 +111,11 @@ export const InvitationEditor: React.FC<Props> = ({ weddingId, slug }) => {
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Mula">
-            <Input type="datetime-local" value={toLocalInput(form.eventStart)} onChange={(e) => set("eventStart", fromLocalInput(e.target.value))} />
+          <Field label="Mula" hint="Waktu Malaysia (GMT+8)">
+            <Input type="datetime-local" value={toMyInput(form.eventStart)} onChange={(e) => set("eventStart", fromMyInput(e.target.value))} />
           </Field>
-          <Field label="Tamat">
-            <Input type="datetime-local" value={toLocalInput(form.eventEnd)} onChange={(e) => set("eventEnd", fromLocalInput(e.target.value))} />
+          <Field label="Tamat" hint="Waktu Malaysia (GMT+8)">
+            <Input type="datetime-local" value={toMyInput(form.eventEnd)} onChange={(e) => set("eventEnd", fromMyInput(e.target.value))} />
           </Field>
         </div>
 
@@ -201,14 +194,19 @@ export const InvitationEditor: React.FC<Props> = ({ weddingId, slug }) => {
         </Button>
       </div>
 
-      <div className="hidden lg:block">
-        <div className="sticky top-4 overflow-hidden rounded-[2rem] border-4 border-foreground/80 bg-background shadow-xl">
-          <iframe
-            key={previewKey}
-            title="Pratonton jemputan"
-            src={`/${encodeURI(slug)}/kad?preview=subadmin`}
-            className="h-[640px] w-full border-0"
-          />
+      <div className="order-first lg:order-none">
+        <Button type="button" variant="outline" className="mb-3 w-full lg:hidden" onClick={() => setShowPreview((v) => !v)}>
+          {showPreview ? "Sembunyikan pratonton" : "Tunjuk pratonton"}
+        </Button>
+        <div className={`${showPreview ? "block" : "hidden"} lg:block`}>
+          <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-[2rem] border-4 border-foreground/80 bg-background shadow-xl lg:sticky lg:top-4">
+            <iframe
+              key={previewKey}
+              title="Pratonton jemputan"
+              src={`/${encodeURI(slug)}/kad?preview=subadmin`}
+              className="h-[640px] w-full border-0"
+            />
+          </div>
         </div>
       </div>
     </div>

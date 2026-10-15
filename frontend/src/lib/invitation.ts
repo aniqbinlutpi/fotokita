@@ -1,5 +1,19 @@
 import type { Invitation } from "@/types/invitation";
 
+/** Invitations are for Malaysian weddings: times are always entered and shown in Malaysia time (GMT+8, no DST). */
+export const MY_TIME_ZONE = "Asia/Kuala_Lumpur";
+const MY_OFFSET_MS = 8 * 3600_000;
+
+/** ISO instant -> value for <input type="datetime-local"> in Malaysia time */
+export function toMyInput(iso: string | null): string {
+  return iso ? new Date(new Date(iso).getTime() + MY_OFFSET_MS).toISOString().slice(0, 16) : "";
+}
+
+/** <input type="datetime-local"> value (Malaysia time) -> ISO instant */
+export function fromMyInput(value: string): string | null {
+  return value ? new Date(`${value}:00+08:00`).toISOString() : null;
+}
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export function mapsQuery(inv: Pick<Invitation, "latitude" | "longitude" | "venueName" | "venueAddress">): string {

@@ -8,6 +8,7 @@ import {
   getMediaById,
   getMediaByWeddingId,
   getMediaUrl,
+  MediaError,
 } from "../services/media.service";
 
 import {
@@ -187,17 +188,25 @@ mediaRoutes.post("/", async (c) => {
   } = validation.data;
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const createdMedia = await createMedia({
-    weddingId,
-    file: buffer,
-    filename: sanitizedFilename,
-    mimeType: file.type,
-    size: file.size,
-    wishes,
-    fromName,
-    signature,
-    secretCode,
-  });
+  let createdMedia;
+  try {
+    createdMedia = await createMedia({
+      weddingId,
+      file: buffer,
+      filename: sanitizedFilename,
+      mimeType: file.type,
+      size: file.size,
+      wishes,
+      fromName,
+      signature,
+      secretCode,
+    });
+  } catch (err) {
+    if (err instanceof MediaError) {
+      return c.json(error(err.code, err.message), 500);
+    }
+    throw err;
+  }
 
   return c.json(success(createdMedia), 201);
 });
