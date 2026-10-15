@@ -1,6 +1,6 @@
 <div align="center">
 
-# Fotokita
+# Fotokita (will private repo soon)
 
 **lagu~ foto kita "Tak Blur" with fotokita.com**
 
