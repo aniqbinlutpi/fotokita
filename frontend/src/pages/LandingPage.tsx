@@ -265,13 +265,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               transition={{ duration: 0.4 }}
               className="flex items-center justify-center mb-6"
             >
-              <Badge
-                variant="outline"
-                className="px-4 py-1.5 text-[11px] uppercase tracking-widest gap-2 bg-card/70 backdrop-blur-xs border-border/70 text-muted-foreground font-normal shadow-2xs"
-              >
-                <Sparkles className="size-3.5 text-accent animate-pulse" />
-                <span>Live Wedding Photobooth & Ballroom Gallery</span>
-              </Badge>
             </motion.div>
 
             {/* Editorial Headline with Embedded 3D Shader Orb */}
