@@ -76,6 +76,28 @@ export async function initDb(): Promise<void> {
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS orb_size TEXT NOT NULL DEFAULT '130';`;
     await client`ALTER TABLE tenant_customizations ADD COLUMN IF NOT EXISTS text_positions TEXT;`;
 
+    await client`
+      CREATE TABLE IF NOT EXISTS tenant_invitations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        wedding_id TEXT NOT NULL UNIQUE,
+        enabled BOOLEAN NOT NULL DEFAULT false,
+        opening_greeting TEXT NOT NULL DEFAULT '',
+        host_names TEXT NOT NULL DEFAULT '',
+        invite_message TEXT NOT NULL DEFAULT '',
+        event_start TIMESTAMP,
+        event_end TIMESTAMP,
+        venue_name TEXT NOT NULL DEFAULT '',
+        venue_address TEXT NOT NULL DEFAULT '',
+        latitude TEXT,
+        longitude TEXT,
+        schedule JSONB NOT NULL DEFAULT '[]'::jsonb,
+        contacts JSONB NOT NULL DEFAULT '[]'::jsonb,
+        music_url TEXT,
+        card_style TEXT NOT NULL DEFAULT 'classic',
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `;
+
     // Index for cleanup query performance
     await client`CREATE INDEX IF NOT EXISTS idx_tenant_media_cleanup ON tenant_accounts (media_expires_at, media_cleaned_up, preserve_media);`;
 

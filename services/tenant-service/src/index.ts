@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import authRoute from "./routes/auth";
 import customizationRoute from "./routes/customization";
+import invitationRoute from "./routes/invitation";
 import maintenanceRoute from "./routes/maintenance";
 import { runMediaRetentionCleanup } from "./services/cleanup.service";
 import { initDb, client } from "./db";
@@ -62,6 +63,7 @@ app.get("/health", async (c) => {
 // Tenant routes
 app.route("/tenant/auth", authRoute);
 app.route("/tenant/customization", customizationRoute);
+app.route("/tenant/invitation", invitationRoute);
 app.route("/tenant/maintenance", maintenanceRoute);
 app.route("/tenant", maintenanceRoute); // mounts /tenant/accounts and /tenant/accounts/:weddingId/...
 

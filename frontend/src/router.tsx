@@ -10,6 +10,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { LandingPage } from "./pages/LandingPage";
 import { WeddingGalleryPage } from "./pages/WeddingGalleryPage";
+import { InvitationPage } from "./pages/InvitationPage";
 import { DemoGalleryPage } from "./pages/DemoGalleryPage";
 import { AdminControlPage } from "./pages/AdminControlPage";
 import { SubAdminPortalPage } from "./pages/SubAdminPortalPage";
@@ -311,6 +312,25 @@ const rootSlugRoute = createRoute({
   },
 });
 
+// 7c. Digital invitation card (/$slug/kad and /w/$slug/kad)
+const invitationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/$slug/kad",
+  component: function InvitationComponent() {
+    const { slug } = useParams({ from: invitationRoute.id });
+    return <InvitationPage slug={slug} />;
+  },
+});
+
+const invitationWSlugRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/w/$slug/kad",
+  component: function InvitationWComponent() {
+    const { slug } = useParams({ from: invitationWSlugRoute.id });
+    return <InvitationPage slug={slug} />;
+  },
+});
+
 // 8. Create Route Tree & Router Instance
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -324,6 +344,8 @@ const routeTree = rootRoute.addChildren([
   galleryRoute,
   weddingSlugRoute,
   rootSlugRoute,
+  invitationRoute,
+  invitationWSlugRoute,
 ]);
 
 export const router = createRouter({

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { FotokitaLogo } from "@/components/common/FotokitaLogo";
+import { InvitationEditor } from "@/components/tenant/InvitationEditor";
 import { SubAdminSidebar } from "@/components/tenant/SubAdminSidebar";
 import { SubAdminLoginModal } from "@/components/tenant/SubAdminLoginModal";
 import { SubAdminDesktopCanvas } from "@/components/tenant/SubAdminDesktopCanvas";
@@ -157,7 +158,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(!tenant);
 
   // Active View: 'editor' | 'dashboard'
-  const [activeView, setActiveView] = useState<"editor" | "dashboard">("editor");
+  const [activeView, setActiveView] = useState<"editor" | "dashboard" | "invitation">("editor");
 
   // View Mode: 'desktop' | 'mobile'
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">(() =>
@@ -674,7 +675,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
               <Separator orientation="vertical" className="hidden sm:block mr-2 h-4 shrink-0" />
               {/* Mobile compact title */}
               <span className="text-xs font-medium text-foreground truncate max-w-[85px] xs:max-w-[120px] sm:hidden">
-                {activeView === "dashboard" ? "Dashboard" : "Editor"}
+                {activeView === "dashboard" ? "Dashboard" : activeView === "invitation" ? "Jemputan" : "Editor"}
               </span>
               {/* Desktop / Tablet Breadcrumbs */}
               <Breadcrumb className="hidden sm:flex min-w-0">
@@ -699,7 +700,9 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     <BreadcrumbPage className="text-xs text-muted-foreground truncate">
                       {activeView === "dashboard"
                         ? "Guest Media & Downloads Dashboard"
-                        : "Live Guest View Editor"}
+                        : activeView === "invitation"
+                          ? "Digital Invitation Card"
+                          : "Live Guest View Editor"}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
@@ -731,7 +734,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     <span>Guest View ↗</span>
                   </Button>
                 </>
-              ) : (
+              ) : activeView === "invitation" ? null : (
                 <>
                   {/* Desktop vs Mobile Toggle */}
                   <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs shadow-2xs shrink-0">
@@ -844,6 +847,8 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                 onSwitchToEditor={() => setActiveView("editor")}
                 onOpenGuestView={handleOpenLiveGuestView}
               />
+            ) : activeView === "invitation" ? (
+              <InvitationEditor weddingId={activeWeddingIdentifier} slug={currentSlug} />
             ) : (
               <div className="p-2 sm:p-6 flex-1 flex flex-col">
                 {viewMode === "desktop" ? (
