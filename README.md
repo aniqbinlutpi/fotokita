@@ -2,7 +2,7 @@
 
 # Fotokita
 
-**"Tak Blur" with fotokita.com**
+**lagu~ foto kita "Tak Blur" with fotokita.com**
 
 *A modern, full-stack wedding photography and interactive digital guestbook platform.*
 
