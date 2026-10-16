@@ -1,23 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 225 46" width="100%" height="100%">
-  <style>
-    @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700&amp;display=swap");
-    .fk-text {
-      font-family: "Plus Jakarta Sans", "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.035em;
-      fill: #2F2926;
-    }
-    .fk-domain {
-      font-weight: 500;
-      letter-spacing: -0.015em;
-      opacity: 0.82;
-    }
-    @media (prefers-color-scheme: dark) {
-      .fk-text { fill: #F5EFEB; }
-    }
-  </style>
-
   <!-- Camera Icon on Left -->
   <g transform="translate(1, 5) scale(0.2857) translate(-34, -38.5)">
     <!-- Camera Body Silhouette with Black Fill -->
@@ -31,6 +12,13 @@
     <path d="M 173.5 164.5 L 173.5 155 L 183 155 Z" fill="#AB5E46"/>
   </g>
 
-  <!-- Text "fotokita.com" on Right -->
-  <text x="52" y="31" class="fk-text">fotokita<tspan class="fk-domain">.com</tspan></text>
+  <!-- Text "fotokita.com" on Right with direct attributes -->
+  <text x="52" y="31"
+        font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Outfit', sans-serif"
+        font-size="26"
+        font-weight="700"
+        letter-spacing="-0.035em"
+        fill="#2F2926">
+    fotokita<tspan font-weight="500" letter-spacing="-0.015em" fill="#2F2926" opacity="0.82">.com</tspan>
+  </text>
 </svg>
