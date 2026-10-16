@@ -5,11 +5,12 @@ import { db } from "../db";
 import { tenantAccounts, tenantCustomizations } from "../db/schema";
 import { runMediaRetentionCleanup } from "../services/cleanup.service";
 import { success, error } from "../lib/response";
+import { requireAdminAuth } from "../lib/admin-auth";
 
 const maintenanceRoute = new Hono();
 
 // POST /tenant/maintenance/cleanup - Run media retention cleanup manually
-maintenanceRoute.post("/cleanup", async (c) => {
+maintenanceRoute.post("/cleanup", requireAdminAuth, async (c) => {
   try {
     const result = await runMediaRetentionCleanup();
     return c.json(success(result));
@@ -20,7 +21,7 @@ maintenanceRoute.post("/cleanup", async (c) => {
 });
 
 // GET /tenant/maintenance/stats - Get tenant accounts subscription metrics
-maintenanceRoute.get("/stats", async (c) => {
+maintenanceRoute.get("/stats", requireAdminAuth, async (c) => {
   try {
     const accounts = await db.select().from(tenantAccounts);
     const now = new Date().getTime();
@@ -50,7 +51,7 @@ maintenanceRoute.get("/stats", async (c) => {
 });
 
 // GET /tenant/accounts - List all tenant accounts with subscription details
-maintenanceRoute.get("/accounts", async (c) => {
+maintenanceRoute.get("/accounts", requireAdminAuth, async (c) => {
   try {
     const accounts = await db
       .select({
@@ -83,7 +84,7 @@ const preserveMediaSchema = z.object({
 });
 
 // PATCH /tenant/accounts/:weddingId/preserve-media - Toggle preserve media flag (disable auto-delete)
-maintenanceRoute.patch("/accounts/:weddingId/preserve-media", async (c) => {
+maintenanceRoute.patch("/accounts/:weddingId/preserve-media", requireAdminAuth, async (c) => {
   const weddingId = c.req.param("weddingId");
   const body = await c.req.json().catch(() => null);
   const parsed = preserveMediaSchema.safeParse(body);
@@ -127,7 +128,7 @@ const extendPlanSchema = z.object({
 });
 
 // PATCH /tenant/accounts/:weddingId/extend-plan - Extend plan duration
-maintenanceRoute.patch("/accounts/:weddingId/extend-plan", async (c) => {
+maintenanceRoute.patch("/accounts/:weddingId/extend-plan", requireAdminAuth, async (c) => {
   const weddingId = c.req.param("weddingId");
   const body = await c.req.json().catch(() => null);
   const parsed = extendPlanSchema.safeParse(body);
@@ -189,7 +190,7 @@ maintenanceRoute.patch("/accounts/:weddingId/extend-plan", async (c) => {
 });
 
 // DELETE /tenant/accounts/:weddingId - Delete tenant account and customizations permanently
-maintenanceRoute.delete("/accounts/:weddingId", async (c) => {
+maintenanceRoute.delete("/accounts/:weddingId", requireAdminAuth, async (c) => {
   const weddingId = c.req.param("weddingId");
   if (!weddingId) {
     return c.json(error("VALIDATION_ERROR", "Wedding ID is required"), 400);

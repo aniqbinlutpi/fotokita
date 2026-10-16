@@ -38,6 +38,7 @@ import {
   AlignCenter,
   AlignRight,
   LayoutDashboard,
+  Mail,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -77,8 +78,8 @@ interface SubAdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onToggleMobileBoundary?: () => void;
   viewMode?: "desktop" | "mobile";
   onSwitchViewMode?: (mode: "desktop" | "mobile") => void;
-  activeView?: "editor" | "dashboard";
-  onSelectView?: (view: "editor" | "dashboard") => void;
+  activeView?: "editor" | "dashboard" | "invitation";
+  onSelectView?: (view: "editor" | "dashboard" | "invitation") => void;
   mediaCount?: number;
   totalMediaSize?: string;
 }
@@ -666,6 +667,29 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
             )}
           </button>
 
+          {/* Invitation Item */}
+          <button
+            type="button"
+            onClick={() => onSelectView?.("invitation")}
+            className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+              activeView === "invitation"
+                ? "border-accent bg-accent/15 text-foreground shadow-xs ring-1 ring-accent/30 font-medium"
+                : "border-sidebar-border hover:border-sidebar-border/80 hover:bg-sidebar-accent/30 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <div
+              className={`p-1.5 rounded-md shrink-0 ${
+                activeView === "invitation" ? "bg-accent text-accent-foreground" : "bg-sidebar-accent text-muted-foreground"
+              }`}
+            >
+              <Mail className="size-4" />
+            </div>
+            <div className="min-w-0 truncate">
+              <span className="text-xs font-semibold block text-foreground truncate">Jemputan</span>
+              <span className="text-[10px] text-muted-foreground block truncate">Kad digital, lokasi & atur cara</span>
+            </div>
+          </button>
+
           {/* Editing Accordion Header */}
           <div className="pt-1">
             <button
@@ -716,7 +740,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
         </div>
 
         {/* Expandable Editing Sub-sections */}
-        {isEditingExpanded && (
+        {isEditingExpanded && activeView !== "invitation" && (
           <div className="space-y-4 animate-in fade-in-50 duration-200">
             {/* Active Layout Mode Banner */}
         <div className="p-2.5 rounded-lg border border-sidebar-border bg-sidebar-accent/25 space-y-2">
@@ -1408,14 +1432,16 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
 
       {/* Footer */}
       <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2 bg-sidebar shrink-0 z-10">
-        <Button
-          onClick={onSave}
-          disabled={isSaving}
-          className="w-full text-xs font-medium shadow-sm cursor-pointer"
-          size="sm"
-        >
-          {isSaving ? "Saving Deco..." : "Save Customization"}
-        </Button>
+        {activeView !== "invitation" && (
+          <Button
+            onClick={onSave}
+            disabled={isSaving}
+            className="w-full text-xs font-medium shadow-sm cursor-pointer"
+            size="sm"
+          >
+            {isSaving ? "Saving Deco..." : "Save Customization"}
+          </Button>
+        )}
 
         <div className="flex items-center justify-between p-2 rounded-lg bg-muted/40 text-xs">
           <div className="grid leading-tight truncate">

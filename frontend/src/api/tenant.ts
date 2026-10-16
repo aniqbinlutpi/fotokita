@@ -1,3 +1,4 @@
+import type { Invitation, InvitationInput } from "@/types/invitation";
 import { handleApiResponse } from "./client";
 
 const TENANT_BASE_URL = import.meta.env.VITE_TENANT_API_URL || "/api/tenant";
@@ -222,4 +223,31 @@ export async function updateTenantCustomization(
     }
   }
   return body;
+}
+
+/**
+ * Fetch the digital invitation (public when enabled; owners also get it while disabled)
+ */
+export async function getInvitation(identifier: string): Promise<Invitation> {
+  const token = getStoredTenantToken();
+  const res = await fetch(`${TENANT_BASE_URL}/invitation/${encodeURIComponent(identifier)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  return handleApiResponse<Invitation>(res);
+}
+
+/**
+ * Save the digital invitation (Sub-Admin access)
+ */
+export async function updateInvitation(identifier: string, input: InvitationInput): Promise<Invitation> {
+  const token = getStoredTenantToken();
+  const res = await fetch(`${TENANT_BASE_URL}/invitation/${encodeURIComponent(identifier)}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(input),
+  });
+  return handleApiResponse<Invitation>(res);
 }

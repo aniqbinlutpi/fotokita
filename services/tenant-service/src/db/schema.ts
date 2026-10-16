@@ -4,6 +4,7 @@ import {
   text,
   boolean,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const tenantAccounts = pgTable("tenant_accounts", {
@@ -50,5 +51,37 @@ export const tenantCustomizations = pgTable("tenant_customizations", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export interface InvitationScheduleItem {
+  time: string;
+  title: string;
+}
+
+export interface InvitationContact {
+  name: string;
+  role: string;
+  phone: string;
+}
+
+export const tenantInvitations = pgTable("tenant_invitations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  weddingId: text("wedding_id").notNull().unique(),
+  enabled: boolean("enabled").notNull().default(false),
+  openingGreeting: text("opening_greeting").notNull().default(""),
+  hostNames: text("host_names").notNull().default(""),
+  inviteMessage: text("invite_message").notNull().default(""),
+  eventStart: timestamp("event_start"),
+  eventEnd: timestamp("event_end"),
+  venueName: text("venue_name").notNull().default(""),
+  venueAddress: text("venue_address").notNull().default(""),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  schedule: jsonb("schedule").$type<InvitationScheduleItem[]>().notNull().default([]),
+  contacts: jsonb("contacts").$type<InvitationContact[]>().notNull().default([]),
+  musicUrl: text("music_url"),
+  cardStyle: text("card_style").notNull().default("classic"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type TenantAccount = typeof tenantAccounts.$inferSelect;
 export type TenantCustomization = typeof tenantCustomizations.$inferSelect;
+export type TenantInvitation = typeof tenantInvitations.$inferSelect;
