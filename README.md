@@ -1,4 +1,5 @@
 <div align="center">
+<img width="300" height="61" alt="image" src="https://github.com/user-attachments/assets/bbf87d4e-f7fb-4be6-a700-1658adc48e37" />
 
 # Fotokita (will private repo soon)
 
