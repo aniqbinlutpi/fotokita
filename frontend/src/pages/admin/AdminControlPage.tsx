@@ -22,6 +22,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 // Tab Sub-pages
 import { AdminDashboard } from "./AdminDashboard";
 import { AdminInquiries } from "./AdminInquiries";
+import { AdminVouchers } from "./AdminVouchers";
 import { AdminTenantInvites } from "./AdminTenantInvites";
 import { AdminWeddings } from "./AdminWeddings";
 import { AdminSystemServices } from "./AdminSystemServices";
@@ -44,6 +45,10 @@ import {
   getAdminInquiries,
   updateAdminInquiryStatus,
   deleteAdminInquiry,
+  getAdminVouchers,
+  createAdminVoucher,
+  toggleAdminVoucherStatus,
+  deleteAdminVoucher,
   getAdminTenantAccounts,
   toggleAdminPreserveMedia,
   triggerAdminMediaCleanup,
@@ -54,6 +59,7 @@ import {
   type AdminInvite,
   type SubscriptionTier,
   type CustomerInquiry,
+  type AdminVoucher,
   type AdminTenantAccount,
 } from "@/api/admin";
 import {
@@ -81,13 +87,14 @@ export function AdminControlPage({
 
   // Navigation tab
   const [activeTab, setActiveTab] = useState<
-    "overview" | "inquiries" | "invites" | "weddings" | "system"
+    "overview" | "inquiries" | "vouchers" | "invites" | "weddings" | "system"
   >("overview");
 
   // Data states
   const [weddings, setWeddings] = useState<Wedding[]>([]);
   const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [inquiries, setInquiries] = useState<CustomerInquiry[]>([]);
+  const [vouchers, setVouchers] = useState<AdminVoucher[]>([]);
   const [inquiryFilter, setInquiryFilter] = useState<
     "all" | "pending" | "contacted" | "converted"
   >("all");
@@ -207,7 +214,19 @@ export function AdminControlPage({
       console.warn("Could not fetch customer inquiries:", err);
     }
 
-    // 5. Fetch tenant accounts from tenant-service
+    // 5. Fetch promotional vouchers from admin-service
+    try {
+      const vouchersData = await getAdminVouchers();
+      setVouchers(vouchersData);
+    } catch (err: any) {
+      if (handleAuthError(err)) {
+        setIsRefreshing(false);
+        return;
+      }
+      console.warn("Could not fetch vouchers:", err);
+    }
+
+    // 6. Fetch tenant accounts from tenant-service
     try {
       const accounts = await getAdminTenantAccounts();
       const mapped: Record<string, AdminTenantAccount> = {};
@@ -305,7 +324,10 @@ export function AdminControlPage({
     setInviteClientPhone(inquiry.phone || "");
     setInviteWeddingDate(inquiry.weddingDate || "");
     setInvitePlanStartDate(inquiry.planStartDate || "");
-    setInviteNotes(`Inquiry phone: ${inquiry.phone} • Plan: ${inquiry.planName}`);
+    const voucherNote = inquiry.voucherCode
+      ? ` • Voucher: ${inquiry.voucherCode} (${inquiry.discountAmount || ""} off, Paid: ${inquiry.finalPrice || inquiry.price})`
+      : ` • Price: ${inquiry.price}`;
+    setInviteNotes(`Inquiry phone: ${inquiry.phone} • Plan: ${inquiry.planName}${voucherNote}`);
     const validTiers: SubscriptionTier[] = [
       "12h",
       "1day",
@@ -325,6 +347,40 @@ export function AdminControlPage({
     setNewlyCreatedInvite(null);
     setReceiptFile(null);
     setIsCreateInviteOpen(true);
+  };
+
+  // Voucher operations
+  const handleCreateVoucher = async (data: any) => {
+    try {
+      const res = await createAdminVoucher(data);
+      setVouchers((prev) => [res.voucher, ...prev]);
+      toast.success(res.message || "Voucher created successfully");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create voucher");
+      throw err;
+    }
+  };
+
+  const handleToggleVoucherStatus = async (id: string, isActive: boolean) => {
+    try {
+      const res = await toggleAdminVoucherStatus(id, isActive);
+      setVouchers((prev) =>
+        prev.map((v) => (v.id === id ? res.voucher : v))
+      );
+      toast.success(res.message || `Voucher ${isActive ? "activated" : "deactivated"}`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update voucher status");
+    }
+  };
+
+  const handleDeleteVoucher = async (id: string) => {
+    try {
+      await deleteAdminVoucher(id);
+      setVouchers((prev) => prev.filter((v) => v.id !== id));
+      toast.success("Voucher deleted successfully");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete voucher");
+    }
   };
 
   // Invite operations
@@ -547,6 +603,7 @@ export function AdminControlPage({
           onLogout={handleLogout}
           onBackHome={onNavigateHome}
           pendingInquiriesCount={inquiries.filter((i) => i.status === "pending").length}
+          activeVouchersCount={vouchers.filter((v) => v.status === "active").length}
         />
 
         {/* Inset Main View */}
@@ -560,6 +617,7 @@ export function AdminControlPage({
               <span className="text-xs font-semibold truncate sm:hidden">
                 {activeTab === "overview" && "Dashboard"}
                 {activeTab === "inquiries" && "Inquiries"}
+                {activeTab === "vouchers" && "Vouchers"}
                 {activeTab === "invites" && "Invites"}
                 {activeTab === "weddings" && "Weddings"}
                 {activeTab === "system" && "System"}
@@ -584,6 +642,7 @@ export function AdminControlPage({
                     <BreadcrumbPage className="capitalize text-xs truncate">
                       {activeTab === "overview" && "Dashboard Overview"}
                       {activeTab === "inquiries" && "Customer Inquiries (WhatsApp Leads)"}
+                      {activeTab === "vouchers" && "Vouchers & Promotional Deals"}
                       {activeTab === "invites" && "Tenant Invites (24h Single-Use)"}
                       {activeTab === "weddings" && "Weddings Management"}
                       {activeTab === "system" && "System & Services"}
@@ -669,6 +728,17 @@ export function AdminControlPage({
                   setNewlyCreatedInvite(null);
                   setIsCreateInviteOpen(true);
                 }}
+              />
+            )}
+
+            {activeTab === "vouchers" && (
+              <AdminVouchers
+                vouchers={vouchers}
+                onRefresh={fetchData}
+                isRefreshing={isRefreshing}
+                onCreateVoucher={handleCreateVoucher}
+                onToggleStatus={handleToggleVoucherStatus}
+                onDeleteVoucher={handleDeleteVoucher}
               />
             )}
 

@@ -4,6 +4,7 @@ import authRoute from "./routes/auth";
 import dashboardRoute from "./routes/dashboard";
 import invitesRoute from "./routes/invites";
 import inquiriesRoute from "./routes/inquiries";
+import vouchersRoute from "./routes/vouchers";
 import { initDb, client } from "./db";
 import { error } from "./lib/response";
 
@@ -52,6 +53,7 @@ app.get("/admin/health", healthHandler);
 app.route("/admin/auth", authRoute);
 app.route("/admin/invites", invitesRoute);
 app.route("/admin/inquiries", inquiriesRoute);
+app.route("/admin/vouchers", vouchersRoute);
 app.route("/admin", dashboardRoute);
 
 const port = Number(process.env.PORT) || 3002;

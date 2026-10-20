@@ -20,9 +20,6 @@ import {
   ArrowRight,
   ArrowLeft,
   ShieldCheck,
-  Globe,
-  Database,
-  Cloud,
   Clock,
   User,
   AlertTriangle,
@@ -30,12 +27,46 @@ import {
   LogIn,
   Eye,
   EyeOff,
+  Info,
+  Mail,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
+import { TimePicker } from "@/components/ui/time-picker";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Wedding } from "@/types/wedding";
+
+function InfoTooltip({ content }: { content: string }) {
+  return (
+    <TooltipProvider delay={100}>
+      <Tooltip>
+        <TooltipTrigger
+          type="button"
+          tabIndex={-1}
+          className="text-muted-foreground/60 hover:text-accent cursor-pointer inline-flex items-center justify-center rounded-full transition-colors"
+          onClick={(e) => e.preventDefault()}
+        >
+          <Info className="size-3.5" />
+          <span className="sr-only">Information</span>
+        </TooltipTrigger>
+        <TooltipContent className="text-xs max-w-xs leading-relaxed bg-foreground text-background font-normal">
+          {content}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 interface SubscriberRegisterPageProps {
   inviteToken?: string;
@@ -84,6 +115,9 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [weddingDate, setWeddingDate] = useState("");
   const [planStartDate, setPlanStartDate] = useState("");
+  const [activationTime, setActivationTime] = useState("08:00");
+  const [isWeddingPickerOpen, setIsWeddingPickerOpen] = useState(false);
+  const [isActivationPickerOpen, setIsActivationPickerOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [isUsernameLocked, setIsUsernameLocked] = useState(false);
   const [subscriberEmail, setSubscriberEmail] = useState("");
@@ -93,18 +127,66 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>(initialPlan);
 
-  const handleWeddingDateChange = (val: string) => {
-    setWeddingDate(val);
-    if (val && planStartDate) {
-      const parts = val.split("-").map(Number);
-      const [year, month, day] = parts;
-      if (year !== undefined && month !== undefined && day !== undefined) {
-        const weddingDayEnd = new Date(year, month - 1, day, 23, 59, 59, 999);
-        const currentStart = new Date(planStartDate);
-        if (currentStart.getTime() > weddingDayEnd.getTime()) {
-          setPlanStartDate("");
-        }
+  const selectedWeddingDateObj = React.useMemo(() => {
+    if (!weddingDate) return undefined;
+    const parts = weddingDate.split("-").map(Number);
+    const [year, month, day] = parts;
+    if (year !== undefined && month !== undefined && day !== undefined) {
+      return new Date(year, month - 1, day);
+    }
+    const d = new Date(weddingDate);
+    return isNaN(d.getTime()) ? undefined : d;
+  }, [weddingDate]);
+
+  const activationDate = React.useMemo(() => {
+    if (!planStartDate) return undefined;
+    const datePart = planStartDate.split("T")[0];
+    if (!datePart) return undefined;
+    const parts = datePart.split("-").map(Number);
+    const [year, month, day] = parts;
+    if (year !== undefined && month !== undefined && day !== undefined) {
+      return new Date(year, month - 1, day);
+    }
+    const d = new Date(planStartDate);
+    return isNaN(d.getTime()) ? undefined : d;
+  }, [planStartDate]);
+
+  const handleSelectWeddingDate = (date: Date | undefined) => {
+    if (!date) {
+      setWeddingDate("");
+      return;
+    }
+    const dateStr = format(date, "yyyy-MM-dd");
+    setWeddingDate(dateStr);
+
+    // If activationDate was previously selected and is now AFTER the new wedding date,
+    // clear it so user must pick a valid date on or before the wedding day.
+    if (planStartDate) {
+      const weddingMidnight = new Date(date);
+      weddingMidnight.setHours(23, 59, 59, 999);
+      const currentStart = new Date(planStartDate);
+      if (currentStart.getTime() > weddingMidnight.getTime()) {
+        setPlanStartDate("");
       }
+    }
+  };
+
+  const handleSelectActivationDate = (date: Date | undefined) => {
+    if (!date) {
+      setPlanStartDate("");
+      return;
+    }
+    const dateStr = format(date, "yyyy-MM-dd");
+    setPlanStartDate(`${dateStr}T${activationTime || "08:00"}`);
+  };
+
+  const handleActivationTimeChange = (time: string) => {
+    setActivationTime(time);
+    if (planStartDate) {
+      const datePart = planStartDate.split("T")[0];
+      setPlanStartDate(`${datePart}T${time}`);
+    } else if (weddingDate) {
+      setPlanStartDate(`${weddingDate}T${time}`);
     }
   };
 
@@ -116,6 +198,34 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
   const calculatedEndDate = calculatePlanEndDate(selectedPlan, effectiveStartDate);
   const coverageCheck = validatePlanCoverage(weddingDate, effectiveStartDate, calculatedEndDate);
+
+  const formatActivation = () => {
+    if (!planStartDate) return { date: "Not scheduled", time: "Pending" };
+    try {
+      const d = new Date(planStartDate);
+      if (isNaN(d.getTime())) return { date: "Not scheduled", time: "Pending" };
+      const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+      return { date, time };
+    } catch {
+      return { date: "Not scheduled", time: "Pending" };
+    }
+  };
+
+  const formatExpiration = () => {
+    try {
+      const d = calculatedEndDate;
+      if (!d || isNaN(d.getTime())) return { date: "—", time: "—" };
+      const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+      return { date, time };
+    } catch {
+      return { date: "—", time: "—" };
+    }
+  };
+
+  const activationDisplay = formatActivation();
+  const expirationDisplay = formatExpiration();
 
   // Success view state (NO AUTO LOGIN)
   const [registeredWedding, setRegisteredWedding] = useState<Wedding | null>(null);
@@ -156,6 +266,10 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         }
         if (res.planStartDate) {
           setPlanStartDate(res.planStartDate);
+          const parts = res.planStartDate.split("T");
+          if (parts[1]) {
+            setActivationTime(parts[1].slice(0, 5));
+          }
         }
 
         const hoursLeft = Math.max(0, Math.ceil(res.remainingMs / (1000 * 60 * 60)));
@@ -301,7 +415,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
     if (!coverageCheck.isValid) {
       toast.error(
         coverageCheck.message ||
-          "Tarikh tamat pelan mendahului tarikh majlis perkahwinan anda. Sila pilih tarikh mula guna yang lebih hampir dengan hari majlis atau pilih pelan dengan durasi lebih panjang."
+          "Plan expiration precedes your wedding date. Please choose an activation time closer to the event or select a longer plan."
       );
       return;
     }
@@ -602,454 +716,558 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         )}
 
         {/* Header */}
-        <div className="text-center mb-8">
-          <Badge variant="outline" className="mb-4 gap-1.5 px-3 py-1 text-[11px] uppercase tracking-widest text-accent">
-            <Sparkles className="size-3.5" />
-            Gallery Sub-Admin Registration
-          </Badge>
-          <h1 className="font-serif text-3xl sm:text-4xl text-foreground tracking-wide font-normal">
-            Register Your Wedding Gallery
+        <div className="text-center mb-6">
+          <h1 className="font-serif text-2xl sm:text-3xl text-foreground tracking-wide font-normal">
+            Wedding Gallery Registration
           </h1>
-          <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto">
-            Complete the details below to launch your exclusive digital wedding gallery.
+          <p className="text-xs text-muted-foreground mt-1.5 max-w-md mx-auto">
+            Review your package details and complete the registration below to launch your digital guestbook.
           </p>
 
           {/* Active 24h Token Banner */}
           {token && tokenRemainingHours !== null && (
-            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs">
-              <Clock className="size-3.5" />
+            <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs">
+              <Clock className="size-3" />
               <span>
-                Valid Link: Approximately <strong>{tokenRemainingHours} hours</strong> remaining (Single-Use)
+                Valid Single-Use Link: <strong>{tokenRemainingHours} hours</strong> remaining
               </span>
             </div>
           )}
         </div>
 
-        {/* Feature Highlights */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-          <Card className="p-3 bg-card/60 flex items-center gap-2.5 flex-row">
-            <Globe className="size-4 text-accent shrink-0" />
-            <div className="text-left">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Custom URL</p>
-              <p className="text-xs font-medium text-foreground">{displayDomain}/slug</p>
-            </div>
-          </Card>
-
-          <Card className="p-3 bg-card/60 flex items-center gap-2.5 flex-row">
-            <Cloud className="size-4 text-accent shrink-0" />
-            <div className="text-left">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Cloud Storage</p>
-              <p className="text-xs font-medium text-foreground">Zero Egress Fees</p>
-            </div>
-          </Card>
-
-          <Card className="p-3 bg-card/60 flex items-center gap-2.5 flex-row">
-            <Database className="size-4 text-accent shrink-0" />
-            <div className="text-left">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">PostgreSQL</p>
-              <p className="text-xs font-medium text-foreground">Tenant Isolated</p>
-            </div>
-          </Card>
-        </div>
-
         {/* Registration Form Card */}
-        <Card className="bg-card p-6 sm:p-8 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 1. Couple Names: Groom (Guy) & Bride (Lady) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Groom's Name (Guy) *
-                </label>
-                <div className="relative">
-                  <Input
-                    required
-                    placeholder="e.g. Alex"
-                    value={groomName}
-                    onChange={handleGroomNameChange}
-                    className="pr-10"
-                  />
-                  <User className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+        <Card className="bg-card p-5 sm:p-7 shadow-xs space-y-6">
+          {/* ========================================================================= */}
+          {/* SECTION A: INFORMATION & PACKAGE OVERVIEW (READ-ONLY)                     */}
+          {/* ========================================================================= */}
+          <div className="rounded-xl border border-accent/25 bg-accent/5 p-4 sm:p-5 space-y-3.5">
+            {/* Header: Plan & Verification Status */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-accent/15">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">
+                  <Sparkles className="size-4" />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Bride's Name (Lady) *
-                </label>
-                <div className="relative">
-                  <Input
-                    required
-                    placeholder="e.g. Rihana"
-                    value={brideName}
-                    onChange={handleBrideNameChange}
-                    className="pr-10"
-                  />
-                  <Heart className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Custom URL Slug with Realtime Checking */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs uppercase tracking-widest font-medium text-muted-foreground">
-                  Gallery URL Slug (Must be unique) *
-                </label>
-                <span className="text-[11px] text-accent font-mono">
-                  {displayDomain}/{slug || "your-slug"}
-                </span>
-              </div>
-
-              <div className="relative flex rounded-lg shadow-2xs">
-                <span className="inline-flex items-center px-3.5 rounded-l-lg border border-r-0 border-input bg-muted/50 text-xs font-mono text-muted-foreground select-none">
-                  {displayDomain}/
-                </span>
-                <input
-                  type="text"
-                  required
-                  placeholder="alex&rihana"
-                  value={slug}
-                  onChange={handleSlugChange}
-                  className="flex-1 px-4 py-2.5 bg-background/50 border border-input rounded-r-lg text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors"
-                />
-                <div className="absolute right-3 top-3 flex items-center">
-                  {isCheckingSlug ? (
-                    <Loader2 className="size-4 text-accent animate-spin" />
-                  ) : slugStatus?.checked ? (
-                    slugStatus.available ? (
-                      <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-                    ) : slugStatus.isError ? (
-                      <AlertTriangle className="size-4 text-amber-500" />
-                    ) : (
-                      <XCircle className="size-4 text-rose-500" />
-                    )
-                  ) : null}
-                </div>
-              </div>
-
-              {/* Status Feedback */}
-              {slugStatus && (
-                <div
-                  className={`mt-2 text-xs flex items-center gap-1.5 ${
-                    slugStatus.available
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : slugStatus.isError
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-rose-600 dark:text-rose-400"
-                  }`}
-                >
-                  {slugStatus.available ? (
-                    <CheckCircle2 className="size-3.5 shrink-0" />
-                  ) : slugStatus.isError ? (
-                    <AlertTriangle className="size-3.5 shrink-0" />
-                  ) : (
-                    <XCircle className="size-3.5 shrink-0" />
-                  )}
-                  <span>
-                    {slugStatus.message ||
-                      (slugStatus.available
-                        ? "This URL slug is available!"
-                        : "This URL slug has already been taken. Please choose another.")}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* 3. Event Date & Plan Start Time */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Wedding Event Date *
-                </label>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    required
-                    value={weddingDate}
-                    onChange={(e) => handleWeddingDateChange(e.target.value)}
-                    className="pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                  />
-                  <Calendar className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Hari majlis perkahwinan anda berlangsung.
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground">
-                    Tarikh &amp; Masa Mula Guna *
-                  </label>
-                  <span className="text-[10px] text-accent font-medium">
-                    {getPlanDurationLabel(selectedPlan)}
-                  </span>
-                </div>
-                <div className="relative">
-                  <Input
-                    type="datetime-local"
-                    required
-                    value={planStartDate}
-                    onChange={(e) => setPlanStartDate(e.target.value)}
-                    max={weddingDate ? `${weddingDate}T23:59` : undefined}
-                    className="pr-10 cursor-pointer"
-                  />
-                  <Clock className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Waktu portal &amp; galeri muat naik mula boleh diakses secara langsung.
-                </p>
-              </div>
-            </div>
-
-            {/* 4. Storage Plan based on Tier */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs uppercase tracking-widest font-medium text-muted-foreground">
-                  Subscription Package
-                </label>
-                {lockedPlan && (
-                  <Badge variant="secondary" className="text-[10px] uppercase font-mono">
-                    Locked by Admin (24h Token)
-                  </Badge>
-                )}
-              </div>
-
-              {lockedPlan ? (
-                <div className="p-4 rounded-xl border border-accent/40 bg-accent/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-serif text-base font-semibold text-foreground">
-                        {PLAN_DETAILS[selectedPlan]?.title || selectedPlan}
-                      </span>
-                      <Badge variant="outline" className="text-xs text-accent font-semibold border-accent/40 bg-accent/5">
-                        {PLAN_DETAILS[selectedPlan]?.price || ""}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {PLAN_DETAILS[selectedPlan]?.desc || "Verified and locked subscription package."}
-                    </p>
+                <div>
+                  <div className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">
+                    Subscription Package
                   </div>
-                  <div className="shrink-0">
-                    <Badge variant="outline" className="text-[11px] font-medium border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
-                      Verified &bull; {PLAN_DETAILS[selectedPlan]?.duration || "Active"}
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif text-base sm:text-lg font-semibold text-foreground">
+                      {PLAN_DETAILS[selectedPlan]?.title || selectedPlan}
+                    </span>
+                    <Badge variant="outline" className="text-xs font-semibold text-accent border-accent/40 bg-accent/10">
+                      {PLAN_DETAILS[selectedPlan]?.price || ""}
                     </Badge>
                   </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {(["12h", "1day", "3days", "1week", "1month", "1year"] as const).map((tierKey) => {
-                    const info = PLAN_DETAILS[tierKey];
-                    return (
-                      <div
-                        key={tierKey}
-                        onClick={() => setSelectedPlan(tierKey)}
-                        className={`cursor-pointer p-3 rounded-lg border transition-all ${
-                          selectedPlan === tierKey
-                            ? "border-accent bg-accent/10 ring-1 ring-accent"
-                            : "border-border hover:border-accent/40"
-                        }`}
-                      >
-                        <div className="font-serif text-sm font-semibold">{info.title}</div>
-                        <div className="text-xs text-accent font-medium mt-0.5">{info.price}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                          {info.desc}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {lockedPlan && (
+                  <Badge variant="outline" className="text-[10px] font-mono uppercase bg-background/80 text-muted-foreground border-border/80 gap-1">
+                    <Lock className="size-2.5 text-accent" />
+                    Locked (Invite Link)
+                  </Badge>
+                )}
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] font-medium gap-1 ${
+                    coverageCheck.isValid
+                      ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                      : "border-destructive/40 text-destructive bg-destructive/10"
+                  }`}
+                >
+                  {coverageCheck.isValid ? (
+                    <>
+                      <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
+                      <span>Event Coverage Verified &bull; {getPlanDurationLabel(selectedPlan)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="size-3 text-destructive" />
+                      <span>Coverage Warning &bull; {getPlanDurationLabel(selectedPlan)}</span>
+                    </>
+                  )}
+                </Badge>
+              </div>
             </div>
 
-            {/* Plan Duration & End Time Coverage Card */}
-            {weddingDate && planStartDate && (
-              <div
-                className={`p-4 rounded-xl border transition-all ${
-                  coverageCheck.isValid
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-100"
-                    : "bg-destructive/10 border-destructive/30 text-destructive"
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-current/15 mb-2.5">
-                  <div className="flex items-center gap-2">
-                    {coverageCheck.isValid ? (
-                      <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    ) : (
-                      <AlertTriangle className="size-4 text-destructive shrink-0" />
-                    )}
-                    <span className="font-semibold text-sm">
-                      {coverageCheck.isValid ? "Hari Majlis Dilindungi Sepenuhnya" : "Amaran: Pelan Tamat Sebelum Hari Majlis!"}
-                    </span>
+            {/* Key Information Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+              <div className="p-2.5 sm:p-3 rounded-lg bg-background/80 border border-border/60 flex flex-col justify-between">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                  <Calendar className="size-3 text-accent shrink-0" />
+                  <span>Wedding Date</span>
+                </span>
+                <div className="mt-1.5">
+                  <div className="font-medium text-xs sm:text-sm text-foreground whitespace-nowrap leading-tight">
+                    {coverageCheck.weddingFormatted || (weddingDate ? weddingDate : "Not selected")}
                   </div>
-                  <Badge variant="outline" className="text-xs font-mono border-current shrink-0">
-                    {getPlanDurationLabel(selectedPlan)}
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Tarikh Majlis</span>
-                    <span className="font-medium text-foreground">{coverageCheck.weddingFormatted || weddingDate}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Mula Aktif</span>
-                    <span className="font-medium text-foreground">
-                      {new Date(planStartDate).toLocaleString("ms-MY", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Tamat Pelan (Automatik)</span>
-                    <span className="font-medium text-foreground">
-                      {coverageCheck.endFormatted || calculatedEndDate.toLocaleString("ms-MY")}
-                    </span>
+                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                    {weddingDate ? "Event Day" : "Select below"}
                   </div>
                 </div>
+              </div>
 
-                {!coverageCheck.isValid && (
-                  <div className="mt-3 p-2.5 rounded-lg bg-destructive/15 border border-destructive/30 text-xs font-medium text-destructive leading-relaxed">
-                    {coverageCheck.message}
+              <div className="p-2.5 sm:p-3 rounded-lg bg-background/80 border border-border/60 flex flex-col justify-between">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                  <Clock className="size-3 text-accent shrink-0" />
+                  <span>Activation</span>
+                </span>
+                <div className="mt-1.5">
+                  <div className="font-medium text-xs sm:text-sm text-foreground whitespace-nowrap leading-tight">
+                    {activationDisplay.date}
                   </div>
-                )}
+                  <div className="text-[11px] font-mono text-muted-foreground leading-tight mt-0.5">
+                    {activationDisplay.time}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2.5 sm:p-3 rounded-lg bg-background/80 border border-border/60 flex flex-col justify-between">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                  <Clock className="size-3 text-muted-foreground shrink-0" />
+                  <span>Expires</span>
+                </span>
+                <div className="mt-1.5">
+                  <div className="font-medium text-xs sm:text-sm text-foreground whitespace-nowrap leading-tight">
+                    {expirationDisplay.date}
+                  </div>
+                  <div className="text-[11px] font-mono text-muted-foreground leading-tight mt-0.5">
+                    {expirationDisplay.time}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2.5 sm:p-3 rounded-lg bg-background/80 border border-border/60 flex flex-col justify-between">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                  <User className="size-3 text-accent shrink-0" />
+                  <span>Sub-Admin</span>
+                </span>
+                <div className="mt-1.5">
+                  <div className="font-mono font-medium text-xs sm:text-sm text-foreground whitespace-nowrap leading-tight truncate">
+                    @{username || "To be created"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                    {isUsernameLocked ? "Locked" : "Configurable"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Warning Details if Invalid */}
+            {!coverageCheck.isValid && (
+              <div className="p-2.5 rounded-lg bg-destructive/15 border border-destructive/30 text-xs text-destructive flex items-start gap-2">
+                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{coverageCheck.message}</span>
               </div>
             )}
 
-            {/* 5. Sub-Admin Username & Email */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground">
-                    Sub-Admin Username *
+            {/* If Plan is unlocked (self-service / direct flow) */}
+            {!lockedPlan && (
+              <div className="pt-2 border-t border-accent/15">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground block mb-1.5">
+                  Choose Subscription Duration:
+                </span>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                  {(["12h", "1day", "3days", "1week", "1month", "1year"] as const).map((tierKey) => {
+                    const info = PLAN_DETAILS[tierKey];
+                    return (
+                      <button
+                        key={tierKey}
+                        type="button"
+                        onClick={() => setSelectedPlan(tierKey)}
+                        className={`p-1.5 rounded-md border text-center transition-all cursor-pointer ${
+                          selectedPlan === tierKey
+                            ? "border-accent bg-accent/20 text-accent font-semibold ring-1 ring-accent"
+                            : "border-border/60 hover:border-border text-muted-foreground bg-background/70"
+                        }`}
+                      >
+                        <div className="text-[11px] leading-tight">{info.title}</div>
+                        <div className="text-[10px] opacity-80">{info.price}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ========================================================================= */}
+          {/* SECTION B: INTERACTIVE FORM (FIELDS TO BE FILLED)                         */}
+          {/* ========================================================================= */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Step 1: Wedding & Gallery Setup */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-1 border-b border-border/50">
+                <span className="size-5 rounded-full bg-accent/15 text-accent text-[11px] font-bold flex items-center justify-center">
+                  1
+                </span>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Wedding &amp; Gallery Details
+                </h2>
+              </div>
+
+              {/* Couple Names: Groom & Bride */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground mb-1.5 block">
+                    Groom's Name <span className="text-accent">*</span>
                   </label>
-                  {isUsernameLocked && (
-                    <Badge variant="secondary" className="text-[10px] uppercase font-mono gap-1 text-muted-foreground">
-                      <Lock className="size-2.5 text-accent" />
-                      Locked
-                    </Badge>
-                  )}
+                  <div className="relative">
+                    <Input
+                      required
+                      placeholder="e.g. Alex"
+                      value={groomName}
+                      onChange={handleGroomNameChange}
+                      className="pr-10 h-10 text-xs rounded-lg"
+                    />
+                    <User className="size-4 absolute right-3 top-3 text-accent/60 pointer-events-none" />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Input
+
+                <div>
+                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground mb-1.5 block">
+                    Bride's Name <span className="text-accent">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      required
+                      placeholder="e.g. Rihana"
+                      value={brideName}
+                      onChange={handleBrideNameChange}
+                      className="pr-10 h-10 text-xs rounded-lg"
+                    />
+                    <Heart className="size-4 absolute right-3 top-3 text-accent/60 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom URL Slug */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
+                    <span>Gallery URL Slug</span>
+                    <span className="text-accent">*</span>
+                    <InfoTooltip content="Unique web address for your wedding gallery to share with your guests." />
+                  </label>
+                  <span className="text-[11px] text-accent font-mono truncate max-w-[220px]">
+                    {displayDomain}/{slug || "your-slug"}
+                  </span>
+                </div>
+
+                <div className="relative flex rounded-lg shadow-2xs">
+                  <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-input bg-muted/50 text-xs font-mono text-muted-foreground select-none">
+                    {displayDomain}/
+                  </span>
+                  <input
+                    type="text"
                     required
-                    readOnly={isUsernameLocked}
-                    placeholder="e.g. ainafarhana"
-                    value={username}
-                    onChange={(e) => {
-                      if (!isUsernameLocked) {
-                        setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""));
-                      }
-                    }}
-                    className={`pr-10 font-mono text-sm ${
-                      isUsernameLocked
-                        ? "bg-muted/70 cursor-not-allowed select-none text-foreground font-semibold"
-                        : ""
-                    }`}
+                    placeholder="alex&rihana"
+                    value={slug}
+                    onChange={handleSlugChange}
+                    className="flex-1 px-3 py-2 bg-background border border-input rounded-r-lg text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all h-10"
                   />
-                  {isUsernameLocked ? (
-                    <Lock className="size-4 absolute right-3.5 top-3 text-accent pointer-events-none" />
-                  ) : (
-                    <User className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
-                  )}
+                  <div className="absolute right-3 top-3 flex items-center">
+                    {isCheckingSlug ? (
+                      <Loader2 className="size-4 text-accent animate-spin" />
+                    ) : slugStatus?.checked ? (
+                      slugStatus.available ? (
+                        <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                      ) : slugStatus.isError ? (
+                        <AlertTriangle className="size-4 text-amber-500" />
+                      ) : (
+                        <XCircle className="size-4 text-rose-500" />
+                      )
+                    ) : null}
+                  </div>
                 </div>
-                {isUsernameLocked ? (
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Username is locked to your reservation and cannot be modified.
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Allowed: lowercase letters, numbers, underscores (_), and dots (.).
-                  </p>
+
+                {/* Slug Status Feedback */}
+                {slugStatus && (
+                  <div
+                    className={`mt-1.5 text-xs flex items-center gap-1.5 ${
+                      slugStatus.available
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : slugStatus.isError
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-rose-600 dark:text-rose-400"
+                    }`}
+                  >
+                    {slugStatus.available ? (
+                      <CheckCircle2 className="size-3.5 shrink-0" />
+                    ) : slugStatus.isError ? (
+                      <AlertTriangle className="size-3.5 shrink-0" />
+                    ) : (
+                      <XCircle className="size-3.5 shrink-0" />
+                    )}
+                    <span>
+                      {slugStatus.message ||
+                        (slugStatus.available
+                          ? "This URL slug is available!"
+                          : "This URL slug has already been taken. Please choose another.")}
+                    </span>
+                  </div>
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Confirmation Email *
-                </label>
-                <Input
-                  required
-                  type="email"
-                  placeholder="couple@email.com"
-                  value={subscriberEmail}
-                  onChange={(e) => setSubscriberEmail(e.target.value)}
-                />
+              {/* Event Schedule: Wedding Date & Start Activation (Shadcn Date & Time Pickers) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                    <Calendar className="size-3.5 text-accent" />
+                    <span>Wedding Date</span>
+                    <span className="text-accent">*</span>
+                    <InfoTooltip content="The official celebration date for your wedding." />
+                  </label>
+                  <Popover open={isWeddingPickerOpen} onOpenChange={setIsWeddingPickerOpen}>
+                    <PopoverTrigger
+                      type="button"
+                      className={cn(
+                        buttonVariants({ variant: "outline" }),
+                        "w-full justify-start text-left font-normal h-10 px-3 cursor-pointer border-input bg-background/50 hover:bg-muted/40 text-xs rounded-lg",
+                        !weddingDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 size-4 text-accent/70 shrink-0" />
+                      <span className="truncate">
+                        {selectedWeddingDateObj
+                          ? format(selectedWeddingDateObj, "PPP")
+                          : "Select wedding date"}
+                      </span>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <ShadcnCalendar
+                        mode="single"
+                        selected={selectedWeddingDateObj}
+                        onSelect={(date) => {
+                          handleSelectWeddingDate(date);
+                          setIsWeddingPickerOpen(false);
+                        }}
+                        disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
+                        autoFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
+                      <Clock className="size-3.5 text-accent" />
+                      <span>Start Activation</span>
+                      <span className="text-accent">*</span>
+                      <InfoTooltip content="The exact date and time your live photo booth and portal will become accessible." />
+                    </label>
+                    <span className="text-[10px] text-accent font-medium font-mono">
+                      {getPlanDurationLabel(selectedPlan)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <Popover open={isActivationPickerOpen} onOpenChange={setIsActivationPickerOpen}>
+                        <PopoverTrigger
+                          type="button"
+                          className={cn(
+                            buttonVariants({ variant: "outline" }),
+                            "w-full justify-start text-left font-normal h-10 px-3 cursor-pointer border-input bg-background/50 hover:bg-muted/40 text-xs rounded-lg",
+                            !activationDate && "text-muted-foreground"
+                          )}
+                        >
+                          <Calendar className="mr-2 size-4 text-accent/70 shrink-0" />
+                          <span className="truncate text-xs">
+                            {activationDate ? format(activationDate, "MMM d, yyyy") : "Start date"}
+                          </span>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <ShadcnCalendar
+                            mode="single"
+                            selected={activationDate}
+                            onSelect={(date) => {
+                              handleSelectActivationDate(date);
+                              setIsActivationPickerOpen(false);
+                            }}
+                            disabled={(date) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              const day = new Date(date);
+                              day.setHours(0, 0, 0, 0);
+                              if (day < today) return true;
+
+                              // Prevent selecting activation date after the wedding date
+                              if (selectedWeddingDateObj) {
+                                const weddingDay = new Date(selectedWeddingDateObj);
+                                weddingDay.setHours(0, 0, 0, 0);
+                                if (day > weddingDay) return true;
+                              }
+                              return false;
+                            }}
+                            autoFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="w-[125px] shrink-0">
+                      <TimePicker
+                        value={activationTime}
+                        onChange={handleActivationTimeChange}
+                        className="h-10 text-xs rounded-lg w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* 6. Sub-Admin Password & Confirmation */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Sub-Admin Password *
-                </label>
-                <div className="relative">
-                  <Input
-                    required
-                    type={showAdminPassword ? "text" : "password"}
-                    placeholder="Enter password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="pr-10 font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowAdminPassword((prev) => !prev)}
-                    className="absolute right-2.5 top-2.5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    aria-label={showAdminPassword ? "Hide password" : "Show password"}
-                  >
-                    {showAdminPassword ? (
-                      <EyeOff className="size-4 text-accent" />
-                    ) : (
-                      <Eye className="size-4" />
+            {/* Step 2: Sub-Admin Login Credentials */}
+            <div className="space-y-4 pt-3 border-t border-border/50">
+              <div className="flex items-center gap-2 pb-1 border-b border-border/50">
+                <span className="size-5 rounded-full bg-accent/15 text-accent text-[11px] font-bold flex items-center justify-center">
+                  2
+                </span>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Sub-Admin Account Credentials
+                </h2>
+              </div>
+
+              {/* Sub-Admin Username & Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
+                      <span>Sub-Admin Username</span>
+                      <span className="text-accent">*</span>
+                      <InfoTooltip
+                        content={
+                          isUsernameLocked
+                            ? "Your username is assigned to your invitation token and cannot be modified."
+                            : "Allowed: lowercase letters, numbers, underscores (_), and dots (.)."
+                        }
+                      />
+                    </label>
+                    {isUsernameLocked && (
+                      <Badge variant="secondary" className="text-[10px] uppercase font-mono gap-1 text-muted-foreground">
+                        <Lock className="size-2.5 text-accent" />
+                        Locked
+                      </Badge>
                     )}
-                  </button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      required
+                      readOnly={isUsernameLocked}
+                      placeholder="e.g. ainafarhana"
+                      value={username}
+                      onChange={(e) => {
+                        if (!isUsernameLocked) {
+                          setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""));
+                        }
+                      }}
+                      className={`pr-10 font-mono text-xs h-10 rounded-lg ${
+                        isUsernameLocked
+                          ? "bg-muted/70 cursor-not-allowed select-none text-foreground font-semibold border-dashed"
+                          : ""
+                      }`}
+                    />
+                    {isUsernameLocked ? (
+                      <Lock className="size-4 absolute right-3 top-3 text-accent pointer-events-none" />
+                    ) : (
+                      <User className="size-4 absolute right-3 top-3 text-accent/60 pointer-events-none" />
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                    <span>Confirmation Email</span>
+                    <span className="text-accent">*</span>
+                    <InfoTooltip content="Email for portal notifications, receipts, and account support." />
+                  </label>
+                  <div className="relative">
+                    <Input
+                      required
+                      type="email"
+                      placeholder="couple@email.com"
+                      value={subscriberEmail}
+                      onChange={(e) => setSubscriberEmail(e.target.value)}
+                      className="pr-10 h-10 text-xs rounded-lg"
+                    />
+                    <Mail className="size-4 absolute right-3 top-3 text-accent/60 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                  Confirm Password *
-                </label>
-                <div className="relative">
-                  <Input
-                    required
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Re-enter password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pr-10 font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    className="absolute right-2.5 top-2.5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="size-4 text-accent" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
-                  </button>
+              {/* Passwords */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                    <span>Password</span>
+                    <span className="text-accent">*</span>
+                    <InfoTooltip content="At least 4 characters to log into your sub-admin portal." />
+                  </label>
+                  <div className="relative">
+                    <Input
+                      required
+                      type={showAdminPassword ? "text" : "password"}
+                      placeholder="Enter password"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      className="pr-10 font-mono text-xs h-10 rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPassword((prev) => !prev)}
+                      className="absolute right-2.5 top-2.5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={showAdminPassword ? "Hide password" : "Show password"}
+                    >
+                      {showAdminPassword ? (
+                        <EyeOff className="size-4 text-accent" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground mb-1.5 block">
+                    Confirm Password <span className="text-accent">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      required
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Re-enter password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pr-10 font-mono text-xs h-10 rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-2.5 top-2.5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="size-4 text-accent" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center gap-3">
+            {/* Action CTA Buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
               {onCancel && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onCancel}
-                  className="w-full sm:w-auto h-11 px-5 uppercase text-xs tracking-wider cursor-pointer"
+                  className="w-full sm:w-auto h-11 px-5 text-xs font-medium cursor-pointer rounded-lg"
                 >
                   Cancel
                 </Button>
@@ -1062,29 +1280,23 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                   (slugStatus !== null && !slugStatus.available) ||
                   !coverageCheck.isValid
                 }
-                className="w-full sm:flex-1 h-11 uppercase text-xs tracking-widest font-semibold cursor-pointer shadow-sm"
+                className="w-full sm:flex-1 h-11 text-xs font-semibold cursor-pointer shadow-sm gap-2 rounded-lg"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    Registering Gallery...
+                    <span>Registering Gallery...</span>
                   </>
                 ) : (
                   <>
                     <span>Register Sub-Admin Account</span>
-                    <ArrowRight data-icon="inline-end" />
+                    <ArrowRight className="size-4" />
                   </>
                 )}
               </Button>
             </div>
           </form>
         </Card>
-
-        {/* Security Assurance Footer */}
-        <div className="mt-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-          <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Your account is protected with encrypted authentication and an isolated database tenant.</span>
-        </div>
       </motion.div>
     </div>
   );

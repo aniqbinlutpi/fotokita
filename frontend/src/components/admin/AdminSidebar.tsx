@@ -21,17 +21,19 @@ import {
   ShieldCheck,
   UserPlus,
   MessageSquare,
+  Ticket,
 } from "lucide-react";
 import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import type { AdminUser } from "@/api/admin";
 
 interface AdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  activeTab: "overview" | "inquiries" | "invites" | "weddings" | "system";
-  onSelectTab: (tab: "overview" | "inquiries" | "invites" | "weddings" | "system") => void;
+  activeTab: "overview" | "inquiries" | "vouchers" | "invites" | "weddings" | "system";
+  onSelectTab: (tab: "overview" | "inquiries" | "vouchers" | "invites" | "weddings" | "system") => void;
   adminUser: AdminUser | null;
   onLogout: () => void;
   onBackHome: () => void;
   pendingInquiriesCount?: number;
+  activeVouchersCount?: number;
 }
 
 export function AdminSidebar({
@@ -41,6 +43,7 @@ export function AdminSidebar({
   onLogout,
   onBackHome,
   pendingInquiriesCount = 0,
+  activeVouchersCount = 0,
   ...props
 }: AdminSidebarProps) {
   return (
@@ -92,6 +95,22 @@ export function AdminSidebar({
                   {typeof pendingInquiriesCount === "number" && pendingInquiriesCount > 0 && (
                     <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                       {pendingInquiriesCount}
+                    </span>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeTab === "vouchers"}
+                  onClick={() => onSelectTab("vouchers")}
+                  tooltip="Vouchers & Promo Codes"
+                >
+                  <Ticket className="size-4" />
+                  <span className="flex-1">Vouchers & Deals</span>
+                  {typeof activeVouchersCount === "number" && activeVouchersCount > 0 && (
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-500/20 px-1.5 text-[10px] font-semibold text-purple-600 dark:text-purple-400">
+                      {activeVouchersCount}
                     </span>
                   )}
                 </SidebarMenuButton>
