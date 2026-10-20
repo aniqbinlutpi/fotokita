@@ -95,15 +95,14 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
   const handleWeddingDateChange = (val: string) => {
     setWeddingDate(val);
-    if (val) {
-      if (!planStartDate) {
-        setPlanStartDate(`${val}T08:00`);
-      } else {
-        const parts = val.split("-").map(Number);
-        const weddingDayEnd = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999);
+    if (val && planStartDate) {
+      const parts = val.split("-").map(Number);
+      const [year, month, day] = parts;
+      if (year !== undefined && month !== undefined && day !== undefined) {
+        const weddingDayEnd = new Date(year, month - 1, day, 23, 59, 59, 999);
         const currentStart = new Date(planStartDate);
         if (currentStart.getTime() > weddingDayEnd.getTime()) {
-          setPlanStartDate(`${val}T08:00`);
+          setPlanStartDate("");
         }
       }
     }

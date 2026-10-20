@@ -116,14 +116,16 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
     setWeddingDate(dateStr);
     if (inquiryError) setInquiryError("");
 
-    const weddingMidnight = new Date(date);
-    weddingMidnight.setHours(23, 59, 59, 999);
-
-    // Auto-sync activation date & time to the wedding date if not already set,
-    // or if current activationDate is after the new wedding date
-    if (!activationDate || activationDate.getTime() > weddingMidnight.getTime()) {
-      setActivationDate(date);
-      setPlanStartDate(`${dateStr}T${activationTime}`);
+    // If activationDate was previously selected and is now AFTER the new wedding date,
+    // clear it so user must pick a valid date on or before the wedding day.
+    // Do NOT auto-select gallery activation.
+    if (activationDate) {
+      const weddingMidnight = new Date(date);
+      weddingMidnight.setHours(23, 59, 59, 999);
+      if (activationDate.getTime() > weddingMidnight.getTime()) {
+        setActivationDate(undefined);
+        setPlanStartDate("");
+      }
     }
   };
 
