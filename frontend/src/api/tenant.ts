@@ -12,6 +12,7 @@ export interface TenantAccount {
   weddingName: string;
   role?: string;
   planTier?: string;
+  planStartDate?: string | null;
   planExpiresAt?: string | null;
   mediaExpiresAt?: string | null;
   preserveMedia?: boolean;
@@ -113,6 +114,7 @@ export interface RegisterTenantInput {
   weddingSlug: string;
   weddingName: string;
   planTier?: string;
+  planStartDate?: string;
 }
 
 /**

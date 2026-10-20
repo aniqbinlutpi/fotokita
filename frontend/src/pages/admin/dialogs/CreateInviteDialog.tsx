@@ -23,6 +23,7 @@ import {
   AlertCircle,
   Phone,
   ExternalLink,
+  Calendar,
 } from "lucide-react";
 import type { AdminInvite, SubscriptionTier } from "@/api/admin";
 import {
@@ -50,6 +51,10 @@ interface CreateInviteDialogProps {
   onInviteClientNameChange: (name: string) => void;
   inviteClientPhone: string;
   onInviteClientPhoneChange: (phone: string) => void;
+  inviteWeddingDate?: string;
+  onInviteWeddingDateChange?: (date: string) => void;
+  invitePlanStartDate?: string;
+  onInvitePlanStartDateChange?: (date: string) => void;
   inviteNotes: string;
   onInviteNotesChange: (notes: string) => void;
   receiptFile: ReceiptUploadFile | null;
@@ -71,6 +76,10 @@ export function CreateInviteDialog({
   onInviteClientNameChange,
   inviteClientPhone,
   onInviteClientPhoneChange,
+  inviteWeddingDate = "",
+  onInviteWeddingDateChange,
+  invitePlanStartDate = "",
+  onInvitePlanStartDateChange,
   inviteNotes,
   onInviteNotesChange,
   receiptFile,
@@ -305,6 +314,35 @@ export function CreateInviteDialog({
               <p className="text-[11px] text-muted-foreground">
                 Allows launching WhatsApp directly with the pre-filled message and registration link.
               </p>
+            </div>
+
+            {/* Wedding Date & Plan Start Time (Pre-fill for user) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <Calendar className="size-3.5 text-accent" />
+                  <span>Tarikh Majlis (Event Date)</span>
+                </label>
+                <Input
+                  type="date"
+                  value={inviteWeddingDate}
+                  onChange={(e) => onInviteWeddingDateChange?.(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="size-3.5 text-accent" />
+                  <span>Tarikh Mula Guna (Start Time)</span>
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={invitePlanStartDate}
+                  onChange={(e) => onInvitePlanStartDateChange?.(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
             </div>
 
             {/* 3. Payment Receipt Upload (Required for Audit) */}

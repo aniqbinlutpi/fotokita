@@ -3,6 +3,11 @@ import { motion } from "framer-motion";
 import { checkSlugAvailability, createWedding } from "@/api/wedding";
 import { verifyInviteToken, redeemInviteToken, type SubscriptionTier } from "@/api/admin";
 import { registerTenant, updateTenantCustomization, clearStoredTenantSession } from "@/api/tenant";
+import {
+  getPlanDurationLabel,
+  calculatePlanEndDate,
+  validatePlanCoverage,
+} from "@/lib/planDuration";
 import { toast } from "sonner";
 import {
   Sparkles,
@@ -78,6 +83,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   const [slug, setSlug] = useState("");
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [weddingDate, setWeddingDate] = useState("");
+  const [planStartDate, setPlanStartDate] = useState("");
   const [username, setUsername] = useState("");
   const [isUsernameLocked, setIsUsernameLocked] = useState(false);
   const [subscriberEmail, setSubscriberEmail] = useState("");
@@ -86,6 +92,31 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>(initialPlan);
+
+  const handleWeddingDateChange = (val: string) => {
+    setWeddingDate(val);
+    if (val) {
+      if (!planStartDate) {
+        setPlanStartDate(`${val}T08:00`);
+      } else {
+        const parts = val.split("-").map(Number);
+        const weddingDayEnd = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999);
+        const currentStart = new Date(planStartDate);
+        if (currentStart.getTime() > weddingDayEnd.getTime()) {
+          setPlanStartDate(`${val}T08:00`);
+        }
+      }
+    }
+  };
+
+  const effectiveStartDate = planStartDate
+    ? new Date(planStartDate)
+    : weddingDate
+    ? new Date(`${weddingDate}T08:00`)
+    : new Date();
+
+  const calculatedEndDate = calculatePlanEndDate(selectedPlan, effectiveStartDate);
+  const coverageCheck = validatePlanCoverage(weddingDate, effectiveStartDate, calculatedEndDate);
 
   // Success view state (NO AUTO LOGIN)
   const [registeredWedding, setRegisteredWedding] = useState<Wedding | null>(null);
@@ -118,6 +149,14 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
           const lockedUsername = res.clientName.toLowerCase().replace(/[^a-z0-9_.]/g, "");
           setUsername(lockedUsername);
           setIsUsernameLocked(true);
+        }
+
+        // Auto-fill wedding date & plan start date from inquiry invite
+        if (res.weddingDate) {
+          setWeddingDate(res.weddingDate);
+        }
+        if (res.planStartDate) {
+          setPlanStartDate(res.planStartDate);
         }
 
         const hoursLeft = Math.max(0, Math.ceil(res.remainingMs / (1000 * 60 * 60)));
@@ -255,6 +294,19 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
       return;
     }
 
+    if (!planStartDate) {
+      toast.error("Please specify when you want to start using your plan.");
+      return;
+    }
+
+    if (!coverageCheck.isValid) {
+      toast.error(
+        coverageCheck.message ||
+          "Tarikh tamat pelan mendahului tarikh majlis perkahwinan anda. Sila pilih tarikh mula guna yang lebih hampir dengan hari majlis atau pilih pelan dengan durasi lebih panjang."
+      );
+      return;
+    }
+
     if (slugStatus && !slugStatus.available) {
       if (slugStatus.isError) {
         toast.error("Unable to verify URL slug. Please check connection to wedding service.");
@@ -300,6 +352,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
           weddingSlug: newWedding.slug,
           weddingName: newWedding.name,
           planTier: selectedPlan,
+          planStartDate: effectiveStartDate.toISOString(),
         });
       } catch (regErr: any) {
         console.warn("Could not register tenant account in tenant-service:", regErr);
@@ -704,20 +757,50 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
               )}
             </div>
 
-            {/* 3. Wedding Date */}
-            <div>
-              <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
-                Wedding Event Date *
-              </label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  required
-                  value={weddingDate}
-                  onChange={(e) => setWeddingDate(e.target.value)}
-                  className="pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
-                <Calendar className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+            {/* 3. Event Date & Plan Start Time */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">
+                  Wedding Event Date *
+                </label>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    required
+                    value={weddingDate}
+                    onChange={(e) => handleWeddingDateChange(e.target.value)}
+                    className="pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <Calendar className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Hari majlis perkahwinan anda berlangsung.
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground">
+                    Tarikh &amp; Masa Mula Guna *
+                  </label>
+                  <span className="text-[10px] text-accent font-medium">
+                    {getPlanDurationLabel(selectedPlan)}
+                  </span>
+                </div>
+                <div className="relative">
+                  <Input
+                    type="datetime-local"
+                    required
+                    value={planStartDate}
+                    onChange={(e) => setPlanStartDate(e.target.value)}
+                    max={weddingDate ? `${weddingDate}T23:59` : undefined}
+                    className="pr-10 cursor-pointer"
+                  />
+                  <Clock className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Waktu portal &amp; galeri muat naik mula boleh diakses secara langsung.
+                </p>
               </div>
             </div>
 
@@ -780,6 +863,64 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Plan Duration & End Time Coverage Card */}
+            {weddingDate && planStartDate && (
+              <div
+                className={`p-4 rounded-xl border transition-all ${
+                  coverageCheck.isValid
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-100"
+                    : "bg-destructive/10 border-destructive/30 text-destructive"
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-current/15 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    {coverageCheck.isValid ? (
+                      <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="size-4 text-destructive shrink-0" />
+                    )}
+                    <span className="font-semibold text-sm">
+                      {coverageCheck.isValid ? "Hari Majlis Dilindungi Sepenuhnya" : "Amaran: Pelan Tamat Sebelum Hari Majlis!"}
+                    </span>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-mono border-current shrink-0">
+                    {getPlanDurationLabel(selectedPlan)}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Tarikh Majlis</span>
+                    <span className="font-medium text-foreground">{coverageCheck.weddingFormatted || weddingDate}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Mula Aktif</span>
+                    <span className="font-medium text-foreground">
+                      {new Date(planStartDate).toLocaleString("ms-MY", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Tamat Pelan (Automatik)</span>
+                    <span className="font-medium text-foreground">
+                      {coverageCheck.endFormatted || calculatedEndDate.toLocaleString("ms-MY")}
+                    </span>
+                  </div>
+                </div>
+
+                {!coverageCheck.isValid && (
+                  <div className="mt-3 p-2.5 rounded-lg bg-destructive/15 border border-destructive/30 text-xs font-medium text-destructive leading-relaxed">
+                    {coverageCheck.message}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 5. Sub-Admin Username & Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
@@ -919,7 +1060,8 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                 type="submit"
                 disabled={
                   isSubmitting ||
-                  (slugStatus !== null && !slugStatus.available)
+                  (slugStatus !== null && !slugStatus.available) ||
+                  !coverageCheck.isValid
                 }
                 className="w-full sm:flex-1 h-11 uppercase text-xs tracking-widest font-semibold cursor-pointer shadow-sm"
               >

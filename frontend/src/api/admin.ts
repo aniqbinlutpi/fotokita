@@ -176,6 +176,8 @@ export interface AdminInvite {
   tier: SubscriptionTier;
   clientName?: string;
   clientPhone?: string;
+  weddingDate?: string;
+  planStartDate?: string;
   notes?: string;
   hasReceipt?: boolean;
   receiptFilename?: string;
@@ -201,6 +203,9 @@ export interface VerifyInviteResponse {
   token: string;
   tier: SubscriptionTier;
   clientName?: string;
+  clientPhone?: string;
+  weddingDate?: string;
+  planStartDate?: string;
   expiresAt: number;
   remainingMs: number;
 }
@@ -223,6 +228,8 @@ export async function createAdminInvite(params: {
   tier: SubscriptionTier;
   clientName?: string;
   clientPhone?: string;
+  weddingDate?: string;
+  planStartDate?: string;
   notes?: string;
   receiptData: string;
   receiptFilename?: string;
@@ -283,6 +290,8 @@ export interface CustomerInquiry {
   planId: string;
   planName: string;
   price: string;
+  weddingDate?: string;
+  planStartDate?: string;
   status: "pending" | "contacted" | "converted";
   createdAt: number;
   notes?: string;
@@ -319,6 +328,8 @@ export async function submitCustomerInquiry(data: {
   planId: string;
   planName: string;
   price: string;
+  weddingDate?: string;
+  planStartDate?: string;
   notes?: string;
 }): Promise<{ inquiry: CustomerInquiry; message: string }> {
   const response = await fetch(`${ADMIN_BASE_URL}/inquiries`, {
