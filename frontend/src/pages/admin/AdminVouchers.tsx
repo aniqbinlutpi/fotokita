@@ -31,7 +31,6 @@ import {
   Sparkles,
   Percent,
   DollarSign,
-  AlertCircle,
 } from "lucide-react";
 import type { AdminVoucher, VoucherRedemption } from "@/api/admin";
 import { CreateVoucherDialog } from "./dialogs/CreateVoucherDialog";
@@ -280,7 +279,6 @@ export function AdminVouchers({
                 ) : (
                   filteredVouchers.map((v) => {
                     const isExhausted = v.status === "exhausted";
-                    const isExpired = v.status === "expired";
                     const percentageUsed = v.usageLimit
                       ? Math.min(100, Math.round((v.usedCount / v.usageLimit) * 100))
                       : null;
