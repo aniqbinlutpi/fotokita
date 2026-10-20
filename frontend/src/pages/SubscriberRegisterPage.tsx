@@ -19,7 +19,6 @@ import {
   Heart,
   ArrowRight,
   ArrowLeft,
-  ShieldCheck,
   Clock,
   User,
   AlertTriangle,

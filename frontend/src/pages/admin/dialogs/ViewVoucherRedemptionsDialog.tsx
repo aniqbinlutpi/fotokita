@@ -16,7 +16,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Ticket, User, Phone, Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { Ticket, User, Phone, Loader2, AlertCircle } from "lucide-react";
 import type { AdminVoucher, VoucherRedemption } from "@/api/admin";
 
 interface ViewVoucherRedemptionsDialogProps {
