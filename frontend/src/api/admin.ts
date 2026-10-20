@@ -295,6 +295,52 @@ export interface CustomerInquiry {
   status: "pending" | "contacted" | "converted";
   createdAt: number;
   notes?: string;
+  voucherCode?: string;
+  discountAmount?: string;
+  originalPrice?: string;
+  finalPrice?: string;
+  voucherApplied?: boolean;
+}
+
+export type VoucherDiscountType = "fixed" | "percentage";
+
+export interface AdminVoucher {
+  id: string;
+  code: string;
+  discountType: VoucherDiscountType;
+  discountValue: number;
+  usageLimit: number | null;
+  usedCount: number;
+  expiresAt: string | null;
+  isActive: boolean;
+  description: string | null;
+  createdAt: number;
+  updatedAt: number;
+  status: "active" | "exhausted" | "expired" | "disabled";
+}
+
+export interface ValidateVoucherResult {
+  valid: boolean;
+  message: string;
+  code?: string;
+  discountType?: VoucherDiscountType;
+  discountValue?: number;
+  discountAmount?: string;
+  originalPrice?: string;
+  finalPrice?: string;
+  discountFormatted?: string;
+}
+
+export interface VoucherRedemption {
+  id: string;
+  username: string;
+  phone: string;
+  planName: string;
+  originalPrice: string;
+  finalPrice: string;
+  discountAmount: string;
+  status: string;
+  createdAt: number;
 }
 
 export interface InquiryAvailabilityCheck {
@@ -331,6 +377,7 @@ export async function submitCustomerInquiry(data: {
   weddingDate?: string;
   planStartDate?: string;
   notes?: string;
+  voucherCode?: string;
 }): Promise<{ inquiry: CustomerInquiry; message: string }> {
   const response = await fetch(`${ADMIN_BASE_URL}/inquiries`, {
     method: "POST",
@@ -338,6 +385,74 @@ export async function submitCustomerInquiry(data: {
     body: JSON.stringify(data),
   });
   return handleApiResponse<{ inquiry: CustomerInquiry; message: string }>(response);
+}
+
+// -------------------------------------------------------------
+// VOUCHER CODES & PROMOTIONAL DISCOUNTS
+// -------------------------------------------------------------
+
+export async function validateVoucher(params: {
+  code: string;
+  price: string;
+  phone?: string;
+  username?: string;
+}): Promise<ValidateVoucherResult> {
+  const response = await fetch(`${ADMIN_BASE_URL}/vouchers/validate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return handleApiResponse<ValidateVoucherResult>(response);
+}
+
+export async function getAdminVouchers(): Promise<AdminVoucher[]> {
+  const response = await fetch(`${ADMIN_BASE_URL}/vouchers`, {
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<AdminVoucher[]>(response);
+}
+
+export async function createAdminVoucher(data: {
+  code: string;
+  discountType: VoucherDiscountType;
+  discountValue: number;
+  usageLimit?: number | null;
+  expiresAt?: string | null;
+  description?: string;
+}): Promise<{ voucher: AdminVoucher; message: string }> {
+  const response = await fetch(`${ADMIN_BASE_URL}/vouchers`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleApiResponse<{ voucher: AdminVoucher; message: string }>(response);
+}
+
+export async function toggleAdminVoucherStatus(
+  id: string,
+  isActive: boolean
+): Promise<{ voucher: AdminVoucher; message: string }> {
+  const response = await fetch(`${ADMIN_BASE_URL}/vouchers/${encodeURIComponent(id)}/status`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ isActive }),
+  });
+  return handleApiResponse<{ voucher: AdminVoucher; message: string }>(response);
+}
+
+export async function deleteAdminVoucher(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${ADMIN_BASE_URL}/vouchers/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<{ message: string }>(response);
+}
+
+export async function getAdminVoucherRedemptions(id: string): Promise<VoucherRedemption[]> {
+  const response = await fetch(`${ADMIN_BASE_URL}/vouchers/${encodeURIComponent(id)}/redemptions`, {
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<VoucherRedemption[]>(response);
 }
 
 export async function getAdminInquiries(): Promise<CustomerInquiry[]> {

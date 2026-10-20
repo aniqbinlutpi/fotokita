@@ -23,10 +23,18 @@ import {
   Clock,
   AlertCircle,
   Sparkles,
+  Ticket,
+  Tag,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "cn";
-import { submitCustomerInquiry, checkInquiryAvailability } from "@/api/admin";
+import {
+  submitCustomerInquiry,
+  checkInquiryAvailability,
+  validateVoucher,
+  type ValidateVoucherResult,
+} from "@/api/admin";
 import {
   getPlanDurationLabelEn,
   calculatePlanEndDate,
@@ -88,6 +96,12 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
     message?: string;
   } | null>(null);
 
+  // Voucher Code & Discount states
+  const [voucherInput, setVoucherInput] = useState("");
+  const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
+  const [appliedVoucher, setAppliedVoucher] = useState<ValidateVoucherResult | null>(null);
+  const [voucherError, setVoucherError] = useState("");
+
   useEffect(() => {
     if (!isOpen) {
       setUsername("");
@@ -104,8 +118,55 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
       setIsCheckingPhone(false);
       setIsWeddingPickerOpen(false);
       setIsActivationPickerOpen(false);
+      setVoucherInput("");
+      setIsValidatingVoucher(false);
+      setAppliedVoucher(null);
+      setVoucherError("");
     }
   }, [isOpen]);
+
+  const handleApplyVoucher = async () => {
+    const code = voucherInput.trim().toUpperCase();
+    if (!code) {
+      setVoucherError("Please enter a voucher code.");
+      return;
+    }
+    if (!plan) return;
+
+    setVoucherError("");
+    setIsValidatingVoucher(true);
+
+    try {
+      const res = await validateVoucher({
+        code,
+        price: plan.price,
+        phone: phone.trim() || undefined,
+        username: username.trim() || undefined,
+      });
+
+      if (!res.valid) {
+        setVoucherError(res.message || "Invalid voucher code.");
+        toast.error(res.message || "Invalid voucher code.");
+      } else {
+        setAppliedVoucher(res);
+        setVoucherError("");
+        toast.success(res.message || `Voucher ${code} applied!`);
+      }
+    } catch (err: any) {
+      const msg = err?.message || "Failed to validate voucher.";
+      setVoucherError(msg);
+      toast.error(msg);
+    } finally {
+      setIsValidatingVoucher(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherInput("");
+    setVoucherError("");
+    toast.info("Voucher removed.");
+  };
 
   const handleSelectWeddingDate = (date: Date | undefined) => {
     if (!date) {
@@ -116,14 +177,16 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
     setWeddingDate(dateStr);
     if (inquiryError) setInquiryError("");
 
-    const weddingMidnight = new Date(date);
-    weddingMidnight.setHours(23, 59, 59, 999);
-
-    // Auto-sync activation date & time to the wedding date if not already set,
-    // or if current activationDate is after the new wedding date
-    if (!activationDate || activationDate.getTime() > weddingMidnight.getTime()) {
-      setActivationDate(date);
-      setPlanStartDate(`${dateStr}T${activationTime}`);
+    // If activationDate was previously selected and is now AFTER the new wedding date,
+    // clear it so user must pick a valid date on or before the wedding day.
+    // Do NOT auto-select gallery activation.
+    if (activationDate) {
+      const weddingMidnight = new Date(date);
+      weddingMidnight.setHours(23, 59, 59, 999);
+      if (activationDate.getTime() > weddingMidnight.getTime()) {
+        setActivationDate(undefined);
+        setPlanStartDate("");
+      }
     }
   };
 
@@ -318,12 +381,22 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
         price: plan.price,
         weddingDate,
         planStartDate,
+        voucherCode: appliedVoucher?.code || undefined,
       });
 
-      const planLabel = plan.code || `${plan.name} (${plan.price})`;
+      const planLabel = plan.code || plan.name;
       const durationLabel = getPlanDurationLabelEn(plan.id);
       const endFormatted = coverageCheck.endFormatted || format(calculatedEndDate, "PPP p");
-      const message = `Hi Fotokita! I'm ${trimmedUsername} (${trimmedPhone}). I would like to book the ${planLabel} package (${durationLabel}).\n\n📅 Wedding Date: ${weddingDate}\n⏱️ Activation: ${planStartDate.replace("T", " ")}\n🏁 Plan Ends: ${endFormatted}\n\nPlease assist with my registration and payment. Thank you!`;
+
+      let message = `Hi Fotokita! I'm ${trimmedUsername} (${trimmedPhone}). I would like to book the ${planLabel} package (${durationLabel}).\n\n📅 Wedding Date: ${weddingDate}\n⏱️ Activation: ${planStartDate.replace("T", " ")}\n🏁 Plan Ends: ${endFormatted}`;
+
+      if (appliedVoucher && appliedVoucher.finalPrice) {
+        message += `\n\n🏷️ Voucher Applied: ${appliedVoucher.code} (${appliedVoucher.discountFormatted})\n💰 Final Payable: ${appliedVoucher.finalPrice} (Original: ${appliedVoucher.originalPrice || plan.price})`;
+      } else {
+        message += `\n💰 Payable: ${plan.price}`;
+      }
+
+      message += `\n\nPlease assist with my registration and payment. Thank you!`;
       const waUrl = `https://wa.me/60137848933?text=${encodeURIComponent(message)}`;
 
       window.open(waUrl, "_blank", "noopener,noreferrer");
@@ -396,9 +469,27 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
                     </div>
                   </div>
                 </div>
-                <Badge variant="outline" className="text-xs font-semibold border-accent/40 text-accent font-sans px-2.5 py-0.5">
-                  {plan.price}
-                </Badge>
+                <div className="flex flex-col items-end">
+                  {appliedVoucher ? (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground line-through font-mono">
+                          {appliedVoucher.originalPrice || plan.price}
+                        </span>
+                        <Badge className="text-xs font-semibold bg-emerald-600 dark:bg-emerald-500 text-white font-sans px-2 py-0.5">
+                          {appliedVoucher.finalPrice}
+                        </Badge>
+                      </div>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                        {appliedVoucher.discountFormatted}
+                      </span>
+                    </>
+                  ) : (
+                    <Badge variant="outline" className="text-xs font-semibold border-accent/40 text-accent font-sans px-2.5 py-0.5">
+                      {plan.price}
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               {/* Username Field */}
@@ -655,6 +746,102 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
                 </div>
               )}
 
+              {/* Voucher / Promo Code Section */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Ticket className="size-3.5 text-accent" />
+                    <span>Voucher / Promo Code</span>
+                  </label>
+                  {appliedVoucher && (
+                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="size-3" />
+                      Discount Applied
+                    </span>
+                  )}
+                </div>
+
+                {!appliedVoucher ? (
+                  <div className="space-y-1.5">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type="text"
+                          placeholder="e.g. FOTOKITA5"
+                          value={voucherInput}
+                          onChange={(e) => {
+                            setVoucherInput(e.target.value.toUpperCase());
+                            if (voucherError) setVoucherError("");
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleApplyVoucher();
+                            }
+                          }}
+                          disabled={isSubmitting || isValidatingVoucher}
+                          className={`h-10 text-xs font-mono uppercase tracking-wider ${
+                            voucherError ? "border-destructive/80 focus-visible:ring-destructive/30" : ""
+                          }`}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleApplyVoucher}
+                        disabled={!voucherInput.trim() || isValidatingVoucher || isSubmitting}
+                        className="h-10 px-4 text-xs font-semibold cursor-pointer shrink-0 border-accent/40 text-accent hover:bg-accent/10 transition-colors"
+                      >
+                        {isValidatingVoucher ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Tag className="size-3.5 mr-1" />
+                        )}
+                        <span>Apply</span>
+                      </Button>
+                    </div>
+                    {voucherError && (
+                      <p className="text-[11px] font-medium text-destructive flex items-center gap-1">
+                        <XCircle className="size-3 shrink-0" />
+                        <span>{voucherError}</span>
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 animate-in fade-in-50 duration-200">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <Tag className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-xs text-foreground tracking-wide">
+                            {appliedVoucher.code}
+                          </span>
+                          <Badge className="text-[10px] bg-emerald-600 text-white px-1.5 py-0 h-4">
+                            {appliedVoucher.discountFormatted}
+                          </Badge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {appliedVoucher.originalPrice} &rarr; <span className="font-semibold text-emerald-600 dark:text-emerald-400">{appliedVoucher.finalPrice}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveVoucher}
+                      disabled={isSubmitting}
+                      className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-lg shrink-0 gap-1"
+                    >
+                      <X className="size-3.5" />
+                      <span className="hidden sm:inline">Remove</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               {inquiryError && (
                 <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-start gap-2">
                   <AlertCircle className="size-4 shrink-0 mt-0.5" />
@@ -693,7 +880,11 @@ export const WhatsAppInquiryModal: React.FC<WhatsAppInquiryModalProps> = ({
                 ) : (
                   <>
                     <MessageCircle className="size-4.5" />
-                    <span>Contact Admin on WhatsApp</span>
+                    <span>
+                      {appliedVoucher?.finalPrice
+                        ? `Contact Admin on WhatsApp · ${appliedVoucher.finalPrice}`
+                        : "Contact Admin on WhatsApp"}
+                    </span>
                   </>
                 )}
               </Button>

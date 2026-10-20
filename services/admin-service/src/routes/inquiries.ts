@@ -45,6 +45,7 @@ const createInquirySchema = z.object({
   weddingDate: z.string().optional(),
   planStartDate: z.string().optional(),
   notes: z.string().optional(),
+  voucherCode: z.string().optional(),
 });
 
 // PUBLIC ENDPOINT: Submit customer WhatsApp inquiry from Landing Page
@@ -82,6 +83,9 @@ inquiriesRoute.post("/", async (c) => {
     const inquiry = await createInquiry(parsed.data);
     return c.json(success({ inquiry, message: "Inquiry saved successfully" }), 201);
   } catch (err: any) {
+    if (err?.code === "INVALID_VOUCHER") {
+      return c.json(error("INVALID_VOUCHER", err.message || "Invalid voucher code provided."), 400);
+    }
     if (err?.code === "USERNAME_TAKEN") {
       return c.json(error("USERNAME_TAKEN", err.message || "This username is already taken."), 409);
     }

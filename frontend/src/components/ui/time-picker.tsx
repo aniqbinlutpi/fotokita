@@ -89,13 +89,13 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         disabled={disabled}
         className={cn(
           buttonVariants({ variant: "outline" }),
-          "w-full justify-between font-normal h-10 px-3 cursor-pointer border-input hover:bg-muted/40 text-left font-sans text-xs",
+          "w-full justify-between font-normal h-10 px-2.5 cursor-pointer border-input hover:bg-muted/40 text-left font-sans text-xs",
           !value && "text-muted-foreground",
           className
         )}
       >
-        <span className="truncate">{displayTime}</span>
-        <Clock className="size-3.5 text-muted-foreground shrink-0 ml-1.5" />
+        <span className="whitespace-nowrap font-mono text-xs">{displayTime}</span>
+        <Clock className="size-3.5 text-muted-foreground shrink-0 ml-1" />
       </PopoverTrigger>
 
       <PopoverContent className="w-auto p-3" align="end">

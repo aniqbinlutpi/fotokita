@@ -7,8 +7,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
+import { TimePicker } from "@/components/ui/time-picker";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   UserPlus,
   Sparkles,
@@ -96,6 +101,70 @@ export function CreateInviteDialog({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [targetPhone, setTargetPhone] = useState(inviteClientPhone || "");
   const [copiedMessage, setCopiedMessage] = useState(false);
+  const [isWeddingPickerOpen, setIsWeddingPickerOpen] = useState(false);
+  const [isActivationPickerOpen, setIsActivationPickerOpen] = useState(false);
+
+  const selectedWeddingDateObj = React.useMemo(() => {
+    if (!inviteWeddingDate) return undefined;
+    const parts = inviteWeddingDate.split("-").map(Number);
+    const [y, m, d] = parts;
+    if (y && m && d) return new Date(y, m - 1, d);
+    const date = new Date(inviteWeddingDate);
+    return isNaN(date.getTime()) ? undefined : date;
+  }, [inviteWeddingDate]);
+
+  const activationDate = React.useMemo(() => {
+    if (!invitePlanStartDate) return undefined;
+    const datePart = invitePlanStartDate.split("T")[0];
+    if (!datePart) return undefined;
+    const parts = datePart.split("-").map(Number);
+    const [y, m, d] = parts;
+    if (y && m && d) return new Date(y, m - 1, d);
+    const date = new Date(invitePlanStartDate);
+    return isNaN(date.getTime()) ? undefined : date;
+  }, [invitePlanStartDate]);
+
+  const activationTime = React.useMemo(() => {
+    if (!invitePlanStartDate) return "08:00";
+    const parts = invitePlanStartDate.split("T");
+    return parts[1] ? parts[1].slice(0, 5) : "08:00";
+  }, [invitePlanStartDate]);
+
+  const handleSelectWeddingDate = (date: Date | undefined) => {
+    if (!date) {
+      onInviteWeddingDateChange?.("");
+      return;
+    }
+    const dateStr = format(date, "yyyy-MM-dd");
+    onInviteWeddingDateChange?.(dateStr);
+
+    if (invitePlanStartDate) {
+      const weddingMidnight = new Date(date);
+      weddingMidnight.setHours(23, 59, 59, 999);
+      const currentStart = new Date(invitePlanStartDate);
+      if (currentStart.getTime() > weddingMidnight.getTime()) {
+        onInvitePlanStartDateChange?.("");
+      }
+    }
+  };
+
+  const handleSelectActivationDate = (date: Date | undefined) => {
+    if (!date) {
+      onInvitePlanStartDateChange?.("");
+      return;
+    }
+    const dateStr = format(date, "yyyy-MM-dd");
+    onInvitePlanStartDateChange?.(`${dateStr}T${activationTime}`);
+  };
+
+  const handleActivationTimeChange = (time: string) => {
+    if (invitePlanStartDate) {
+      const datePart = invitePlanStartDate.split("T")[0];
+      onInvitePlanStartDateChange?.(`${datePart}T${time}`);
+    } else if (inviteWeddingDate) {
+      onInvitePlanStartDateChange?.(`${inviteWeddingDate}T${time}`);
+    }
+  };
 
   useEffect(() => {
     if (newlyCreatedInvite) {
@@ -158,202 +227,190 @@ export function CreateInviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="size-5 text-accent" />
-            <span>Generate Tenant Registration Link</span>
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
+        <DialogHeader className="pb-2 border-b">
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+            <UserPlus className="size-4 text-accent" />
+            <span>Generate Invite Link</span>
           </DialogTitle>
-          <DialogDescription>
-            Generate a 24-hour registration link with a locked subscription plan for the client after they make a QR payment.
+          <DialogDescription className="text-xs text-muted-foreground">
+            Configure subscription tier, client details, and activation schedule for this single-use link.
           </DialogDescription>
         </DialogHeader>
 
         {!newlyCreatedInvite ? (
-          <form onSubmit={handleSubmit} className="space-y-4 py-1">
+          <form onSubmit={handleSubmit} className="space-y-3.5 py-1">
             {/* 1. Subscription Tier Selection */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Select Subscription Plan *
+                Subscription Plan *
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                <div
-                  onClick={() => onInviteTierChange("12h")}
-                  className={`cursor-pointer p-3 rounded-lg border transition-all ${
-                    inviteTier === "12h"
-                      ? "border-accent bg-accent/10 ring-1 ring-accent"
-                      : "border-border hover:border-accent/40"
-                  }`}
-                >
-                  <div className="font-serif text-sm font-semibold">12 Hours</div>
-                  <div className="text-xs text-accent font-medium mt-0.5">RM 6</div>
-                  <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                    Short event &amp; ceremony
-                  </div>
-                </div>
-
-                <div
-                  onClick={() => onInviteTierChange("1day")}
-                  className={`cursor-pointer p-3 rounded-lg border transition-all ${
-                    inviteTier === "1day"
-                      ? "border-accent bg-accent/10 ring-1 ring-accent"
-                      : "border-border hover:border-accent/40"
-                  }`}
-                >
-                  <div className="font-serif text-sm font-semibold">Whole Day</div>
-                  <div className="text-xs text-accent font-medium mt-0.5">RM 10</div>
-                  <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                    Full-day wedding banquet
-                  </div>
-                </div>
-
-                <div
-                  onClick={() => onInviteTierChange("3days")}
-                  className={`cursor-pointer p-3 rounded-lg border transition-all ${
-                    inviteTier === "3days"
-                      ? "border-accent bg-accent/10 ring-1 ring-accent"
-                      : "border-border hover:border-accent/40"
-                  }`}
-                >
-                  <div className="font-serif text-sm font-semibold">3 Days</div>
-                  <div className="text-xs text-accent font-medium mt-0.5">RM 17</div>
-                  <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                    Weekend solemnization &amp; reception
-                  </div>
-                </div>
-
-                <div
-                  onClick={() => onInviteTierChange("1week")}
-                  className={`cursor-pointer p-3 rounded-lg border transition-all ${
-                    inviteTier === "1week"
-                      ? "border-accent bg-accent/10 ring-1 ring-accent"
-                      : "border-border hover:border-accent/40"
-                  }`}
-                >
-                  <div className="font-serif text-sm font-semibold">1 Week</div>
-                  <div className="text-xs text-accent font-medium mt-0.5">RM 23</div>
-                  <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                    Full week multi-event coverage
-                  </div>
-                </div>
-
-                <div
-                  onClick={() => onInviteTierChange("1month")}
-                  className={`cursor-pointer p-3 rounded-lg border transition-all ${
-                    inviteTier === "1month"
-                      ? "border-accent bg-accent/10 ring-1 ring-accent"
-                      : "border-border hover:border-accent/40"
-                  }`}
-                >
-                  <div className="font-serif text-sm font-semibold">1 Month</div>
-                  <div className="text-xs text-accent font-medium mt-0.5">RM 46</div>
-                  <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                    Relaxed access &amp; downloads
-                  </div>
-                </div>
-
-                <div
-                  onClick={() => onInviteTierChange("1year")}
-                  className={`cursor-pointer p-3 rounded-lg border transition-all ${
-                    inviteTier === "1year"
-                      ? "border-accent bg-accent/10 ring-1 ring-accent"
-                      : "border-border hover:border-accent/40"
-                  }`}
-                >
-                  <div className="font-serif text-sm font-semibold">1 Year Special</div>
-                  <div className="text-xs text-accent font-medium mt-0.5">RM 189</div>
-                  <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                    Photographer, Hall &amp; Organizer
-                  </div>
-                </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { tier: "12h", name: "12 Hours", price: "RM 6" },
+                  { tier: "1day", name: "Whole Day", price: "RM 10" },
+                  { tier: "3days", name: "3 Days", price: "RM 17" },
+                  { tier: "1week", name: "1 Week", price: "RM 23" },
+                  { tier: "1month", name: "1 Month", price: "RM 46" },
+                  { tier: "1year", name: "1 Year Special", price: "RM 189" },
+                ].map((item) => (
+                  <button
+                    key={item.tier}
+                    type="button"
+                    onClick={() => onInviteTierChange(item.tier as SubscriptionTier)}
+                    className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
+                      inviteTier === item.tier
+                        ? "border-accent bg-accent/10 ring-1 ring-accent text-accent font-semibold"
+                        : "border-border hover:border-accent/40 bg-card/60 text-foreground"
+                    }`}
+                  >
+                    <div className="text-xs font-semibold leading-tight">{item.name}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{item.price}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* 2. Tenant Username (Locked for Tenant Registration) */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
+            {/* 2. Client Details (Username & WhatsApp in a clean 2-col row) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="space-y-1">
                 <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                  Tenant Username (Auto-filled &amp; Locked)
+                  Username *
                 </label>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  letters, numbers, _ and .
-                </span>
+                <Input
+                  placeholder="e.g. ainafarhana"
+                  value={inviteClientName}
+                  onChange={(e) =>
+                    onInviteClientNameChange(
+                      e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, "")
+                    )
+                  }
+                  className="font-mono text-xs h-9"
+                  required
+                />
               </div>
-              <Input
-                placeholder="e.g. ainafarhana"
-                value={inviteClientName}
-                onChange={(e) =>
-                  onInviteClientNameChange(
-                    e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, "")
-                  )
-                }
-                className="font-mono text-sm"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                This username will be locked to the link and non-modifiable during tenant registration.
-              </p>
-            </div>
 
-            {/* 2.5 Client WhatsApp Phone Number */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
+              <div className="space-y-1">
                 <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Phone className="size-3.5 text-accent" />
-                  <span>Client WhatsApp Number (Optional)</span>
+                  <Phone className="size-3 text-accent" />
+                  <span>WhatsApp</span>
                 </label>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  e.g. 0123456789
-                </span>
+                <Input
+                  placeholder="e.g. 0123456789"
+                  value={inviteClientPhone}
+                  onChange={(e) => onInviteClientPhoneChange(e.target.value)}
+                  className="font-mono text-xs h-9"
+                />
               </div>
-              <Input
-                placeholder="e.g. 0123456789 or 60123456789"
-                value={inviteClientPhone}
-                onChange={(e) => onInviteClientPhoneChange(e.target.value)}
-                className="font-mono text-sm"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                Allows launching WhatsApp directly with the pre-filled message and registration link.
-              </p>
             </div>
 
-            {/* Wedding Date & Plan Start Time (Pre-fill for user) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+            {/* 3. Event & Start Time (Matching Wedding & Activation) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="space-y-1">
                 <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
                   <Calendar className="size-3.5 text-accent" />
-                  <span>Tarikh Majlis (Event Date)</span>
+                  <span>Wedding Date</span>
                 </label>
-                <Input
-                  type="date"
-                  value={inviteWeddingDate}
-                  onChange={(e) => onInviteWeddingDateChange?.(e.target.value)}
-                  className="text-xs"
-                />
+                <Popover open={isWeddingPickerOpen} onOpenChange={setIsWeddingPickerOpen}>
+                  <PopoverTrigger
+                    type="button"
+                    className={cn(
+                      buttonVariants({ variant: "outline" }),
+                      "w-full justify-start text-left font-normal h-9 px-3 cursor-pointer border-input bg-background/50 hover:bg-muted/40 text-xs rounded-md",
+                      !inviteWeddingDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 size-3.5 text-accent/70 shrink-0" />
+                    <span className="truncate">
+                      {selectedWeddingDateObj
+                        ? format(selectedWeddingDateObj, "PPP")
+                        : "Select wedding date"}
+                    </span>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <ShadcnCalendar
+                      mode="single"
+                      selected={selectedWeddingDateObj}
+                      onSelect={(date) => {
+                        handleSelectWeddingDate(date);
+                        setIsWeddingPickerOpen(false);
+                      }}
+                      disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
+                      autoFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
                   <Clock className="size-3.5 text-accent" />
-                  <span>Tarikh Mula Guna (Start Time)</span>
+                  <span>Activation Time</span>
                 </label>
-                <Input
-                  type="datetime-local"
-                  value={invitePlanStartDate}
-                  onChange={(e) => onInvitePlanStartDateChange?.(e.target.value)}
-                  className="text-xs"
-                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <Popover open={isActivationPickerOpen} onOpenChange={setIsActivationPickerOpen}>
+                      <PopoverTrigger
+                        type="button"
+                        className={cn(
+                          buttonVariants({ variant: "outline" }),
+                          "w-full justify-start text-left font-normal h-9 px-3 cursor-pointer border-input bg-background/50 hover:bg-muted/40 text-xs rounded-md",
+                          !activationDate && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 size-3.5 text-accent/70 shrink-0" />
+                        <span className="truncate text-xs">
+                          {activationDate ? format(activationDate, "MMM d, yyyy") : "Start date"}
+                        </span>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <ShadcnCalendar
+                          mode="single"
+                          selected={activationDate}
+                          onSelect={(date) => {
+                            handleSelectActivationDate(date);
+                            setIsActivationPickerOpen(false);
+                          }}
+                          disabled={(date) => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const day = new Date(date);
+                            day.setHours(0, 0, 0, 0);
+                            if (day < today) return true;
+
+                            if (selectedWeddingDateObj) {
+                              const weddingDay = new Date(selectedWeddingDateObj);
+                              weddingDay.setHours(0, 0, 0, 0);
+                              if (day > weddingDay) return true;
+                            }
+                            return false;
+                          }}
+                          autoFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="w-[125px] shrink-0">
+                    <TimePicker
+                      value={activationTime}
+                      onChange={handleActivationTimeChange}
+                      className="h-9 text-xs rounded-md w-full"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* 3. Payment Receipt Upload (Required for Audit) */}
-            <div className="space-y-1.5">
+            {/* 4. Payment Receipt Upload */}
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Receipt className="size-3.5 text-accent" />
-                  <span>Payment Receipt Evidence *</span>
+                  <Receipt className="size-3 text-accent" />
+                  <span>Payment Receipt *</span>
                 </label>
                 <span className="text-[10px] text-muted-foreground">
-                  Image or PDF (Max 10MB)
+                  Image / PDF (Max 10MB)
                 </span>
               </div>
 
@@ -379,44 +436,37 @@ export function CreateInviteDialog({
                     if (file) processFile(file);
                   }}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${
+                  className={`border border-dashed rounded-lg p-3 text-center cursor-pointer transition-all flex items-center justify-center gap-2 ${
                     isDragging
                       ? "border-accent bg-accent/10"
                       : "border-border hover:border-accent/50 hover:bg-muted/30"
                   }`}
                 >
-                  <UploadCloud className="size-6 mx-auto text-accent mb-1.5" />
-                  <p className="text-xs font-medium text-foreground">
-                    Click to upload or drag &amp; drop payment receipt
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Proof of payment (QR / bank transfer) required before generating 24h link
-                  </p>
+                  <UploadCloud className="size-4 text-accent shrink-0" />
+                  <span className="text-xs text-muted-foreground">
+                    Click to upload payment receipt (QR / Bank Transfer)
+                  </span>
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/40">
-                  <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center justify-between p-2 rounded-lg border bg-muted/40">
+                  <div className="flex items-center gap-2 min-w-0">
                     {receiptFile.type.includes("pdf") ? (
-                      <div className="size-9 rounded-md bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
-                        <FileText className="size-5" />
+                      <div className="size-7 rounded bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+                        <FileText className="size-4" />
                       </div>
                     ) : (
                       <img
                         src={receiptFile.data}
                         alt="Receipt preview"
-                        className="size-9 rounded-md object-cover border shrink-0 bg-background"
+                        className="size-7 rounded object-cover border shrink-0 bg-background"
                       />
                     )}
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-foreground truncate max-w-[220px] sm:max-w-[280px]">
                         {receiptFile.name}
                       </p>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                        <span>{(receiptFile.size / 1024).toFixed(0)} KB</span>
-                        <span>•</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                          Receipt ready for audit
-                        </span>
+                      <p className="text-[10px] text-muted-foreground">
+                        {(receiptFile.size / 1024).toFixed(0)} KB • Receipt ready for audit
                       </p>
                     </div>
                   </div>
@@ -451,24 +501,17 @@ export function CreateInviteDialog({
               )}
             </div>
 
-            {/* 4. Internal Notes (Optional) */}
-            <div className="space-y-1.5">
+            {/* 5. Internal Notes (Optional) */}
+            <div className="space-y-1">
               <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Internal Notes / Payment Reference (Optional)
+                Notes / Reference (Optional)
               </label>
               <Input
-                placeholder="e.g. DuitNow QR RM10 (Verified on WhatsApp)"
+                placeholder="e.g. DuitNow QR RM10"
                 value={inviteNotes}
                 onChange={(e) => onInviteNotesChange(e.target.value)}
+                className="text-xs h-9"
               />
-            </div>
-
-            {/* Safety notice */}
-            <div className="p-3 rounded-lg bg-muted/40 border text-xs text-muted-foreground flex items-start gap-2">
-              <Clock className="size-4 text-accent shrink-0 mt-0.5" />
-              <span>
-                <strong>24-Hour Expiry &amp; Single-Use:</strong> This link automatically expires after 24 hours and is burned immediately once the client registers.
-              </span>
             </div>
 
             <DialogFooter className="pt-2">
@@ -477,15 +520,16 @@ export function CreateInviteDialog({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isCreatingInvite}
+                className="h-8 text-xs"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isCreatingInvite || !receiptFile || !inviteClientName.trim()}
-                className="gap-2 cursor-pointer"
+                className="h-8 text-xs gap-1.5"
               >
-                <Sparkles className="size-4" />
+                <Sparkles className="size-3.5" />
                 <span>{isCreatingInvite ? "Generating..." : "Generate 24h Link"}</span>
               </Button>
             </DialogFooter>

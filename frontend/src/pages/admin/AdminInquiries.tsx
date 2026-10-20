@@ -29,6 +29,8 @@ import {
   Phone,
   Trash2,
   Search,
+  Ticket,
+  Tag,
 } from "lucide-react";
 import type { CustomerInquiry } from "@/api/admin";
 import { getCustomerWhatsAppDirectUrl } from "./utils";
@@ -59,16 +61,25 @@ export function AdminInquiries({
   onOpenCreateInvite,
 }: AdminInquiriesProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [offerFilter, setOfferFilter] = useState<"all" | "offered" | "standard">("all");
+
+  const totalVouchered = inquiries.filter((i) => Boolean(i.voucherCode || i.voucherApplied)).length;
 
   const filteredInquiries = inquiries.filter((inq) => {
     const matchesFilter = inquiryFilter === "all" || inq.status === inquiryFilter;
     if (!matchesFilter) return false;
+
+    const hasOffer = Boolean(inq.voucherCode || inq.voucherApplied);
+    if (offerFilter === "offered" && !hasOffer) return false;
+    if (offerFilter === "standard" && hasOffer) return false;
+
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase().trim();
     return (
       inq.username.toLowerCase().includes(query) ||
       inq.phone.toLowerCase().includes(query) ||
-      inq.planName.toLowerCase().includes(query)
+      inq.planName.toLowerCase().includes(query) ||
+      (inq.voucherCode && inq.voucherCode.toLowerCase().includes(query))
     );
   });
 
@@ -108,7 +119,7 @@ export function AdminInquiries({
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 min-w-0">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4 min-w-0">
         <Card className="shadow-xs min-w-0">
           <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
             <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
@@ -174,6 +185,23 @@ export function AdminInquiries({
             </p>
           </CardContent>
         </Card>
+
+        <Card className="shadow-xs min-w-0 col-span-2 lg:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
+            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+              Vouchers Claimed
+            </CardTitle>
+            <Ticket className="size-3.5 sm:size-4 text-purple-500 shrink-0" />
+          </CardHeader>
+          <CardContent className="p-2.5 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {totalVouchered}
+            </div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+              {totalVouchered > 0 ? `${Math.round((totalVouchered / (inquiries.length || 1)) * 100)}% of leads` : "No vouchers yet"}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filter and Table Card */}
@@ -184,7 +212,7 @@ export function AdminInquiries({
               Inquiries Directory
             </CardTitle>
             <CardDescription>
-              Customer username, WhatsApp contact number, and requested plan.
+              Customer username, WhatsApp contact number, requested plan, and promotional offers.
             </CardDescription>
           </div>
 
@@ -194,14 +222,14 @@ export function AdminInquiries({
               <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground pointer-events-none" />
               <Input
                 type="text"
-                placeholder="Search user or phone..."
+                placeholder="Search user, phone, voucher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-8 pl-8 pr-2 text-xs bg-background"
               />
             </div>
 
-            {/* Filter Pills */}
+            {/* Status Filter Pills */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <Button
                 size="sm"
@@ -239,6 +267,50 @@ export function AdminInquiries({
           </div>
         </CardHeader>
 
+        {/* Offer Sub-Filter Bar */}
+        <div className="px-4 py-2 border-b bg-muted/20 flex items-center justify-between flex-wrap gap-2 text-xs">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground font-medium mr-1">Pricing Filter:</span>
+            <button
+              type="button"
+              onClick={() => setOfferFilter("all")}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                offerFilter === "all"
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              All Pricing ({inquiries.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setOfferFilter("offered")}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                offerFilter === "offered"
+                  ? "bg-emerald-600 text-white font-semibold"
+                  : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+              }`}
+            >
+              <Tag className="size-3" />
+              <span>With Voucher ({totalVouchered})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOfferFilter("standard")}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                offerFilter === "standard"
+                  ? "bg-muted-foreground/30 text-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              Standard Price ({inquiries.length - totalVouchered})
+            </button>
+          </div>
+          <span className="text-[11px] text-muted-foreground font-mono">
+            Showing {filteredInquiries.length} of {inquiries.length} leads
+          </span>
+        </div>
+
         <CardContent className="p-0 overflow-hidden min-w-0 max-w-full">
           <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
             <Table>
@@ -247,6 +319,7 @@ export function AdminInquiries({
                 <TableHead>Customer</TableHead>
                 <TableHead>Phone Number</TableHead>
                 <TableHead>Requested Plan</TableHead>
+                <TableHead>Pricing & Offer</TableHead>
                 <TableHead>Time Received</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -256,77 +329,111 @@ export function AdminInquiries({
               {filteredInquiries.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center py-12 text-muted-foreground"
                   >
                     No customer inquiries found for this filter.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInquiries.map((inq) => (
-                  <TableRow key={inq.id}>
-                    <TableCell className="align-top">
-                      <div className="font-medium text-foreground flex items-center gap-1.5">
-                        <User className="size-3.5 text-accent shrink-0" />
-                        <span>{inq.username}</span>
-                      </div>
-                      <div className="text-[11px] font-mono text-muted-foreground mt-0.5">
-                        ID: {inq.id.slice(0, 10)}...
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="align-top">
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="size-3.5 text-muted-foreground shrink-0" />
-                        <span className="font-mono text-xs font-medium text-foreground">
-                          {inq.phone}
-                        </span>
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="align-top">
-                      <div className="space-y-1">
-                        <Badge
-                          variant="outline"
-                          className="text-xs font-medium border-accent/40 text-accent bg-accent/10"
-                        >
-                          {inq.planName}
-                        </Badge>
-                        <div className="text-[11px] font-mono font-semibold text-muted-foreground">
-                          {inq.price}
+                filteredInquiries.map((inq) => {
+                  const hasVoucher = Boolean(inq.voucherCode || inq.voucherApplied);
+                  return (
+                    <TableRow key={inq.id} className={hasVoucher ? "bg-emerald-500/5 hover:bg-emerald-500/10" : ""}>
+                      <TableCell className="align-top">
+                        <div className="font-medium text-foreground flex items-center gap-1.5">
+                          <User className="size-3.5 text-accent shrink-0" />
+                          <span>{inq.username}</span>
                         </div>
-                        {(inq.weddingDate || inq.planStartDate) && (
-                          <div className="text-[10px] text-muted-foreground space-y-0.5 pt-1 border-t border-border/50">
-                            {inq.weddingDate && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium text-foreground">Majlis:</span> {inq.weddingDate}
-                              </div>
-                            )}
-                            {inq.planStartDate && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium text-foreground">Mula:</span> {inq.planStartDate.replace("T", " ")}
-                              </div>
-                            )}
+                        <div className="text-[11px] font-mono text-muted-foreground mt-0.5">
+                          ID: {inq.id.slice(0, 10)}...
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="align-top">
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="size-3.5 text-muted-foreground shrink-0" />
+                          <span className="font-mono text-xs font-medium text-foreground">
+                            {inq.phone}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="align-top">
+                        <div className="space-y-1">
+                          <Badge
+                            variant="outline"
+                            className="text-xs font-medium border-accent/40 text-accent bg-accent/10"
+                          >
+                            {inq.planName}
+                          </Badge>
+                          {(inq.weddingDate || inq.planStartDate) && (
+                            <div className="text-[10px] text-muted-foreground space-y-0.5 pt-1 border-t border-border/50">
+                              {inq.weddingDate && (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-foreground">Wedding:</span> {inq.weddingDate}
+                                </div>
+                              )}
+                              {inq.planStartDate && (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium text-foreground">Activation:</span> {inq.planStartDate.replace("T", " ")}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="align-top">
+                        {hasVoucher ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-mono text-xs font-bold border border-emerald-500/30">
+                                <Tag className="size-3" />
+                                {inq.voucherCode}
+                              </span>
+                              {inq.discountAmount && (
+                                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                  -{inq.discountAmount}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs font-mono">
+                              <span className="line-through text-muted-foreground text-[11px]">
+                                {inq.originalPrice || inq.price}
+                              </span>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                {inq.finalPrice || inq.price}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground font-medium">
+                              Standard Price
+                            </span>
+                            <div className="font-mono text-xs font-semibold text-foreground">
+                              {inq.price}
+                            </div>
                           </div>
                         )}
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    <TableCell className="align-top text-xs text-muted-foreground">
-                      <div>
-                        {new Date(inq.createdAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground/80 mt-0.5">
-                        {new Date(inq.createdAt).toLocaleTimeString("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
-                    </TableCell>
+                      <TableCell className="align-top text-xs text-muted-foreground">
+                        <div>
+                          {new Date(inq.createdAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground/80 mt-0.5">
+                          {new Date(inq.createdAt).toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      </TableCell>
 
                     <TableCell className="align-top">
                       <div className="flex flex-col gap-1.5">
@@ -424,8 +531,9 @@ export function AdminInquiries({
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+                );
+              })
+            )}
             </TableBody>
           </Table>
           </div>

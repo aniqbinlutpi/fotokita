@@ -33,26 +33,27 @@ export function getPlanDurationMs(planTier: string): number {
 export function getPlanDurationLabel(planTier: string): string {
   switch (planTier?.toLowerCase()) {
     case "12h":
-      return "12 Jam";
+      return "12 Hours";
     case "1day":
     case "oneday":
     case "standard":
-      return "24 Jam (1 Hari Penuh)";
+    case "premium":
+      return "24 Hours (Full Day)";
     case "3days":
     case "threedays":
-      return "3 Hari (Weekend Pass)";
+      return "3 Days (Weekend Pass)";
     case "1week":
     case "oneweek":
-      return "7 Hari (1 Minggu)";
+      return "7 Days (1 Week)";
     case "1month":
     case "onemonth":
-      return "30 Hari (1 Bulan)";
+      return "30 Days (1 Month)";
     case "1year":
     case "oneyear":
     case "vip":
-      return "365 Hari (1 Tahun Penuh)";
+      return "365 Days (1 Full Year)";
     default:
-      return "24 Jam (1 Hari Penuh)";
+      return "24 Hours (Full Day)";
   }
 }
 
@@ -208,21 +209,13 @@ export function validatePlanCoverage(
 
   const { start: weddingDayStart, end: weddingDayEnd } = parsed;
 
-  const weddingFormatted = weddingDayStart.toLocaleDateString("ms-MY", {
+  const weddingFormatted = weddingDayStart.toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 
-  const startFormatted = planStartDate.toLocaleString("ms-MY", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const endFormatted = planEndDate.toLocaleString("ms-MY", {
+  const startFormatted = planStartDate.toLocaleString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -230,22 +223,30 @@ export function validatePlanCoverage(
     minute: "2-digit",
   });
 
-  // 1. Tarikh mula guna tidak boleh selepas tarikh majlis perkahwinan
+  const endFormatted = planEndDate.toLocaleString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // 1. Activation start date cannot be after the wedding date
   if (planStartDate.getTime() > weddingDayEnd.getTime()) {
     return {
       isValid: false,
-      message: `Tarikh mula guna (${startFormatted}) tidak boleh selepas tarikh majlis (${weddingFormatted}). Sistem perlu mula aktif sebelum atau pada hari majlis perkahwinan anda.`,
+      message: `Gallery activation date (${startFormatted}) cannot be after your wedding date (${weddingFormatted}). The system must start active on or before your wedding event.`,
       weddingFormatted,
       startFormatted,
       endFormatted,
     };
   }
 
-  // 2. Tarikh tamat pelan tidak boleh mendahului hari majlis perkahwinan
+  // 2. Plan expiration date cannot end before the wedding day starts
   if (planEndDate.getTime() < weddingDayStart.getTime()) {
     return {
       isValid: false,
-      message: `Tarikh tamat pelan (${endFormatted}) mendahului tarikh majlis (${weddingFormatted}). Sila pilih tarikh mula guna yang lebih hampir dengan hari majlis atau pilih pelan dengan durasi lebih panjang.`,
+      message: `Plan expiration (${endFormatted}) is earlier than your wedding date (${weddingFormatted}). The plan must remain active during your wedding event. Please choose a start date closer to your event or select a longer plan.`,
       weddingFormatted,
       startFormatted,
       endFormatted,

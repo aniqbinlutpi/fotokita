@@ -39,7 +39,7 @@ export function DeleteWeddingDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminPassword.trim()) {
-      setErrorMsg("Sila masukkan kata laluan admin untuk meneruskan");
+      setErrorMsg("Please enter the super admin password to proceed");
       return;
     }
     setErrorMsg(null);
@@ -61,7 +61,7 @@ export function DeleteWeddingDialog({
                 <strong>&ldquo;{wedding?.name}&rdquo;</strong> (slug: /{wedding?.slug})?
               </div>
               <div className="text-xs text-destructive/90 bg-destructive/10 p-2.5 rounded-md border border-destructive/20 leading-relaxed">
-                ⚠️ <strong>Full Purge:</strong> Tindakan ini akan memadam rekod majlis, semua foto &amp; video daripada storan Cloudflare/S3, ucapan tetamu, dan akaun login Sub-Admin secara kekal.
+                ⚠️ <strong>Full Purge:</strong> This action will permanently delete the wedding record, all photos &amp; videos from cloud storage, guest wishes, and the Sub-Admin login account.
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -70,11 +70,11 @@ export function DeleteWeddingDialog({
           <div className="space-y-1.5 pt-1 text-left">
             <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
               <Lock className="size-3.5 text-muted-foreground" />
-              <span>Sahkan dengan Kata Laluan Super Admin:</span>
+              <span>Confirm with Super Admin Password:</span>
             </label>
             <Input
               type="password"
-              placeholder="Masukkan kata laluan login admin..."
+              placeholder="Enter super admin password..."
               value={adminPassword}
               onChange={(e) => {
                 setAdminPassword(e.target.value);

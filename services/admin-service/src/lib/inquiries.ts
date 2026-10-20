@@ -1,6 +1,7 @@
 import { eq, desc } from "drizzle-orm";
 import { db, client } from "../db";
 import { customerInquiries } from "../db/schema";
+import { validateVoucher, incrementVoucherUsage, parsePriceNumber } from "./vouchers";
 
 export interface CustomerInquiry {
   id: string;
@@ -14,6 +15,11 @@ export interface CustomerInquiry {
   status: "pending" | "contacted" | "converted";
   createdAt: number;
   notes?: string;
+  voucherCode?: string;
+  discountAmount?: string;
+  originalPrice?: string;
+  finalPrice?: string;
+  voucherApplied?: boolean;
 }
 
 export interface InquiryAvailabilityResult {
@@ -40,6 +46,11 @@ function mapInquiryRow(row: typeof customerInquiries.$inferSelect): CustomerInqu
     status: row.status as "pending" | "contacted" | "converted",
     createdAt: row.createdAt ? new Date(row.createdAt).getTime() : Date.now(),
     notes: row.notes || undefined,
+    voucherCode: row.voucherCode || undefined,
+    discountAmount: row.discountAmount || undefined,
+    originalPrice: row.originalPrice || undefined,
+    finalPrice: row.finalPrice || undefined,
+    voucherApplied: Boolean(row.voucherApplied),
   };
 }
 
@@ -166,9 +177,11 @@ export async function createInquiry(params: {
   weddingDate?: string;
   planStartDate?: string;
   notes?: string;
+  voucherCode?: string;
 }): Promise<CustomerInquiry> {
   const cleanUsername = params.username.trim().toLowerCase();
   const cleanPhone = params.phone.trim();
+  const cleanDigits = cleanPhone.replace(/\D/g, "");
 
   // Pre-validate username & phone uniqueness
   const availability = await checkInquiryAvailability({
@@ -189,29 +202,150 @@ export async function createInquiry(params: {
   }
 
   try {
-    const [created] = await db
-      .insert(customerInquiries)
-      .values({
-        username: cleanUsername,
-        phone: cleanPhone,
-        planId: params.planId.trim(),
-        planName: params.planName.trim(),
-        price: params.price.trim(),
-        weddingDate: params.weddingDate?.trim() || null,
-        planStartDate: params.planStartDate?.trim() || null,
-        status: "pending",
-        notes: params.notes?.trim() || null,
-      })
-      .returning();
+    // Database Transaction & Row-Level Locking to eliminate race conditions
+    return await client.begin(async (sql) => {
+      let validatedVoucherCode: string | null = null;
+      let discountAmountStr: string | null = null;
+      let originalPriceStr = params.price.trim();
+      let finalPriceStr = params.price.trim();
+      let voucherApplied = false;
 
-    if (!created) {
-      throw new Error("Failed to insert customer inquiry into database");
-    }
+      if (params.voucherCode && params.voucherCode.trim()) {
+        const codeToUse = params.voucherCode.trim().toUpperCase();
 
-    return mapInquiryRow(created);
+        // 1. Pessimistic Row Lock (SELECT ... FOR UPDATE):
+        // Concurrently incoming redemptions for this voucher row are serialized by PostgreSQL.
+        const voucherRows = await sql`
+          SELECT id, code, discount_type, discount_value, usage_limit, used_count, expires_at, is_active
+          FROM vouchers
+          WHERE UPPER(code) = UPPER(${codeToUse})
+          FOR UPDATE
+        `;
+
+        if (!voucherRows.length || !voucherRows[0]) {
+          const err = new Error(`Voucher code "${codeToUse}" does not exist.`);
+          (err as any).code = "INVALID_VOUCHER";
+          throw err;
+        }
+
+        const vRow = voucherRows[0];
+
+        if (!vRow.is_active) {
+          const err = new Error(`Voucher "${codeToUse}" is currently inactive.`);
+          (err as any).code = "INVALID_VOUCHER";
+          throw err;
+        }
+
+        if (vRow.expires_at) {
+          const expDate = new Date(vRow.expires_at);
+          if (!isNaN(expDate.getTime()) && Date.now() > expDate.getTime()) {
+            const err = new Error(`Voucher "${codeToUse}" has expired.`);
+            (err as any).code = "INVALID_VOUCHER";
+            throw err;
+          }
+        }
+
+        const currentUsed = Number(vRow.used_count) || 0;
+        const maxLimit = vRow.usage_limit !== null && vRow.usage_limit !== undefined ? Number(vRow.usage_limit) : null;
+
+        if (maxLimit !== null && maxLimit > 0 && currentUsed >= maxLimit) {
+          const err = new Error(`Voucher "${codeToUse}" has reached its maximum usage limit of ${maxLimit} user(s).`);
+          (err as any).code = "INVALID_VOUCHER";
+          throw err;
+        }
+
+        // 2. Race condition check: Verify user/phone hasn't redeemed this voucher under lock
+        const priorClaims = await sql`
+          SELECT id FROM customer_inquiries
+          WHERE UPPER(voucher_code) = UPPER(${codeToUse})
+            AND (
+              LOWER(username) = LOWER(${cleanUsername})
+              OR translate(phone, ' -()+.', '') = ${cleanDigits}
+            )
+          LIMIT 1
+        `;
+
+        if (priorClaims.length > 0) {
+          const err = new Error(`You have already redeemed voucher "${codeToUse}". Limit is 1 per customer.`);
+          (err as any).code = "INVALID_VOUCHER";
+          throw err;
+        }
+
+        // 3. Calculate discount value
+        const origPriceNum = parsePriceNumber(params.price);
+        const discountVal = parseFloat(vRow.discount_value) || 0;
+        let discountNum = 0;
+        if (vRow.discount_type === "percentage") {
+          discountNum = (origPriceNum * discountVal) / 100;
+        } else {
+          discountNum = discountVal;
+        }
+        if (discountNum > origPriceNum) discountNum = origPriceNum;
+        const finalNum = Math.max(0, origPriceNum - discountNum);
+
+        const formatMoney = (val: number) => (Number.isInteger(val) ? val.toString() : val.toFixed(2));
+
+        validatedVoucherCode = vRow.code;
+        discountAmountStr = `RM ${formatMoney(discountNum)}`;
+        originalPriceStr = `RM ${formatMoney(origPriceNum)}`;
+        finalPriceStr = `RM ${formatMoney(finalNum)}`;
+        voucherApplied = true;
+
+        // 4. Atomically increment used_count within the transaction
+        await sql`
+          UPDATE vouchers
+          SET used_count = used_count + 1,
+              updated_at = NOW()
+          WHERE id = ${vRow.id}
+        `;
+      }
+
+      // 5. Insert customer inquiry inside the transaction
+      const insertRows = await sql`
+        INSERT INTO customer_inquiries (
+          username, phone, plan_id, plan_name, price,
+          wedding_date, plan_start_date, status, notes,
+          voucher_code, discount_amount, original_price, final_price, voucher_applied
+        ) VALUES (
+          ${cleanUsername}, ${cleanPhone}, ${params.planId.trim()}, ${params.planName.trim()}, ${params.price.trim()},
+          ${params.weddingDate?.trim() || null}, ${params.planStartDate?.trim() || null}, 'pending', ${params.notes?.trim() || null},
+          ${validatedVoucherCode}, ${discountAmountStr}, ${originalPriceStr}, ${finalPriceStr}, ${voucherApplied}
+        )
+        RETURNING *
+      `;
+
+      if (!insertRows.length || !insertRows[0]) {
+        throw new Error("Failed to insert customer inquiry into database");
+      }
+
+      const created = insertRows[0];
+      return {
+        id: created.id,
+        username: created.username,
+        phone: created.phone,
+        planId: created.plan_id,
+        planName: created.plan_name,
+        price: created.price,
+        weddingDate: created.wedding_date || undefined,
+        planStartDate: created.plan_start_date || undefined,
+        status: created.status as "pending" | "contacted" | "converted",
+        createdAt: created.created_at ? new Date(created.created_at).getTime() : Date.now(),
+        notes: created.notes || undefined,
+        voucherCode: created.voucher_code || undefined,
+        discountAmount: created.discount_amount || undefined,
+        originalPrice: created.original_price || undefined,
+        finalPrice: created.final_price || undefined,
+        voucherApplied: Boolean(created.voucher_applied),
+      };
+    });
   } catch (err: any) {
     if (err?.code === "23505" || err?.message?.toLowerCase().includes("unique")) {
       const errMsg = err?.detail || err?.message || "";
+      if (errMsg.toLowerCase().includes("voucher")) {
+        const errorObj = new Error("This voucher code has already been redeemed by this account or phone number.");
+        (errorObj as any).code = "INVALID_VOUCHER";
+        throw errorObj;
+      }
       if (errMsg.toLowerCase().includes("username")) {
         const errorObj = new Error("This username is already taken. Please choose another username.");
         (errorObj as any).code = "USERNAME_TAKEN";

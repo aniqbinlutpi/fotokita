@@ -40,18 +40,63 @@ export const formatWhatsAppPhone = (phone?: string): string => {
   return digits;
 };
 
+export const formatDisplayDate = (dateStr?: string): string => {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-").map(Number);
+  const [year, month, day] = parts;
+  if (year !== undefined && month !== undefined && day !== undefined && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
+    return `${day.toString().padStart(2, "0")}/${month.toString().padStart(2, "0")}/${year}`;
+  }
+  return dateStr;
+};
+
+export const formatDisplayDateTime = (dateStr?: string): string => {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const day = d.getDate().toString().padStart(2, "0");
+      const month = (d.getMonth() + 1).toString().padStart(2, "0");
+      const year = d.getFullYear();
+      const timeStr = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+      return `${day}/${month}/${year}, ${timeStr}`;
+    }
+  } catch {}
+  return dateStr.replace("T", " ");
+};
+
 export const getWhatsAppMessageText = (invite: AdminInvite): string => {
-  const url = `${window.location.origin}/register?token=${encodeURIComponent(invite.token)}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://fotokita.com";
+  const url = `${origin}/register?token=${encodeURIComponent(invite.token)}`;
   const clientGreeting = invite.clientName ? `Hi ${invite.clientName}` : "Hi";
   const tierName = formatTierLabel(invite.tier);
+
+  const weddingFormatted = invite.weddingDate ? formatDisplayDate(invite.weddingDate) : "";
+  const startFormatted = invite.planStartDate ? formatDisplayDateTime(invite.planStartDate) : "";
+
   let dateDetails = "";
-  if (invite.weddingDate) {
-    dateDetails += `\n📅 Tarikh Majlis: ${invite.weddingDate}`;
+  if (weddingFormatted) {
+    dateDetails += `\n• *Wedding Date:* ${weddingFormatted}`;
   }
-  if (invite.planStartDate) {
-    dateDetails += `\n⏱️ Mula Guna: ${invite.planStartDate.replace("T", " ")}`;
+  if (startFormatted) {
+    dateDetails += `\n• *System Access & Activation:* ${startFormatted}`;
   }
-  return `${clientGreeting}! Terima kasih atas langganan pakej Fotokita ${tierName}.${dateDetails}\n\nSila gunakan pautan rasmi ini untuk melengkapkan akaun Sub-Admin majlis anda:\n${url}\n\n⚠️ Peringatan: Pautan ini sah selama 24 jam sahaja (Single-Use). Sila lengkapkan pendaftaran anda sebelum tamat tempoh.`;
+
+  const startNotice = startFormatted
+    ? `Your gallery system will be fully active and accessible starting from *${startFormatted}*.`
+    : "Your gallery system will become active according to your scheduled start time.";
+
+  return `${clientGreeting}! Thank you for subscribing to the Fotokita *${tierName}* package.${dateDetails}
+
+*Next Important Steps:*
+1. Please click this official link to complete your wedding Sub-Admin portal registration now:
+${url}
+
+2. IMPORTANT: Please make sure to *remember the Username and Password* you create during registration to log into your portal later.
+
+3. ${startNotice}
+
+(Notice: This registration link is valid for 24 hours only. Please complete your registration promptly).`;
 };
 
 export const getWhatsAppShareUrl = (
