@@ -44,7 +44,14 @@ export const getWhatsAppMessageText = (invite: AdminInvite): string => {
   const url = `${window.location.origin}/register?token=${encodeURIComponent(invite.token)}`;
   const clientGreeting = invite.clientName ? `Hi ${invite.clientName}` : "Hi";
   const tierName = formatTierLabel(invite.tier);
-  return `${clientGreeting}! Thank you for your payment for the Fotokita ${tierName} package.\n\nPlease use this official link to register your Sub-Admin account and launch your wedding gallery:\n${url}\n\n⚠️ Notice: This link is valid for 24 hours only and is single-use. Please complete your registration before expiry.`;
+  let dateDetails = "";
+  if (invite.weddingDate) {
+    dateDetails += `\n📅 Tarikh Majlis: ${invite.weddingDate}`;
+  }
+  if (invite.planStartDate) {
+    dateDetails += `\n⏱️ Mula Guna: ${invite.planStartDate.replace("T", " ")}`;
+  }
+  return `${clientGreeting}! Terima kasih atas langganan pakej Fotokita ${tierName}.${dateDetails}\n\nSila gunakan pautan rasmi ini untuk melengkapkan akaun Sub-Admin majlis anda:\n${url}\n\n⚠️ Peringatan: Pautan ini sah selama 24 jam sahaja (Single-Use). Sila lengkapkan pendaftaran anda sebelum tamat tempoh.`;
 };
 
 export const getWhatsAppShareUrl = (

@@ -295,6 +295,20 @@ export function AdminInquiries({
                         <div className="text-[11px] font-mono font-semibold text-muted-foreground">
                           {inq.price}
                         </div>
+                        {(inq.weddingDate || inq.planStartDate) && (
+                          <div className="text-[10px] text-muted-foreground space-y-0.5 pt-1 border-t border-border/50">
+                            {inq.weddingDate && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium text-foreground">Majlis:</span> {inq.weddingDate}
+                              </div>
+                            )}
+                            {inq.planStartDate && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium text-foreground">Mula:</span> {inq.planStartDate.replace("T", " ")}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
 

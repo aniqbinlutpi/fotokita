@@ -49,7 +49,15 @@ export async function initDb(): Promise<void> {
       ADD COLUMN IF NOT EXISTS receipt_data TEXT,
       ADD COLUMN IF NOT EXISTS receipt_filename TEXT,
       ADD COLUMN IF NOT EXISTS receipt_mime_type TEXT,
-      ADD COLUMN IF NOT EXISTS client_phone TEXT;
+      ADD COLUMN IF NOT EXISTS client_phone TEXT,
+      ADD COLUMN IF NOT EXISTS wedding_date TEXT,
+      ADD COLUMN IF NOT EXISTS plan_start_date TEXT;
+    `;
+
+    await client`
+      ALTER TABLE customer_inquiries
+      ADD COLUMN IF NOT EXISTS wedding_date TEXT,
+      ADD COLUMN IF NOT EXISTS plan_start_date TEXT;
     `;
 
     await client`

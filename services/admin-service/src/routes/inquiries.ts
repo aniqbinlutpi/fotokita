@@ -42,6 +42,8 @@ const createInquirySchema = z.object({
   planId: z.string().min(1, "Plan ID is required"),
   planName: z.string().min(1, "Plan name is required"),
   price: z.string().min(1, "Plan price is required"),
+  weddingDate: z.string().optional(),
+  planStartDate: z.string().optional(),
   notes: z.string().optional(),
 });
 

@@ -23,6 +23,8 @@ export const customerInquiries = pgTable("customer_inquiries", {
   planId: text("plan_id").notNull(),
   planName: text("plan_name").notNull(),
   price: text("price").notNull(),
+  weddingDate: text("wedding_date"),
+  planStartDate: text("plan_start_date"),
   status: text("status").notNull().default("pending"), // pending | contacted | converted
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -34,6 +36,8 @@ export const tenantInvites = pgTable("tenant_invites", {
   tier: text("tier").notNull(),
   clientName: text("client_name"),
   clientPhone: text("client_phone"),
+  weddingDate: text("wedding_date"),
+  planStartDate: text("plan_start_date"),
   notes: text("notes"),
   receiptData: text("receipt_data"),
   receiptFilename: text("receipt_filename"),

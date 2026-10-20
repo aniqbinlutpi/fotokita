@@ -1,4 +1,5 @@
 export interface PlanDates {
+  planStartDate: Date;
   planExpiresAt: Date;
   mediaExpiresAt: Date;
 }
@@ -54,6 +55,7 @@ export function calculatePlanDates(planTier: string, startDate: Date = new Date(
   const mediaExpiresAt = new Date(planExpiresAt.getTime() + THREE_DAYS_MS);
 
   return {
+    planStartDate: startDate,
     planExpiresAt,
     mediaExpiresAt,
   };

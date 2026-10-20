@@ -32,6 +32,7 @@ export async function initDb(): Promise<void> {
 
     // Safely add any new columns to existing tables
     await client`ALTER TABLE tenant_accounts ADD COLUMN IF NOT EXISTS plan_tier TEXT NOT NULL DEFAULT '1day';`;
+    await client`ALTER TABLE tenant_accounts ADD COLUMN IF NOT EXISTS plan_start_date TIMESTAMP;`;
     await client`ALTER TABLE tenant_accounts ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP;`;
     await client`ALTER TABLE tenant_accounts ADD COLUMN IF NOT EXISTS media_expires_at TIMESTAMP;`;
     await client`ALTER TABLE tenant_accounts ADD COLUMN IF NOT EXISTS preserve_media BOOLEAN NOT NULL DEFAULT false;`;

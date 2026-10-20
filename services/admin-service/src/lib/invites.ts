@@ -23,6 +23,8 @@ export interface InviteToken {
   tier: SubscriptionTier;
   clientName?: string;
   clientPhone?: string;
+  weddingDate?: string;
+  planStartDate?: string;
   notes?: string;
   hasReceipt?: boolean;
   receiptFilename?: string;
@@ -49,6 +51,8 @@ function mapInviteRow(
     tier: row.tier as SubscriptionTier,
     clientName: row.clientName || undefined,
     clientPhone: row.clientPhone || undefined,
+    weddingDate: row.weddingDate || undefined,
+    planStartDate: row.planStartDate || undefined,
     notes: row.notes || undefined,
     hasReceipt: Boolean(row.receiptData),
     receiptFilename: row.receiptFilename || undefined,
@@ -69,6 +73,8 @@ export async function createInviteToken(params: {
   tier: SubscriptionTier;
   clientName?: string;
   clientPhone?: string;
+  weddingDate?: string;
+  planStartDate?: string;
   notes?: string;
   receiptData: string;
   receiptFilename?: string;
@@ -88,6 +94,8 @@ export async function createInviteToken(params: {
       tier: params.tier,
       clientName: params.clientName?.trim().toLowerCase() || null,
       clientPhone: params.clientPhone?.trim() || null,
+      weddingDate: params.weddingDate?.trim() || null,
+      planStartDate: params.planStartDate?.trim() || null,
       notes: params.notes?.trim() || null,
       receiptData: params.receiptData,
       receiptFilename: params.receiptFilename || null,
@@ -116,6 +124,9 @@ export async function listInvites(): Promise<InviteToken[]> {
       token: tenantInvites.token,
       tier: tenantInvites.tier,
       clientName: tenantInvites.clientName,
+      clientPhone: tenantInvites.clientPhone,
+      weddingDate: tenantInvites.weddingDate,
+      planStartDate: tenantInvites.planStartDate,
       notes: tenantInvites.notes,
       hasReceipt: sql<boolean>`CASE WHEN ${tenantInvites.receiptData} IS NOT NULL AND ${tenantInvites.receiptData} != '' THEN true ELSE false END`,
       receiptFilename: tenantInvites.receiptFilename,
@@ -134,6 +145,9 @@ export async function listInvites(): Promise<InviteToken[]> {
     token: r.token,
     tier: r.tier as SubscriptionTier,
     clientName: r.clientName || undefined,
+    clientPhone: r.clientPhone || undefined,
+    weddingDate: r.weddingDate || undefined,
+    planStartDate: r.planStartDate || undefined,
     notes: r.notes || undefined,
     hasReceipt: Boolean(r.hasReceipt),
     receiptFilename: r.receiptFilename || undefined,

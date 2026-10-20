@@ -100,6 +100,8 @@ export function AdminControlPage({
   const [inviteTier, setInviteTier] = useState<SubscriptionTier>("1day");
   const [inviteClientName, setInviteClientName] = useState("");
   const [inviteClientPhone, setInviteClientPhone] = useState("");
+  const [inviteWeddingDate, setInviteWeddingDate] = useState("");
+  const [invitePlanStartDate, setInvitePlanStartDate] = useState("");
   const [inviteNotes, setInviteNotes] = useState("");
   const [receiptFile, setReceiptFile] = useState<ReceiptUploadFile | null>(null);
   const [isCreatingInvite, setIsCreatingInvite] = useState(false);
@@ -301,6 +303,8 @@ export function AdminControlPage({
   const handleConvertInquiryToInvite = (inquiry: CustomerInquiry) => {
     setInviteClientName(inquiry.username);
     setInviteClientPhone(inquiry.phone || "");
+    setInviteWeddingDate(inquiry.weddingDate || "");
+    setInvitePlanStartDate(inquiry.planStartDate || "");
     setInviteNotes(`Inquiry phone: ${inquiry.phone} • Plan: ${inquiry.planName}`);
     const validTiers: SubscriptionTier[] = [
       "12h",
@@ -336,6 +340,8 @@ export function AdminControlPage({
         tier: inviteTier,
         clientName: inviteClientName.trim() || undefined,
         clientPhone: inviteClientPhone.trim() || undefined,
+        weddingDate: inviteWeddingDate.trim() || undefined,
+        planStartDate: invitePlanStartDate.trim() || undefined,
         notes: inviteNotes.trim() || undefined,
         receiptData: receiptFile.data,
         receiptFilename: receiptFile.name,
@@ -721,6 +727,10 @@ export function AdminControlPage({
         onInviteClientNameChange={setInviteClientName}
         inviteClientPhone={inviteClientPhone}
         onInviteClientPhoneChange={setInviteClientPhone}
+        inviteWeddingDate={inviteWeddingDate}
+        onInviteWeddingDateChange={setInviteWeddingDate}
+        invitePlanStartDate={invitePlanStartDate}
+        onInvitePlanStartDateChange={setInvitePlanStartDate}
         inviteNotes={inviteNotes}
         onInviteNotesChange={setInviteNotes}
         receiptFile={receiptFile}
@@ -732,6 +742,8 @@ export function AdminControlPage({
           setNewlyCreatedInvite(null);
           setInviteClientName("");
           setInviteClientPhone("");
+          setInviteWeddingDate("");
+          setInvitePlanStartDate("");
           setInviteNotes("");
           setReceiptFile(null);
         }}

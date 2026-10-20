@@ -9,6 +9,8 @@ export interface CustomerInquiry {
   planId: string;
   planName: string;
   price: string;
+  weddingDate?: string;
+  planStartDate?: string;
   status: "pending" | "contacted" | "converted";
   createdAt: number;
   notes?: string;
@@ -33,6 +35,8 @@ function mapInquiryRow(row: typeof customerInquiries.$inferSelect): CustomerInqu
     planId: row.planId,
     planName: row.planName,
     price: row.price,
+    weddingDate: row.weddingDate || undefined,
+    planStartDate: row.planStartDate || undefined,
     status: row.status as "pending" | "contacted" | "converted",
     createdAt: row.createdAt ? new Date(row.createdAt).getTime() : Date.now(),
     notes: row.notes || undefined,
@@ -159,6 +163,8 @@ export async function createInquiry(params: {
   planId: string;
   planName: string;
   price: string;
+  weddingDate?: string;
+  planStartDate?: string;
   notes?: string;
 }): Promise<CustomerInquiry> {
   const cleanUsername = params.username.trim().toLowerCase();
@@ -191,6 +197,8 @@ export async function createInquiry(params: {
         planId: params.planId.trim(),
         planName: params.planName.trim(),
         price: params.price.trim(),
+        weddingDate: params.weddingDate?.trim() || null,
+        planStartDate: params.planStartDate?.trim() || null,
         status: "pending",
         notes: params.notes?.trim() || null,
       })

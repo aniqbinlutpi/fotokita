@@ -29,6 +29,7 @@ const registerSchema = z.object({
   weddingSlug: z.string().min(1, "Wedding slug diperlukan"),
   weddingName: z.string().min(1, "Wedding name diperlukan"),
   planTier: z.string().optional().default("1day"),
+  planStartDate: z.string().optional(),
 });
 
 export const requireTenantAuth = async (c: any, next: () => Promise<void>) => {
@@ -79,12 +80,16 @@ authRoute.post("/register", async (c) => {
     );
   }
 
-  const { username, email, password, weddingId, weddingSlug, weddingName } = parsed.data;
+  const { username, email, password, weddingId, weddingSlug, weddingName, planStartDate: rawStartDate } = parsed.data;
   const cleanUsername = username.trim().toLowerCase();
   const cleanEmail = (email || `${cleanUsername}@fotokita.com`).trim().toLowerCase();
   const cleanPassword = password.trim();
   const planTier = (parsed.data.planTier || "1day").trim().toLowerCase();
-  const { planExpiresAt, mediaExpiresAt } = calculatePlanDates(planTier);
+  const parsedStartDate = rawStartDate ? new Date(rawStartDate) : new Date();
+  const validStartDate = isNaN(parsedStartDate.getTime()) ? new Date() : parsedStartDate;
+  const { planStartDate, planExpiresAt, mediaExpiresAt } = calculatePlanDates(planTier, validStartDate);
+  const now = new Date();
+  const initialStatus = now.getTime() < planStartDate.getTime() ? "scheduled" : "active";
 
   // Check if username or email is already registered to a DIFFERENT wedding
   try {
@@ -130,10 +135,11 @@ authRoute.post("/register", async (c) => {
         weddingSlug: weddingSlug.trim().toLowerCase(),
         weddingName: weddingName.trim(),
         planTier,
+        planStartDate,
         planExpiresAt,
         mediaExpiresAt,
         preserveMedia: false,
-        status: "active",
+        status: initialStatus,
         mediaCleanedUp: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -147,9 +153,10 @@ authRoute.post("/register", async (c) => {
           weddingSlug: weddingSlug.trim().toLowerCase(),
           weddingName: weddingName.trim(),
           planTier,
+          planStartDate,
           planExpiresAt,
           mediaExpiresAt,
-          status: "active",
+          status: initialStatus,
           updatedAt: new Date(),
         },
       })
@@ -216,6 +223,7 @@ authRoute.post("/register", async (c) => {
         weddingSlug: registeredAccount.weddingSlug,
         weddingName: registeredAccount.weddingName,
         planTier: registeredAccount.planTier,
+        planStartDate: registeredAccount.planStartDate,
         planExpiresAt: registeredAccount.planExpiresAt,
         mediaExpiresAt: registeredAccount.mediaExpiresAt,
         preserveMedia: registeredAccount.preserveMedia,
@@ -298,8 +306,40 @@ authRoute.post("/login", async (c) => {
     }
   }
 
-  // Enforce subscription plan expiry check
   const now = new Date();
+
+  // Check if subscription plan has not started yet
+  if (tenant.planStartDate && now.getTime() < new Date(tenant.planStartDate).getTime()) {
+    const startFormatted = new Date(tenant.planStartDate).toLocaleString("ms-MY", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return c.json(
+      error(
+        "PLAN_NOT_STARTED",
+        `Akaun dan galeri anda dijadualkan bermula pada ${startFormatted}. Anda boleh mula log masuk dan mengakses portal pada waktu tersebut.`
+      ),
+      403
+    );
+  }
+
+  // Auto-activate scheduled account once start time arrives
+  if (tenant.status === "scheduled" && (!tenant.planStartDate || now.getTime() >= new Date(tenant.planStartDate).getTime())) {
+    try {
+      await db
+        .update(tenantAccounts)
+        .set({ status: "active", updatedAt: new Date() })
+        .where(eq(tenantAccounts.id, tenant.id));
+      tenant.status = "active";
+    } catch (statusErr) {
+      console.warn("Failed to activate scheduled tenant:", statusErr);
+    }
+  }
+
+  // Enforce subscription plan expiry check
   const isExpired = tenant.planExpiresAt && now.getTime() > new Date(tenant.planExpiresAt).getTime();
   if (isExpired) {
     if (tenant.status === "active") {
@@ -373,6 +413,7 @@ authRoute.post("/login", async (c) => {
         weddingSlug,
         weddingName,
         planTier: tenant.planTier,
+        planStartDate: tenant.planStartDate,
         planExpiresAt: tenant.planExpiresAt,
         mediaExpiresAt: tenant.mediaExpiresAt,
         preserveMedia: tenant.preserveMedia,
@@ -420,6 +461,7 @@ authRoute.get("/me", requireTenantAuth, async (c) => {
         weddingName: liveWedding.name,
         role: tokenTenant.role,
         planTier: tenant?.planTier || "1day",
+        planStartDate: tenant?.planStartDate || null,
         planExpiresAt: tenant?.planExpiresAt || null,
         mediaExpiresAt: tenant?.mediaExpiresAt || null,
         preserveMedia: tenant?.preserveMedia ?? false,
