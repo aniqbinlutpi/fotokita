@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Lock,
   User,
@@ -81,9 +80,6 @@ export function AdminLogin({ onLoginSuccess, onBackHome }: AdminLoginProps) {
               <CardTitle className="text-2xl font-bold tracking-tight">
                 Fotokita Admin
               </CardTitle>
-              <Badge variant="outline" className="text-xs uppercase font-semibold tracking-wider">
-                Super Admin
-              </Badge>
             </div>
 
             <CardDescription className="text-sm">

@@ -59,6 +59,25 @@ inquiriesRoute.post("/", async (c) => {
     );
   }
 
+  // Validate that activation date is not after wedding event date
+  if (parsed.data.weddingDate && parsed.data.planStartDate) {
+    const parts = parsed.data.weddingDate.split("-").map(Number);
+    const [year, month, day] = parts;
+    if (year !== undefined && month !== undefined && day !== undefined && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      const weddingDayEnd = new Date(year, month - 1, day, 23, 59, 59, 999);
+      const start = new Date(parsed.data.planStartDate);
+      if (!isNaN(start.getTime()) && start.getTime() > weddingDayEnd.getTime()) {
+        return c.json(
+          error(
+            "INVALID_PLAN_DATES",
+            "Activation date cannot be after the wedding date. The system must start active on or before your wedding event."
+          ),
+          400
+        );
+      }
+    }
+  }
+
   try {
     const inquiry = await createInquiry(parsed.data);
     return c.json(success({ inquiry, message: "Inquiry saved successfully" }), 201);

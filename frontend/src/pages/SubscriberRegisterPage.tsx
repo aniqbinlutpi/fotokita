@@ -95,8 +95,17 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
   const handleWeddingDateChange = (val: string) => {
     setWeddingDate(val);
-    if (val && !planStartDate) {
-      setPlanStartDate(`${val}T08:00`);
+    if (val) {
+      if (!planStartDate) {
+        setPlanStartDate(`${val}T08:00`);
+      } else {
+        const parts = val.split("-").map(Number);
+        const weddingDayEnd = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999);
+        const currentStart = new Date(planStartDate);
+        if (currentStart.getTime() > weddingDayEnd.getTime()) {
+          setPlanStartDate(`${val}T08:00`);
+        }
+      }
     }
   };
 
@@ -107,7 +116,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
     : new Date();
 
   const calculatedEndDate = calculatePlanEndDate(selectedPlan, effectiveStartDate);
-  const coverageCheck = validatePlanCoverage(weddingDate, calculatedEndDate);
+  const coverageCheck = validatePlanCoverage(weddingDate, effectiveStartDate, calculatedEndDate);
 
   // Success view state (NO AUTO LOGIN)
   const [registeredWedding, setRegisteredWedding] = useState<Wedding | null>(null);
@@ -784,6 +793,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
                     required
                     value={planStartDate}
                     onChange={(e) => setPlanStartDate(e.target.value)}
+                    max={weddingDate ? `${weddingDate}T23:59` : undefined}
                     className="pr-10 cursor-pointer"
                   />
                   <Clock className="size-4 absolute right-3.5 top-3 text-accent/60 pointer-events-none" />
