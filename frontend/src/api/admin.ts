@@ -283,6 +283,8 @@ export async function redeemInviteToken(data: {
 // CLIENT INQUIRIES & WHATSAPP LEADS
 // -------------------------------------------------------------
 
+export type InquiryStatus = "pending" | "contacted" | "sent" | "registered" | "converted";
+
 export interface CustomerInquiry {
   id: string;
   username: string;
@@ -292,7 +294,7 @@ export interface CustomerInquiry {
   price: string;
   weddingDate?: string;
   planStartDate?: string;
-  status: "pending" | "contacted" | "converted";
+  status: InquiryStatus;
   createdAt: number;
   notes?: string;
   voucherCode?: string;
@@ -464,7 +466,7 @@ export async function getAdminInquiries(): Promise<CustomerInquiry[]> {
 
 export async function updateAdminInquiryStatus(
   id: string,
-  status: "pending" | "contacted" | "converted",
+  status: InquiryStatus,
   notes?: string
 ): Promise<{ inquiry: CustomerInquiry }> {
   const response = await fetch(`${ADMIN_BASE_URL}/inquiries/${encodeURIComponent(id)}`, {

@@ -3,6 +3,8 @@ import { db, client } from "../db";
 import { customerInquiries } from "../db/schema";
 import { validateVoucher, incrementVoucherUsage, parsePriceNumber } from "./vouchers";
 
+export type InquiryStatus = "pending" | "contacted" | "sent" | "registered" | "converted";
+
 export interface CustomerInquiry {
   id: string;
   username: string;
@@ -12,7 +14,7 @@ export interface CustomerInquiry {
   price: string;
   weddingDate?: string;
   planStartDate?: string;
-  status: "pending" | "contacted" | "converted";
+  status: InquiryStatus;
   createdAt: number;
   notes?: string;
   voucherCode?: string;
@@ -43,7 +45,7 @@ function mapInquiryRow(row: typeof customerInquiries.$inferSelect): CustomerInqu
     price: row.price,
     weddingDate: row.weddingDate || undefined,
     planStartDate: row.planStartDate || undefined,
-    status: row.status as "pending" | "contacted" | "converted",
+    status: row.status as InquiryStatus,
     createdAt: row.createdAt ? new Date(row.createdAt).getTime() : Date.now(),
     notes: row.notes || undefined,
     voucherCode: row.voucherCode || undefined,
@@ -365,6 +367,38 @@ export async function createInquiry(params: {
 }
 
 export async function listInquiries(): Promise<CustomerInquiry[]> {
+  try {
+    // 1. Auto-sync: Mark inquiries as 'registered' if a matching tenant_invite is used
+    await client`
+      UPDATE customer_inquiries ci
+      SET status = 'registered'
+      FROM tenant_invites ti
+      WHERE ci.status != 'registered'
+        AND ti.is_used = true
+        AND (
+          (ti.client_name IS NOT NULL AND LOWER(ci.username) = LOWER(ti.client_name))
+          OR (ti.registration_details IS NOT NULL AND LOWER(ci.username) = LOWER(ti.registration_details->>'username'))
+          OR (ti.client_phone IS NOT NULL AND translate(ti.client_phone, ' -()+.', '') = translate(ci.phone, ' -()+.', ''))
+        )
+    `;
+
+    // 2. Auto-sync: Mark inquiries as 'sent' if an active tenant_invite exists and inquiry is still 'pending' or 'contacted'
+    await client`
+      UPDATE customer_inquiries ci
+      SET status = 'sent'
+      FROM tenant_invites ti
+      WHERE ci.status IN ('pending', 'contacted')
+        AND ti.is_used = false
+        AND ti.expires_at > NOW()
+        AND (
+          (ti.client_name IS NOT NULL AND LOWER(ci.username) = LOWER(ti.client_name))
+          OR (ti.client_phone IS NOT NULL AND translate(ti.client_phone, ' -()+.', '') = translate(ci.phone, ' -()+.', ''))
+        )
+    `;
+  } catch (syncErr) {
+    console.warn("Could not auto-sync inquiry statuses with tenant_invites:", syncErr);
+  }
+
   const rows = await db
     .select()
     .from(customerInquiries)
@@ -375,7 +409,7 @@ export async function listInquiries(): Promise<CustomerInquiry[]> {
 
 export async function updateInquiryStatus(
   id: string,
-  status: "pending" | "contacted" | "converted",
+  status: InquiryStatus,
   notes?: string
 ): Promise<CustomerInquiry | null> {
   const updateValues: Partial<typeof customerInquiries.$inferInsert> = {

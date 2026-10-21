@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { db } from "../db";
+import { db, client } from "../db";
 import { tenantInvites, type TenantRegistrationDetails } from "../db/schema";
 
 export type SubscriptionTier =
@@ -108,6 +108,27 @@ export async function createInviteToken(params: {
 
   if (!created) {
     throw new Error("Failed to insert tenant invite into database");
+  }
+
+  // Auto-sync: Update matching customer_inquiry to 'sent' if currently pending or contacted
+  if (params.clientName || params.clientPhone) {
+    try {
+      const cleanName = params.clientName?.trim().toLowerCase() || null;
+      const cleanPhoneDigits = params.clientPhone ? params.clientPhone.replace(/\D/g, "") : null;
+      if (cleanName || cleanPhoneDigits) {
+        await client`
+          UPDATE customer_inquiries
+          SET status = 'sent'
+          WHERE status IN ('pending', 'contacted')
+            AND (
+              (${cleanName}::text IS NOT NULL AND LOWER(username) = ${cleanName})
+              OR (${cleanPhoneDigits}::text IS NOT NULL AND translate(phone, ' -()+.', '') = ${cleanPhoneDigits})
+            )
+        `;
+      }
+    } catch (inqErr) {
+      console.warn("Could not auto-update customer inquiry status on invite creation:", inqErr);
+    }
   }
 
   return mapInviteRow(created);
@@ -276,6 +297,24 @@ export async function redeemInviteToken(
 
   if (!updated) {
     throw new Error("Failed to redeem invite token. It may have been used concurrently.");
+  }
+
+  // Auto-sync: Update matching customer_inquiry to 'registered'
+  try {
+    const regUser = details.username.trim().toLowerCase();
+    const invClientName = existing.clientName?.trim().toLowerCase() || null;
+    const invPhoneDigits = existing.clientPhone ? existing.clientPhone.replace(/\D/g, "") : null;
+    await client`
+      UPDATE customer_inquiries
+      SET status = 'registered'
+      WHERE (
+        LOWER(username) = ${regUser}
+        OR (${invClientName}::text IS NOT NULL AND LOWER(username) = ${invClientName})
+        OR (${invPhoneDigits}::text IS NOT NULL AND translate(phone, ' -()+.', '') = ${invPhoneDigits})
+      )
+    `;
+  } catch (inqErr) {
+    console.warn("Could not auto-update customer inquiry status on invite redemption:", inqErr);
   }
 
   return mapInviteRow(updated);

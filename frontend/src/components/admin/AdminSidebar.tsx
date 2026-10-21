@@ -19,16 +19,14 @@ import {
   LogOut,
   Globe,
   ShieldCheck,
-  UserPlus,
-  MessageSquare,
   Ticket,
 } from "lucide-react";
 import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import type { AdminUser } from "@/api/admin";
 
 interface AdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  activeTab: "overview" | "inquiries" | "vouchers" | "invites" | "weddings" | "system";
-  onSelectTab: (tab: "overview" | "inquiries" | "vouchers" | "invites" | "weddings" | "system") => void;
+  activeTab: "overview" | "weddings" | "vouchers" | "system" | "inquiries" | "invites";
+  onSelectTab: (tab: "overview" | "weddings" | "vouchers" | "system" | "inquiries" | "invites") => void;
   adminUser: AdminUser | null;
   onLogout: () => void;
   onBackHome: () => void;
@@ -86,14 +84,21 @@ export function AdminSidebar({
 
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={activeTab === "inquiries"}
-                  onClick={() => onSelectTab("inquiries")}
-                  tooltip="Customer Inquiries"
+                  isActive={
+                    activeTab === "weddings" ||
+                    activeTab === "inquiries" ||
+                    activeTab === "invites"
+                  }
+                  onClick={() => onSelectTab("weddings")}
+                  tooltip="Weddings, Inquiries & Invites Hub"
                 >
-                  <MessageSquare className="size-4" />
-                  <span className="flex-1">Inquiries</span>
+                  <Heart className="size-4" />
+                  <span className="flex-1">Weddings &amp; Clients</span>
                   {typeof pendingInquiriesCount === "number" && pendingInquiriesCount > 0 && (
-                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span
+                      className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500/20 px-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400"
+                      title={`${pendingInquiriesCount} pending leads`}
+                    >
                       {pendingInquiriesCount}
                     </span>
                   )}
@@ -107,7 +112,7 @@ export function AdminSidebar({
                   tooltip="Vouchers & Promo Codes"
                 >
                   <Ticket className="size-4" />
-                  <span className="flex-1">Vouchers & Deals</span>
+                  <span className="flex-1">Vouchers &amp; Deals</span>
                   {typeof activeVouchersCount === "number" && activeVouchersCount > 0 && (
                     <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-500/20 px-1.5 text-[10px] font-semibold text-purple-600 dark:text-purple-400">
                       {activeVouchersCount}
@@ -118,34 +123,12 @@ export function AdminSidebar({
 
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={activeTab === "invites"}
-                  onClick={() => onSelectTab("invites")}
-                  tooltip="Tenant Invites (24h Single-Use)"
-                >
-                  <UserPlus className="size-4" />
-                  <span>Tenant Invites</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={activeTab === "weddings"}
-                  onClick={() => onSelectTab("weddings")}
-                  tooltip="Weddings Management"
-                >
-                  <Heart className="size-4" />
-                  <span>Weddings Management</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
                   isActive={activeTab === "system"}
                   onClick={() => onSelectTab("system")}
                   tooltip="System & Services"
                 >
                   <Server className="size-4" />
-                  <span>System & Services</span>
+                  <span>System &amp; Services</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
