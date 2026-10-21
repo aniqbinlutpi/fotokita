@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { WeddingsDataTable } from "@/components/admin/WeddingsDataTable";
 import type { Wedding } from "@/types/wedding";
 import type { AdminTenantAccount } from "@/api/admin";
@@ -11,7 +11,6 @@ interface AdminWeddingsProps {
   onCopyLink: (slug: string, id: string) => void;
   onViewGallery: (slug: string) => void;
   onDeleteWedding: (wedding: Wedding) => void;
-  onOpenCreateWedding: () => void;
   onTogglePreserveMedia?: (weddingId: string, currentVal: boolean) => Promise<void>;
   onTriggerCleanup?: () => Promise<void>;
   isCleaningUp?: boolean;
@@ -24,7 +23,6 @@ export function AdminWeddings({
   onCopyLink,
   onViewGallery,
   onDeleteWedding,
-  onOpenCreateWedding,
   onTogglePreserveMedia,
   onTriggerCleanup,
   isCleaningUp,
@@ -40,8 +38,8 @@ export function AdminWeddings({
             Monitor, manage, and configure all wedding gallery registrations.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
-          {onTriggerCleanup && (
+        {onTriggerCleanup && (
+          <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
             <Button
               variant="outline"
               size="sm"
@@ -53,15 +51,8 @@ export function AdminWeddings({
               <Trash2 className="size-4 text-muted-foreground" />
               <span>{isCleaningUp ? "Cleaning..." : "Run Retention Cleanup"}</span>
             </Button>
-          )}
-          <Button
-            onClick={onOpenCreateWedding}
-            className="gap-2 cursor-pointer"
-          >
-            <Plus className="size-4" />
-            <span>Create Wedding</span>
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Full Weddings Table powered by TanStack Table */}

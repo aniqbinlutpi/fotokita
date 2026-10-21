@@ -22,12 +22,12 @@ const loginSchema = z.object({
 });
 
 const registerSchema = z.object({
-  username: z.string().min(2, "Username mestilah sekurang-kurangnya 2 aksara"),
-  email: z.string().email("Emel tidak sah").optional().or(z.literal("")),
-  password: z.string().min(4, "Kata laluan atau PIN mestilah sekurang-kurangnya 4 aksara"),
-  weddingId: z.string().min(1, "Wedding ID diperlukan"),
-  weddingSlug: z.string().min(1, "Wedding slug diperlukan"),
-  weddingName: z.string().min(1, "Wedding name diperlukan"),
+  username: z.string().min(2, "Username must be at least 2 characters"),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  password: z.string().min(4, "Password or PIN must be at least 4 characters"),
+  weddingId: z.string().min(1, "Wedding ID is required"),
+  weddingSlug: z.string().min(1, "Wedding slug is required"),
+  weddingName: z.string().min(1, "Wedding name is required"),
   planTier: z.string().optional().default("1day"),
   planStartDate: z.string().optional(),
 });
@@ -75,7 +75,7 @@ authRoute.post("/register", async (c) => {
 
   if (!parsed.success) {
     return c.json(
-      error("VALIDATION_ERROR", "Sila lengkapkan maklumat pendaftaran akaun", parsed.error.flatten()),
+      error("VALIDATION_ERROR", "Please complete all required registration fields", parsed.error.flatten()),
       400
     );
   }
@@ -112,14 +112,14 @@ authRoute.post("/register", async (c) => {
       return c.json(
         error(
           "USERNAME_EXISTS",
-          "Username atau emel ini telah didaftarkan oleh majlis lain. Sila gunakan username atau emel yang berbeza."
+          "This username or email is already registered for another wedding. Please use a different username or email."
         ),
         409
       );
     }
   } catch (err: any) {
     console.error("Database check failed in /register:", err);
-    return c.json(error("DATABASE_ERROR", "Ralat memeriksa pangkalan data akaun"), 500);
+    return c.json(error("DATABASE_ERROR", "Failed to check account database"), 500);
   }
 
   // Insert or update tenant_accounts with registered credentials
@@ -165,11 +165,11 @@ authRoute.post("/register", async (c) => {
     registeredAccount = rows[0];
   } catch (err: any) {
     console.error("Database insert failed in /register:", err);
-    return c.json(error("DATABASE_ERROR", "Gagal menyimpan akaun pendaftaran ke pangkalan data"), 500);
+    return c.json(error("DATABASE_ERROR", "Failed to save registration account to database"), 500);
   }
 
   if (!registeredAccount) {
-    return c.json(error("DATABASE_ERROR", "Pendaftaran akaun gagal diproses"), 500);
+    return c.json(error("DATABASE_ERROR", "Failed to process account registration"), 500);
   }
 
   // Also initialize tenant_customizations row with couple names parsed from weddingName
@@ -241,7 +241,7 @@ authRoute.post("/login", async (c) => {
 
   if (!parsed.success) {
     return c.json(
-      error("VALIDATION_ERROR", "Sila masukkan username atau emel berserta kata laluan", parsed.error.flatten()),
+      error("VALIDATION_ERROR", "Please enter your username or email and password", parsed.error.flatten()),
       400
     );
   }
@@ -266,7 +266,7 @@ authRoute.post("/login", async (c) => {
       .limit(1);
   } catch (err: any) {
     console.error("Database query failed in /login:", err);
-    return c.json(error("DATABASE_ERROR", "Ralat menyemak pangkalan data akaun"), 500);
+    return c.json(error("DATABASE_ERROR", "Failed to check account database"), 500);
   }
 
   const tenant = tenantList[0];
@@ -275,7 +275,7 @@ authRoute.post("/login", async (c) => {
     return c.json(
       error(
         "INVALID_CREDENTIALS",
-        "Akaun tidak dijumpai dengan username atau emel yang diberikan. Sila semak pendaftaran anda."
+        "No account found with the provided username or email. Please verify your registration."
       ),
       401
     );
@@ -288,7 +288,7 @@ authRoute.post("/login", async (c) => {
     return c.json(
       error(
         "INVALID_CREDENTIALS",
-        "Kata laluan atau PIN yang dimasukkan tidak tepat dengan pendaftaran akaun anda. Sila cuba lagi."
+        "The password or PIN entered does not match your registered account. Please try again."
       ),
       401
     );
@@ -310,7 +310,7 @@ authRoute.post("/login", async (c) => {
 
   // Check if subscription plan has not started yet
   if (tenant.planStartDate && now.getTime() < new Date(tenant.planStartDate).getTime()) {
-    const startFormatted = new Date(tenant.planStartDate).toLocaleString("ms-MY", {
+    const startFormatted = new Date(tenant.planStartDate).toLocaleString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -320,7 +320,7 @@ authRoute.post("/login", async (c) => {
     return c.json(
       error(
         "PLAN_NOT_STARTED",
-        `Akaun dan galeri anda dijadualkan bermula pada ${startFormatted}. Anda boleh mula log masuk dan mengakses portal pada waktu tersebut.`
+        `Your account and gallery are scheduled to start on ${startFormatted}. You can log in and access the portal at that time.`
       ),
       403
     );
@@ -354,17 +354,17 @@ authRoute.post("/login", async (c) => {
     }
 
     const expiryFormatted = tenant.planExpiresAt
-      ? new Date(tenant.planExpiresAt).toLocaleDateString("ms-MY", {
+      ? new Date(tenant.planExpiresAt).toLocaleDateString("en-US", {
           day: "numeric",
           month: "short",
           year: "numeric",
         })
-      : "baru-baru ini";
+      : "recently";
 
     return c.json(
       error(
         "PLAN_EXPIRED",
-        `Tempoh pelan langganan Sub-Admin anda telah tamat pada ${expiryFormatted}. Galeri anda disimpan selama 3 hari. Sila hubungi Super Admin untuk menyambung akses portal.`
+        `Your Sub-Admin subscription plan expired on ${expiryFormatted}. Your gallery is preserved for 3 days. Please contact Super Admin to extend portal access.`
       ),
       403
     );

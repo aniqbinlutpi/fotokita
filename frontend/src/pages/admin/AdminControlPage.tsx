@@ -14,7 +14,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, UserPlus, Plus } from "lucide-react";
+import { RefreshCw, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLogin } from "@/components/admin/AdminLogin";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -30,7 +30,6 @@ import { AdminSystemServices } from "./AdminSystemServices";
 // Dialogs
 import { CreateInviteDialog, type ReceiptUploadFile } from "./dialogs/CreateInviteDialog";
 import { ViewReceiptDialog } from "./dialogs/ViewReceiptDialog";
-import { CreateWeddingDialog } from "./dialogs/CreateWeddingDialog";
 import { DeleteWeddingDialog } from "./dialogs/DeleteWeddingDialog";
 
 // APIs & Types
@@ -64,8 +63,6 @@ import {
 } from "@/api/admin";
 import {
   getWeddings,
-  createWedding,
-  checkSlugAvailability,
 } from "@/api/wedding";
 import type { Wedding } from "@/types/wedding";
 
@@ -119,13 +116,6 @@ export function AdminControlPage({
   const [viewReceiptInvite, setViewReceiptInvite] = useState<AdminInvite | null>(null);
   const [isViewReceiptOpen, setIsViewReceiptOpen] = useState(false);
 
-  // Create wedding modal states
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newWeddingName, setNewWeddingName] = useState("");
-  const [newWeddingSlug, setNewWeddingSlug] = useState("");
-  const [newWeddingDate, setNewWeddingDate] = useState("");
-  const [slugStatus, setSlugStatus] = useState<{ available?: boolean; message?: string } | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
 
   // Delete wedding confirmation
   const [weddingToDelete, setWeddingToDelete] = useState<Wedding | null>(null);
@@ -431,64 +421,6 @@ export function AdminControlPage({
     setTimeout(() => setCopiedInviteId(null), 2000);
   };
 
-  // Wedding operations
-  const handleNameChange = (name: string) => {
-    setNewWeddingName(name);
-    const generatedSlug = name
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    setNewWeddingSlug(generatedSlug);
-    if (generatedSlug) {
-      checkSlug(generatedSlug);
-    } else {
-      setSlugStatus(null);
-    }
-  };
-
-  const checkSlug = async (slug: string) => {
-    if (!slug || slug.length < 3) {
-      setSlugStatus({ available: false, message: "URL slug must be at least 3 characters" });
-      return;
-    }
-    try {
-      const res = await checkSlugAvailability(slug);
-      setSlugStatus(res);
-    } catch {
-      setSlugStatus(null);
-    }
-  };
-
-  const handleCreateWedding = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newWeddingName || !newWeddingSlug || !newWeddingDate) {
-      toast.error("Please fill in all wedding details.");
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      const created = await createWedding({
-        name: newWeddingName.trim(),
-        slug: newWeddingSlug.trim(),
-        date: new Date(newWeddingDate).toISOString(),
-      });
-
-      setWeddings((prev) => [created, ...prev]);
-      toast.success(`Wedding "${created.name}" created successfully!`);
-      setIsCreateOpen(false);
-      setNewWeddingName("");
-      setNewWeddingSlug("");
-      setNewWeddingDate("");
-      setSlugStatus(null);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create wedding");
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   const confirmDeleteWedding = async (adminPassword: string) => {
     if (!weddingToDelete) return;
@@ -682,17 +614,6 @@ export function AdminControlPage({
                 <UserPlus className="size-3.5 shrink-0" />
                 <span className="hidden sm:inline">Invite</span>
               </Button>
-
-              <Button
-                size="sm"
-                onClick={() => setIsCreateOpen(true)}
-                className="h-8 px-2.5 sm:px-3 text-xs cursor-pointer shrink-0 gap-1 font-medium bg-primary text-primary-foreground"
-                title="Create new wedding event"
-              >
-                <Plus className="size-3.5 shrink-0" />
-                <span className="hidden sm:inline">Create </span>
-                <span>Wedding</span>
-              </Button>
             </div>
           </header>
 
@@ -768,7 +689,6 @@ export function AdminControlPage({
                 onCopyLink={handleCopyLink}
                 onViewGallery={handleViewGallery}
                 onDeleteWedding={(w) => setWeddingToDelete(w)}
-                onOpenCreateWedding={() => setIsCreateOpen(true)}
                 onTogglePreserveMedia={handleTogglePreserveMedia}
                 onTriggerCleanup={handleTriggerCleanup}
                 isCleaningUp={isCleaningUp}
@@ -827,22 +747,6 @@ export function AdminControlPage({
         invite={viewReceiptInvite}
       />
 
-      <CreateWeddingDialog
-        open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
-        weddingName={newWeddingName}
-        onWeddingNameChange={handleNameChange}
-        weddingSlug={newWeddingSlug}
-        onWeddingSlugChange={(slug) => {
-          setNewWeddingSlug(slug);
-          checkSlug(slug);
-        }}
-        weddingDate={newWeddingDate}
-        onWeddingDateChange={setNewWeddingDate}
-        slugStatus={slugStatus}
-        isCreating={isCreating}
-        onSubmit={handleCreateWedding}
-      />
 
       <DeleteWeddingDialog
         wedding={weddingToDelete}
