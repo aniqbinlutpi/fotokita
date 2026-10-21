@@ -21,10 +21,8 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 // Tab Sub-pages
 import { AdminDashboard } from "./AdminDashboard";
-import { AdminInquiries } from "./AdminInquiries";
+import { AdminWeddingsHub, type WeddingsHubSubTab } from "./AdminWeddingsHub";
 import { AdminVouchers } from "./AdminVouchers";
-import { AdminTenantInvites } from "./AdminTenantInvites";
-import { AdminWeddings } from "./AdminWeddings";
 import { AdminSystemServices } from "./AdminSystemServices";
 
 // Dialogs
@@ -85,8 +83,24 @@ export function AdminControlPage({
 
   // Navigation tab
   const [activeTab, setActiveTab] = useState<
-    "overview" | "inquiries" | "vouchers" | "invites" | "weddings" | "system"
+    "overview" | "weddings" | "vouchers" | "system"
   >("overview");
+  const [weddingsSubTab, setWeddingsSubTab] = useState<WeddingsHubSubTab>("weddings");
+
+  const handleNavigateTab = (tab: "overview" | "inquiries" | "invites" | "weddings" | "system" | "vouchers") => {
+    if (tab === "inquiries") {
+      setActiveTab("weddings");
+      setWeddingsSubTab("inquiries");
+    } else if (tab === "invites") {
+      setActiveTab("weddings");
+      setWeddingsSubTab("invites");
+    } else if (tab === "weddings") {
+      setActiveTab("weddings");
+      setWeddingsSubTab("weddings");
+    } else {
+      setActiveTab(tab as any);
+    }
+  };
 
   // Data states
   const [weddings, setWeddings] = useState<Wedding[]>([]);
@@ -465,16 +479,57 @@ export function AdminControlPage({
       // 1. Verify Super Admin password before critical destructive purge
       await verifyAdminPassword(adminPassword);
 
-      // 2. Perform full cascade purge
+      // 2. Perform full cascade purge of media, tenant accounts, and wedding record
       await purgeEntireWedding(weddingToDelete.id);
+
+      // 3. Find and delete associated onboarding invites for this wedding
+      const matchingInvites = invites.filter(
+        (inv) => inv.registrationDetails?.weddingId === weddingToDelete.id
+      );
+      for (const inv of matchingInvites) {
+        try {
+          await deleteAdminInvite(inv.id);
+        } catch (e) {
+          console.warn("Could not delete associated invite:", e);
+        }
+      }
+
+      // 4. Find and delete associated customer inquiries for this couple/wedding
+      const tenantAcc = tenantAccounts[weddingToDelete.id];
+      const usernameToMatch = tenantAcc?.username?.toLowerCase();
+      const matchingInquiries = inquiries.filter(
+        (inq) =>
+          (usernameToMatch && inq.username.toLowerCase() === usernameToMatch) ||
+          matchingInvites.some(
+            (inv) =>
+              (inv.clientName && inv.clientName.toLowerCase() === inq.username.toLowerCase()) ||
+              (inv.clientPhone && inq.phone && inv.clientPhone.replace(/\D/g, "") === inq.phone.replace(/\D/g, ""))
+          )
+      );
+      for (const inq of matchingInquiries) {
+        try {
+          await deleteAdminInquiry(inq.id);
+        } catch (e) {
+          console.warn("Could not delete associated inquiry:", e);
+        }
+      }
+
+      // 5. Update local state across all tabs
       setWeddings((prev) => prev.filter((w) => w.id !== weddingToDelete.id));
       setTenantAccounts((prev) => {
         const next = { ...prev };
         delete next[weddingToDelete.id];
         return next;
       });
+      setInvites((prev) =>
+        prev.filter((inv) => inv.registrationDetails?.weddingId !== weddingToDelete.id)
+      );
+      setInquiries((prev) =>
+        prev.filter((inq) => !matchingInquiries.some((mi) => mi.id === inq.id))
+      );
+
       toast.success(
-        `Wedding "${weddingToDelete.name}" and all associated storage files & accounts have been permanently purged`
+        `Wedding "${weddingToDelete.name}" and all associated storage files, accounts, invites & inquiries have been permanently purged`
       );
       setWeddingToDelete(null);
     } catch (err: any) {
@@ -566,7 +621,7 @@ export function AdminControlPage({
         {/* Sidebar */}
         <AdminSidebar
           activeTab={activeTab}
-          onSelectTab={setActiveTab}
+          onSelectTab={handleNavigateTab}
           adminUser={adminUser}
           onLogout={handleLogout}
           onBackHome={onNavigateHome}
@@ -584,10 +639,14 @@ export function AdminControlPage({
               {/* Mobile concise label */}
               <span className="text-xs font-semibold truncate sm:hidden">
                 {activeTab === "overview" && "Dashboard"}
-                {activeTab === "inquiries" && "Inquiries"}
+                {activeTab === "weddings" && (
+                  weddingsSubTab === "weddings"
+                    ? "Weddings"
+                    : weddingsSubTab === "inquiries"
+                    ? "Inquiries"
+                    : "Invites"
+                )}
                 {activeTab === "vouchers" && "Vouchers"}
-                {activeTab === "invites" && "Invites"}
-                {activeTab === "weddings" && "Weddings"}
                 {activeTab === "system" && "System"}
               </span>
               {/* Desktop breadcrumb */}
@@ -609,10 +668,15 @@ export function AdminControlPage({
                   <BreadcrumbItem className="min-w-0">
                     <BreadcrumbPage className="capitalize text-xs truncate">
                       {activeTab === "overview" && "Dashboard Overview"}
-                      {activeTab === "inquiries" && "Customer Inquiries (WhatsApp Leads)"}
+                      {activeTab === "weddings" && (
+                        <span>
+                          Weddings &amp; Clients
+                          <span className="text-muted-foreground font-normal ml-1">
+                            • {weddingsSubTab === "weddings" ? "Live Weddings" : weddingsSubTab === "inquiries" ? "Customer Inquiries" : "Onboarding Invites"}
+                          </span>
+                        </span>
+                      )}
                       {activeTab === "vouchers" && "Vouchers & Promotional Deals"}
-                      {activeTab === "invites" && "Tenant Invites (24h Single-Use)"}
-                      {activeTab === "weddings" && "Weddings Management"}
                       {activeTab === "system" && "System & Services"}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -666,28 +730,45 @@ export function AdminControlPage({
                 copiedId={copiedId}
                 onCopyLink={handleCopyLink}
                 onViewGallery={handleViewGallery}
-                onNavigateToTab={setActiveTab}
+                onNavigateToTab={handleNavigateTab}
               />
             )}
 
-            {activeTab === "inquiries" && (
-              <AdminInquiries
+            {activeTab === "weddings" && (
+              <AdminWeddingsHub
+                subTab={weddingsSubTab}
+                onSubTabChange={setWeddingsSubTab}
+                weddings={weddings}
+                tenantAccounts={tenantAccounts}
+                copiedId={copiedId}
+                onCopyLink={handleCopyLink}
+                onViewGallery={handleViewGallery}
+                onDeleteWedding={(w) => setWeddingToDelete(w)}
+                onTogglePreserveMedia={handleTogglePreserveMedia}
+                onTriggerCleanup={handleTriggerCleanup}
+                isCleaningUp={isCleaningUp}
                 inquiries={inquiries}
-                invites={invites}
                 inquiryFilter={inquiryFilter}
-                onFilterChange={setInquiryFilter}
+                onInquiryFilterChange={setInquiryFilter}
                 isUpdatingInquiryId={isUpdatingInquiryId}
-                onUpdateStatus={handleUpdateInquiryStatus}
+                onUpdateInquiryStatus={handleUpdateInquiryStatus}
                 onDeleteInquiry={handleDeleteInquiry}
                 onConvertInquiry={handleConvertInquiryToInvite}
-                onRefresh={fetchData}
-                isRefreshing={isRefreshing}
+                invites={invites}
+                copiedInviteId={copiedInviteId}
                 onCopyInviteUrl={handleCopyInviteUrl}
+                onDeleteInvite={handleDeleteInvite}
+                onViewReceipt={(inv) => {
+                  setViewReceiptInvite(inv);
+                  setIsViewReceiptOpen(true);
+                }}
                 onOpenCreateInvite={() => {
                   setConvertingInquiryId(null);
                   setNewlyCreatedInvite(null);
                   setIsCreateInviteOpen(true);
                 }}
+                onRefresh={fetchData}
+                isRefreshing={isRefreshing}
               />
             )}
 
@@ -699,38 +780,6 @@ export function AdminControlPage({
                 onCreateVoucher={handleCreateVoucher}
                 onToggleStatus={handleToggleVoucherStatus}
                 onDeleteVoucher={handleDeleteVoucher}
-              />
-            )}
-
-            {activeTab === "invites" && (
-              <AdminTenantInvites
-                invites={invites}
-                copiedInviteId={copiedInviteId}
-                onCopyInviteUrl={handleCopyInviteUrl}
-                onDeleteInvite={handleDeleteInvite}
-                onOpenCreateInvite={() => {
-                  setNewlyCreatedInvite(null);
-                  setReceiptFile(null);
-                  setIsCreateInviteOpen(true);
-                }}
-                onViewReceipt={(inv) => {
-                  setViewReceiptInvite(inv);
-                  setIsViewReceiptOpen(true);
-                }}
-              />
-            )}
-
-            {activeTab === "weddings" && (
-              <AdminWeddings
-                weddings={weddings}
-                tenantAccounts={tenantAccounts}
-                copiedId={copiedId}
-                onCopyLink={handleCopyLink}
-                onViewGallery={handleViewGallery}
-                onDeleteWedding={(w) => setWeddingToDelete(w)}
-                onTogglePreserveMedia={handleTogglePreserveMedia}
-                onTriggerCleanup={handleTriggerCleanup}
-                isCleaningUp={isCleaningUp}
               />
             )}
 

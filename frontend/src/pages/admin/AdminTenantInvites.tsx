@@ -39,6 +39,7 @@ import {
 import { toast } from "sonner";
 
 interface AdminTenantInvitesProps {
+  hideHeader?: boolean;
   invites: AdminInvite[];
   copiedInviteId: string | null;
   onCopyInviteUrl: (token: string, id: string) => void;
@@ -48,6 +49,7 @@ interface AdminTenantInvitesProps {
 }
 
 export function AdminTenantInvites({
+  hideHeader = false,
   invites,
   copiedInviteId,
   onCopyInviteUrl,
@@ -57,23 +59,25 @@ export function AdminTenantInvites({
 }: AdminTenantInvitesProps) {
   return (
     <div className="space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Tenant Invites &amp; Onboarding
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Generate exclusive registration links (24h validity &amp; single-use) based on client&apos;s chosen subscription package after payment.
-          </p>
+      {!hideHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Tenant Invites &amp; Onboarding
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Generate exclusive registration links (24h validity &amp; single-use) based on client&apos;s chosen subscription package after payment.
+            </p>
+          </div>
+          <Button
+            onClick={onOpenCreateInvite}
+            className="gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            <UserPlus className="size-4" />
+            <span>Generate New Link</span>
+          </Button>
         </div>
-        <Button
-          onClick={onOpenCreateInvite}
-          className="gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
-        >
-          <UserPlus className="size-4" />
-          <span>Generate New Link</span>
-        </Button>
-      </div>
+      )}
 
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 min-w-0">

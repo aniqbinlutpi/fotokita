@@ -40,6 +40,7 @@ import { getCustomerWhatsAppDirectUrl } from "./utils";
 import { toast } from "sonner";
 
 interface AdminInquiriesProps {
+  hideHeader?: boolean;
   inquiries: CustomerInquiry[];
   invites?: AdminInvite[];
   inquiryFilter: "all" | "pending" | "contacted" | "sent" | "registered" | "converted";
@@ -55,6 +56,7 @@ interface AdminInquiriesProps {
 }
 
 export function AdminInquiries({
+  hideHeader = false,
   inquiries,
   invites,
   inquiryFilter,
@@ -130,38 +132,40 @@ export function AdminInquiries({
 
   return (
     <div className="space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Customer Inquiries
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Prospective customers who initiated WhatsApp contact from pricing plans. Track conversation status, issue 24-hour registration links, and monitor completed tenant registrations.
-          </p>
+      {!hideHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Customer Inquiries
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Prospective customers who initiated WhatsApp contact from pricing plans. Track conversation status, issue 24-hour registration links, and monitor completed tenant registrations.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="gap-1.5 text-xs h-9 cursor-pointer"
+            >
+              <RefreshCw
+                className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              <span>Refresh</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={onOpenCreateInvite}
+              className="gap-1.5 text-xs h-9 cursor-pointer"
+            >
+              <UserPlus className="size-3.5" />
+              <span>Generate Invite</span>
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="gap-1.5 text-xs h-9 cursor-pointer"
-          >
-            <RefreshCw
-              className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            <span>Refresh</span>
-          </Button>
-          <Button
-            size="sm"
-            onClick={onOpenCreateInvite}
-            className="gap-1.5 text-xs h-9 cursor-pointer"
-          >
-            <UserPlus className="size-3.5" />
-            <span>Generate Invite</span>
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-4 min-w-0">
