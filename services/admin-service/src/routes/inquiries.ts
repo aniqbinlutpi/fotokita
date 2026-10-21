@@ -108,12 +108,12 @@ inquiriesRoute.get("/", requireAdminAuth, async (c) => {
 inquiriesRoute.patch("/:id", requireAdminAuth, async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => ({}))) as {
-    status?: "pending" | "contacted" | "converted";
+    status?: "pending" | "contacted" | "sent" | "registered" | "converted";
     notes?: string;
   };
 
   const status = body.status;
-  if (status && !["pending", "contacted", "converted"].includes(status)) {
+  if (status && !["pending", "contacted", "sent", "registered", "converted"].includes(status)) {
     return c.json(error("VALIDATION_ERROR", "Invalid inquiry status"), 400);
   }
 

@@ -58,6 +58,7 @@ import {
   type AdminInvite,
   type SubscriptionTier,
   type CustomerInquiry,
+  type InquiryStatus,
   type AdminVoucher,
   type AdminTenantAccount,
 } from "@/api/admin";
@@ -93,9 +94,10 @@ export function AdminControlPage({
   const [inquiries, setInquiries] = useState<CustomerInquiry[]>([]);
   const [vouchers, setVouchers] = useState<AdminVoucher[]>([]);
   const [inquiryFilter, setInquiryFilter] = useState<
-    "all" | "pending" | "contacted" | "converted"
+    "all" | "pending" | "contacted" | "sent" | "registered" | "converted"
   >("all");
   const [isUpdatingInquiryId, setIsUpdatingInquiryId] = useState<string | null>(null);
+  const [convertingInquiryId, setConvertingInquiryId] = useState<string | null>(null);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -285,7 +287,7 @@ export function AdminControlPage({
   // Inquiry operations
   const handleUpdateInquiryStatus = async (
     id: string,
-    status: "pending" | "contacted" | "converted"
+    status: InquiryStatus
   ) => {
     setIsUpdatingInquiryId(id);
     try {
@@ -310,6 +312,7 @@ export function AdminControlPage({
   };
 
   const handleConvertInquiryToInvite = (inquiry: CustomerInquiry) => {
+    setConvertingInquiryId(inquiry.id);
     setInviteClientName(inquiry.username);
     setInviteClientPhone(inquiry.phone || "");
     setInviteWeddingDate(inquiry.weddingDate || "");
@@ -396,6 +399,39 @@ export function AdminControlPage({
       setInvites((prev) => [res.invite, ...prev]);
       setNewlyCreatedInvite(res.invite);
       toast.success("24-hour single-use invite link created successfully!");
+
+      // Auto-update inquiry status to 'sent'
+      if (convertingInquiryId) {
+        try {
+          await updateAdminInquiryStatus(convertingInquiryId, "sent");
+          setInquiries((prev) =>
+            prev.map((inq) =>
+              inq.id === convertingInquiryId ? { ...inq, status: "sent" } : inq
+            )
+          );
+        } catch (e) {
+          console.warn("Could not auto-update converting inquiry to sent:", e);
+        }
+        setConvertingInquiryId(null);
+      } else {
+        const cleanName = inviteClientName.trim().toLowerCase();
+        const cleanPhone = inviteClientPhone.replace(/\D/g, "");
+        const matched = inquiries.find(
+          (i) =>
+            (cleanName && i.username.toLowerCase() === cleanName) ||
+            (cleanPhone && i.phone.replace(/\D/g, "") === cleanPhone)
+        );
+        if (matched && (matched.status === "pending" || matched.status === "contacted")) {
+          try {
+            await updateAdminInquiryStatus(matched.id, "sent");
+            setInquiries((prev) =>
+              prev.map((inq) => (inq.id === matched.id ? { ...inq, status: "sent" } : inq))
+            );
+          } catch (e) {
+            console.warn("Could not auto-update matched inquiry to sent:", e);
+          }
+        }
+      }
     } catch (err: any) {
       toast.error(err?.message || "Failed to create invite link");
     } finally {
@@ -637,6 +673,7 @@ export function AdminControlPage({
             {activeTab === "inquiries" && (
               <AdminInquiries
                 inquiries={inquiries}
+                invites={invites}
                 inquiryFilter={inquiryFilter}
                 onFilterChange={setInquiryFilter}
                 isUpdatingInquiryId={isUpdatingInquiryId}
@@ -645,7 +682,9 @@ export function AdminControlPage({
                 onConvertInquiry={handleConvertInquiryToInvite}
                 onRefresh={fetchData}
                 isRefreshing={isRefreshing}
+                onCopyInviteUrl={handleCopyInviteUrl}
                 onOpenCreateInvite={() => {
+                  setConvertingInquiryId(null);
                   setNewlyCreatedInvite(null);
                   setIsCreateInviteOpen(true);
                 }}
