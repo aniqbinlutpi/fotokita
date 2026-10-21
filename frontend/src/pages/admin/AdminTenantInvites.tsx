@@ -2,7 +2,6 @@ import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardContent,
 } from "@/components/ui/card";
 import {
@@ -80,68 +79,68 @@ export function AdminTenantInvites({
       )}
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 min-w-0">
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 min-w-0">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Total Links
             </CardTitle>
-            <Sparkles className="size-3.5 sm:size-4 text-accent shrink-0" />
+            <Sparkles className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{invites.length}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{invites.length}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               All records
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Active Links
             </CardTitle>
-            <Clock className="size-3.5 sm:size-4 text-emerald-500 shrink-0" />
+            <Clock className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {invites.filter((i) => i.status === "active").length}
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               24h Window
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Registered
             </CardTitle>
-            <CheckCircle2 className="size-3.5 sm:size-4 text-blue-500 shrink-0" />
+            <CheckCircle2 className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {invites.filter((i) => i.status === "used").length}
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               Used tokens
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Expired
             </CardTitle>
-            <AlertTriangle className="size-3.5 sm:size-4 text-amber-500 shrink-0" />
+            <AlertTriangle className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {invites.filter((i) => i.status === "expired").length}
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               Past 24 hours
             </p>
           </CardContent>
@@ -150,13 +149,15 @@ export function AdminTenantInvites({
 
       {/* Invites Table */}
       <Card className="shadow-xs overflow-hidden min-w-0 w-full max-w-full">
-        <CardHeader className="min-w-0">
-          <CardTitle className="text-base font-semibold">
-            Tenant Registration Links Directory
-          </CardTitle>
-          <CardDescription>
-            Subscription packages, single-use token validity, and registered tenant profiles.
-          </CardDescription>
+        <CardHeader className="p-3.5 sm:p-4 border-b min-w-0">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm sm:text-base font-semibold">
+              Registration Links Directory
+            </CardTitle>
+            <span className="text-xs text-muted-foreground font-mono">
+              ({invites.length})
+            </span>
+          </div>
         </CardHeader>
         <CardContent className="p-0 overflow-hidden min-w-0 max-w-full">
           <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">

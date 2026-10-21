@@ -1,14 +1,11 @@
+import { cn } from "@/lib/utils";
 import {
   Heart,
   MessageSquare,
   UserPlus,
-  RefreshCw,
   Trash2,
-  ArrowRight,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { WeddingsDataTable } from "@/components/admin/WeddingsDataTable";
 import { AdminInquiries } from "./AdminInquiries";
 import { AdminTenantInvites } from "./AdminTenantInvites";
@@ -87,205 +84,151 @@ export function AdminWeddingsHub({
   const activeInvitesCount = invites.filter((i) => i.status === "active").length;
 
   return (
-    <div className="space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
-      {/* Header & Global Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-4 sm:space-y-5 w-full max-w-full min-w-0 overflow-x-clip">
+      {/* Minimal Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Weddings &amp; Client Hub
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+            Weddings &amp; Clients
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Complete lifecycle management: Track WhatsApp inquiries, generate 24-hour onboarding links, and oversee live wedding galleries.
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Track WhatsApp inquiries, issue 24-hour onboarding links, and oversee live wedding galleries.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {subTab === "weddings" && onTriggerCleanup && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onTriggerCleanup}
-              disabled={isCleaningUp}
-              className="gap-1.5 text-xs h-9 cursor-pointer text-muted-foreground hover:text-foreground"
-              title="Scan and delete expired images (past retention period)"
-            >
-              <Trash2 className="size-3.5" />
-              <span>{isCleaningUp ? "Cleaning..." : "Retention Cleanup"}</span>
-            </Button>
-          )}
+        {subTab === "weddings" && onTriggerCleanup && (
           <Button
             variant="outline"
             size="sm"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="gap-1.5 text-xs h-9 cursor-pointer"
+            onClick={onTriggerCleanup}
+            disabled={isCleaningUp}
+            className="h-8 gap-1.5 text-xs cursor-pointer text-muted-foreground hover:text-foreground self-start sm:self-auto shrink-0"
+            title="Scan and delete expired images (past retention period)"
           >
-            <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
+            <Trash2 className="size-3.5" />
+            <span>{isCleaningUp ? "Cleaning..." : "Retention Cleanup"}</span>
           </Button>
-          <Button
-            size="sm"
-            onClick={onOpenCreateInvite}
-            className="gap-1.5 text-xs h-9 cursor-pointer"
-          >
-            <UserPlus className="size-3.5" />
-            <span>Generate Invite</span>
-          </Button>
-        </div>
+        )}
       </div>
 
-      {/* 3-Step Lifecycle Pipeline Funnel Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-w-0">
-        {/* Step 1: Inquiries */}
-        <Card
-          onClick={() => onSubTabChange("inquiries")}
-          className={`cursor-pointer transition-all border shadow-xs hover:border-amber-500/50 ${
-            subTab === "inquiries"
-              ? "bg-amber-500/10 border-amber-500/40 ring-1 ring-amber-500/30"
-              : "bg-card hover:bg-muted/30"
-          }`}
-        >
-          <CardContent className="p-3.5 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="size-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 font-bold text-xs">
-                1
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-foreground truncate">
-                    1. Inquiries &amp; Leads
-                  </span>
-                  {pendingInquiriesCount > 0 && (
-                    <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white shrink-0">
-                      {pendingInquiriesCount} new
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {inquiries.length} leads • WhatsApp requests
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="size-4 text-muted-foreground shrink-0 hidden sm:block opacity-60" />
-          </CardContent>
-        </Card>
-
-        {/* Step 2: Invites */}
-        <Card
-          onClick={() => onSubTabChange("invites")}
-          className={`cursor-pointer transition-all border shadow-xs hover:border-blue-500/50 ${
-            subTab === "invites"
-              ? "bg-blue-500/10 border-blue-500/40 ring-1 ring-blue-500/30"
-              : "bg-card hover:bg-muted/30"
-          }`}
-        >
-          <CardContent className="p-3.5 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="size-9 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 font-bold text-xs">
-                2
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-foreground truncate">
-                    2. Onboarding Invites
-                  </span>
-                  {activeInvitesCount > 0 && (
-                    <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-600 text-white shrink-0">
-                      {activeInvitesCount} active
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {invites.length} links • 24h validity tokens
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="size-4 text-muted-foreground shrink-0 hidden sm:block opacity-60" />
-          </CardContent>
-        </Card>
-
-        {/* Step 3: Active Weddings */}
-        <Card
-          onClick={() => onSubTabChange("weddings")}
-          className={`cursor-pointer transition-all border shadow-xs hover:border-emerald-500/50 ${
-            subTab === "weddings"
-              ? "bg-emerald-500/10 border-emerald-500/40 ring-1 ring-emerald-500/30"
-              : "bg-card hover:bg-muted/30"
-          }`}
-        >
-          <CardContent className="p-3.5 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="size-9 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-bold text-xs">
-                3
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-foreground truncate">
-                    3. Live Weddings
-                  </span>
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
-                    <Sparkles className="size-2.5" />
-                    Active
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {weddings.length} registered wedding galleries
-                </p>
-              </div>
-            </div>
-            <Heart className="size-4 text-emerald-500 shrink-0" />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Segmented Sub-Tab Switcher */}
-      <div className="flex items-center gap-1 p-1 bg-muted/40 rounded-xl border w-fit max-w-full overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => onSubTabChange("weddings")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
-            subTab === "weddings"
-              ? "bg-background text-foreground shadow-xs font-semibold"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Heart className="size-3.5 text-accent" />
-          <span>Live Weddings ({weddings.length})</span>
-        </button>
-
+      {/* Sleek, Compact 3-Step Lifecycle Card Bar (Acts as the View Selector) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 min-w-0">
+        {/* Step 1: Inquiries & Leads */}
         <button
           type="button"
           onClick={() => onSubTabChange("inquiries")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+          className={cn(
+            "flex items-center justify-between p-2.5 sm:px-3.5 sm:py-2.5 rounded-lg border text-left transition-all cursor-pointer",
             subTab === "inquiries"
-              ? "bg-background text-foreground shadow-xs font-semibold"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+              ? "bg-background border-amber-500/50 shadow-xs ring-1 ring-amber-500/20"
+              : "bg-muted/20 border-border/40 hover:bg-muted/40 hover:border-border"
+          )}
         >
-          <MessageSquare className="size-3.5 text-blue-500" />
-          <span>Inquiries ({inquiries.length})</span>
-          {pendingInquiriesCount > 0 && (
-            <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
-              {pendingInquiriesCount}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className={cn(
+                "flex size-6 items-center justify-center rounded-md text-[11px] font-bold shrink-0 transition-colors",
+                subTab === "inquiries"
+                  ? "bg-amber-500 text-white"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              1
             </span>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-foreground truncate">
+                Inquiries &amp; Leads
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {inquiries.length} {inquiries.length === 1 ? "lead" : "leads"}
+              </div>
+            </div>
+          </div>
+          {pendingInquiriesCount > 0 ? (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shrink-0">
+              {pendingInquiriesCount} new
+            </span>
+          ) : (
+            <MessageSquare className="size-3.5 text-muted-foreground/60 shrink-0" />
           )}
         </button>
 
+        {/* Step 2: Onboarding Invites */}
         <button
           type="button"
           onClick={() => onSubTabChange("invites")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+          className={cn(
+            "flex items-center justify-between p-2.5 sm:px-3.5 sm:py-2.5 rounded-lg border text-left transition-all cursor-pointer",
             subTab === "invites"
-              ? "bg-background text-foreground shadow-xs font-semibold"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <UserPlus className="size-3.5 text-purple-500" />
-          <span>Onboarding Invites ({invites.length})</span>
-          {activeInvitesCount > 0 && (
-            <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-600 text-white">
-              {activeInvitesCount}
-            </span>
+              ? "bg-background border-blue-500/50 shadow-xs ring-1 ring-blue-500/20"
+              : "bg-muted/20 border-border/40 hover:bg-muted/40 hover:border-border"
           )}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className={cn(
+                "flex size-6 items-center justify-center rounded-md text-[11px] font-bold shrink-0 transition-colors",
+                subTab === "invites"
+                  ? "bg-blue-600 text-white"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              2
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-foreground truncate">
+                Onboarding Invites
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {invites.length} {invites.length === 1 ? "link" : "links"}
+              </div>
+            </div>
+          </div>
+          {activeInvitesCount > 0 ? (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shrink-0">
+              {activeInvitesCount} active
+            </span>
+          ) : (
+            <UserPlus className="size-3.5 text-muted-foreground/60 shrink-0" />
+          )}
+        </button>
+
+        {/* Step 3: Live Weddings */}
+        <button
+          type="button"
+          onClick={() => onSubTabChange("weddings")}
+          className={cn(
+            "flex items-center justify-between p-2.5 sm:px-3.5 sm:py-2.5 rounded-lg border text-left transition-all cursor-pointer",
+            subTab === "weddings"
+              ? "bg-background border-emerald-500/50 shadow-xs ring-1 ring-emerald-500/20"
+              : "bg-muted/20 border-border/40 hover:bg-muted/40 hover:border-border"
+          )}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className={cn(
+                "flex size-6 items-center justify-center rounded-md text-[11px] font-bold shrink-0 transition-colors",
+                subTab === "weddings"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              3
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-foreground truncate">
+                Live Weddings
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {weddings.length} {weddings.length === 1 ? "gallery" : "galleries"}
+              </div>
+            </div>
+          </div>
+          <Heart
+            className={cn(
+              "size-3.5 shrink-0 transition-colors",
+              subTab === "weddings" ? "text-emerald-500" : "text-muted-foreground/60"
+            )}
+          />
         </button>
       </div>
 

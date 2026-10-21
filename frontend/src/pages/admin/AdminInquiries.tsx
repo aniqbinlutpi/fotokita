@@ -3,7 +3,6 @@ import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardContent,
 } from "@/components/ui/card";
 import {
@@ -17,6 +16,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import {
   MessageSquare,
   Clock,
@@ -34,6 +39,8 @@ import {
   Send,
   ExternalLink,
   Copy,
+  Filter,
+  ChevronDown,
 } from "lucide-react";
 import type { CustomerInquiry, InquiryStatus, AdminInvite } from "@/api/admin";
 import { getCustomerWhatsAppDirectUrl } from "./utils";
@@ -168,102 +175,102 @@ export function AdminInquiries({
       )}
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-4 min-w-0">
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5 min-w-0">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Total Inquiries
             </CardTitle>
-            <MessageSquare className="size-3.5 sm:size-4 text-primary shrink-0" />
+            <MessageSquare className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold">{inquiries.length}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{inquiries.length}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               All leads
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Pending Action
             </CardTitle>
-            <Clock className="size-3.5 sm:size-4 text-amber-500 shrink-0" />
+            <Clock className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {pendingCount}
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               Awaiting reply
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Contacted
             </CardTitle>
-            <MessageCircle className="size-3.5 sm:size-4 text-blue-500 shrink-0" />
+            <MessageCircle className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {contactedCount}
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               Engaged WhatsApp
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Link Sent
             </CardTitle>
-            <Send className="size-3.5 sm:size-4 text-purple-500 shrink-0" />
+            <Send className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {sentCount}
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               Invite 24h issued
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs min-w-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+        <Card className="shadow-xs border-border/60 min-w-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Registered
             </CardTitle>
-            <CheckCircle2 className="size-3.5 sm:size-4 text-emerald-500 shrink-0" />
+            <CheckCircle2 className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {registeredCount}
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               Tenant onboarded
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs min-w-0 col-span-2 sm:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-2.5 sm:p-4">
-            <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground truncate">
+        <Card className="shadow-xs border-border/60 min-w-0 col-span-2 sm:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-3.5">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">
               Vouchers
             </CardTitle>
-            <Ticket className="size-3.5 sm:size-4 text-rose-500 shrink-0" />
+            <Ticket className="size-3.5 sm:size-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent className="p-2.5 sm:p-4 pt-0">
-            <div className="text-lg sm:text-2xl font-bold text-rose-600 dark:text-rose-400">
+          <CardContent className="p-3 sm:p-3.5 pt-0">
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {totalVouchered}
             </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               {totalVouchered > 0 ? `${Math.round((totalVouchered / (inquiries.length || 1)) * 100)}% claim rate` : "No vouchers"}
             </p>
           </CardContent>
@@ -272,118 +279,138 @@ export function AdminInquiries({
 
       {/* Filter and Table Card */}
       <Card className="shadow-xs overflow-hidden min-w-0 w-full max-w-full">
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-4 min-w-0">
-          <div>
-            <CardTitle className="text-base font-semibold">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 border-b min-w-0">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm sm:text-base font-semibold">
               Inquiries Directory
             </CardTitle>
-            <CardDescription>
-              Customer username, WhatsApp contact number, requested plan, promotional offers, and live onboarding status.
-            </CardDescription>
+            <span className="text-xs text-muted-foreground font-mono">
+              ({filteredInquiries.length})
+            </span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             {/* Search Input */}
-            <div className="relative w-full sm:w-56">
+            <div className="relative w-full sm:w-52">
               <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground pointer-events-none" />
               <Input
                 type="text"
-                placeholder="Search user, phone, voucher..."
+                placeholder="Search user, phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-8 pl-8 pr-2 text-xs bg-background"
               />
             </div>
 
-            {/* Status Filter Pills */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Button
-                size="sm"
-                variant={inquiryFilter === "all" ? "default" : "outline"}
-                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-                onClick={() => onFilterChange("all")}
+            {/* Status Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5 font-normal px-2.5 bg-background cursor-pointer justify-between"
+                  />
+                }
               >
-                All ({inquiries.length})
-              </Button>
-              <Button
-                size="sm"
-                variant={inquiryFilter === "pending" ? "default" : "outline"}
-                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-                onClick={() => onFilterChange("pending")}
+                <div className="flex items-center gap-1.5">
+                  <Filter className="size-3.5 text-muted-foreground" />
+                  <span>
+                    {inquiryFilter === "all" && `Status: All (${inquiries.length})`}
+                    {inquiryFilter === "pending" && `Status: Pending (${pendingCount})`}
+                    {inquiryFilter === "contacted" && `Status: Contacted (${contactedCount})`}
+                    {inquiryFilter === "sent" && `Status: Link Sent (${sentCount})`}
+                    {inquiryFilter === "registered" && `Status: Registered (${registeredCount})`}
+                  </span>
+                </div>
+                <ChevronDown className="size-3 text-muted-foreground ml-1 opacity-60" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 text-xs">
+                <DropdownMenuItem
+                  onClick={() => onFilterChange("all")}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>All Inquiries</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{inquiries.length}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onFilterChange("pending")}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>Pending</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{pendingCount}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onFilterChange("contacted")}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>Contacted</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{contactedCount}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onFilterChange("sent")}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>Link Sent</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{sentCount}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onFilterChange("registered")}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>Registered</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{registeredCount}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Pricing Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5 font-normal px-2.5 bg-background cursor-pointer justify-between"
+                  />
+                }
               >
-                Pending ({pendingCount})
-              </Button>
-              <Button
-                size="sm"
-                variant={inquiryFilter === "contacted" ? "default" : "outline"}
-                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-                onClick={() => onFilterChange("contacted")}
-              >
-                Contacted ({contactedCount})
-              </Button>
-              <Button
-                size="sm"
-                variant={inquiryFilter === "sent" ? "default" : "outline"}
-                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-                onClick={() => onFilterChange("sent")}
-              >
-                Link Sent ({sentCount})
-              </Button>
-              <Button
-                size="sm"
-                variant={inquiryFilter === "registered" ? "default" : "outline"}
-                className="h-7 text-xs px-2.5 rounded-full cursor-pointer"
-                onClick={() => onFilterChange("registered")}
-              >
-                Registered ({registeredCount})
-              </Button>
-            </div>
+                <div className="flex items-center gap-1.5">
+                  <Tag className="size-3.5 text-muted-foreground" />
+                  <span>
+                    {offerFilter === "all" && "Pricing: All"}
+                    {offerFilter === "offered" && `Vouchers (${totalVouchered})`}
+                    {offerFilter === "standard" && "Standard Price"}
+                  </span>
+                </div>
+                <ChevronDown className="size-3 text-muted-foreground ml-1 opacity-60" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 text-xs">
+                <DropdownMenuItem
+                  onClick={() => setOfferFilter("all")}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>All Pricing</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{inquiries.length}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setOfferFilter("offered")}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>With Voucher</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{totalVouchered}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setOfferFilter("standard")}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <span>Standard Price</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{inquiries.length - totalVouchered}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
-
-        {/* Offer Sub-Filter Bar */}
-        <div className="px-4 py-2 border-b bg-muted/20 flex items-center justify-between flex-wrap gap-2 text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground font-medium mr-1">Pricing Filter:</span>
-            <button
-              type="button"
-              onClick={() => setOfferFilter("all")}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                offerFilter === "all"
-                  ? "bg-primary text-primary-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              All Pricing ({inquiries.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setOfferFilter("offered")}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer flex items-center gap-1 ${
-                offerFilter === "offered"
-                  ? "bg-emerald-600 text-white font-semibold"
-                  : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-              }`}
-            >
-              <Tag className="size-3" />
-              <span>With Voucher ({totalVouchered})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setOfferFilter("standard")}
-              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                offerFilter === "standard"
-                  ? "bg-muted-foreground/30 text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              Standard Price ({inquiries.length - totalVouchered})
-            </button>
-          </div>
-          <span className="text-[11px] text-muted-foreground font-mono">
-            Showing {filteredInquiries.length} of {inquiries.length} leads
-          </span>
-        </div>
 
         <CardContent className="p-0 overflow-hidden min-w-0 max-w-full">
           <div className="w-full max-w-full overflow-x-auto overscroll-x-contain">
