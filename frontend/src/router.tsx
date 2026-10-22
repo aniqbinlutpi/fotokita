@@ -15,6 +15,13 @@ import { DemoGalleryPage } from "./pages/DemoGalleryPage";
 import { AdminControlPage } from "./pages/AdminControlPage";
 import { SubAdminPortalPage } from "./pages/SubAdminPortalPage";
 import { SubscriberRegisterPage } from "./pages/SubscriberRegisterPage";
+import {
+  NotFoundPage,
+  ServerErrorPage,
+  ForbiddenPage,
+  BadRequestPage,
+} from "./pages/error";
+import { ErrorPage } from "./pages/ErrorPage";
 import { extractSlugFromSearch } from "@/lib/slug";
 
 // 1. Root Route
@@ -24,6 +31,10 @@ const rootRoute = createRootRoute({
       <Toaster />
       <Outlet />
     </>
+  ),
+  notFoundComponent: () => <NotFoundPage />,
+  errorComponent: ({ error, reset }) => (
+    <ServerErrorPage error={error} onRetry={reset} />
   ),
 });
 
@@ -331,6 +342,61 @@ const invitationWSlugRoute = createRoute({
   },
 });
 
+// 7d. Dedicated Error Return Pages (/400, /404, /500, /403, /error)
+const badRequestRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/400",
+  component: function BadRequestComponent() {
+    return <BadRequestPage />;
+  },
+});
+
+const notFoundRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/404",
+  component: function NotFoundComponent() {
+    return <NotFoundPage />;
+  },
+});
+
+const serverErrorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/500",
+  component: function ServerErrorComponent() {
+    return <ServerErrorPage />;
+  },
+});
+
+const forbiddenRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/403",
+  component: function ForbiddenComponent() {
+    return <ForbiddenPage />;
+  },
+});
+
+const errorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/error",
+  component: function ErrorDynamicComponent() {
+    const location = useLocation();
+    const search = new URLSearchParams(location.searchStr || window.location.search);
+    const code = Number(search.get("code")) || 500;
+    const title = search.get("title") || undefined;
+    const message = search.get("message") || undefined;
+    const weddingSlug = search.get("slug") || undefined;
+
+    return (
+      <ErrorPage
+        code={code}
+        title={title}
+        description={message}
+        weddingSlug={weddingSlug}
+      />
+    );
+  },
+});
+
 // 8. Create Route Tree & Router Instance
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -342,6 +408,11 @@ const routeTree = rootRoute.addChildren([
   adminRoute,
   adminFotokitaRoute,
   galleryRoute,
+  badRequestRoute,
+  notFoundRoute,
+  serverErrorRoute,
+  forbiddenRoute,
+  errorRoute,
   weddingSlugRoute,
   rootSlugRoute,
   invitationRoute,
@@ -351,6 +422,10 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: "intent",
+  defaultNotFoundComponent: () => <NotFoundPage />,
+  defaultErrorComponent: ({ error, reset }) => (
+    <ServerErrorPage error={error} onRetry={reset} />
+  ),
 });
 
 // Register router for type safety
