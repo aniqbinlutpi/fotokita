@@ -217,6 +217,20 @@ export async function getAnalyticsOverview(
   // Slug filter condition
   const slugFilter = weddingSlug && weddingSlug !== "all" ? weddingSlug : null;
 
+  const sessionSlugCondition =
+    slugFilter === "landing"
+      ? sql`(${visitorSessions.weddingSlug} IS NULL OR ${visitorSessions.weddingSlug} = 'landing' OR ${visitorSessions.pagePath} = '/')`
+      : slugFilter
+      ? eq(visitorSessions.weddingSlug, slugFilter)
+      : sql`TRUE`;
+
+  const eventSlugCondition =
+    slugFilter === "landing"
+      ? sql`(${analyticsEvents.weddingSlug} IS NULL OR ${analyticsEvents.weddingSlug} = 'landing' OR ${analyticsEvents.pagePath} = '/')`
+      : slugFilter
+      ? eq(analyticsEvents.weddingSlug, slugFilter)
+      : sql`TRUE`;
+
   // 1. Fetch sessions in the selected date range
   const sessions = await db
     .select()
@@ -224,7 +238,7 @@ export async function getAnalyticsOverview(
     .where(
       and(
         gte(visitorSessions.firstSeenAt, startDate),
-        slugFilter ? eq(visitorSessions.weddingSlug, slugFilter) : sql`TRUE`
+        sessionSlugCondition
       )
     )
     .orderBy(desc(visitorSessions.lastSeenAt));
@@ -236,7 +250,7 @@ export async function getAnalyticsOverview(
     .where(
       and(
         gte(analyticsEvents.createdAt, startDate),
-        slugFilter ? eq(analyticsEvents.weddingSlug, slugFilter) : sql`TRUE`
+        eventSlugCondition
       )
     );
 
