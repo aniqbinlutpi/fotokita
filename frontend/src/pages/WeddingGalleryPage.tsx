@@ -11,6 +11,7 @@ import { useActiveWedding } from "@/hooks/queries/useWeddings";
 import { useMedia, useDeleteMedia } from "@/hooks/queries/useMedia";
 import { extractSlugFromSearch } from "@/lib/slug";
 import { FotokitaLogo } from "@/components/common/FotokitaLogo";
+import { NotFoundPage } from "./error/404_NotFoundPage";
 import type { Wedding } from "@/types/wedding";
 
 
@@ -183,6 +184,20 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
     }
   };
 
+  if (weddingError && !effectiveWedding) {
+    return (
+      <NotFoundPage
+        weddingSlug={activeSlug}
+        onNavigateHome={onNavigateToLanding}
+        title="Wedding Gallery Not Found"
+        description={
+          activeSlug
+            ? `The wedding gallery link for "${activeSlug}" was not found in our archive. Please verify the URL spelling or reach out to the couple.`
+            : "This wedding gallery could not be found or may have been relocated."
+        }
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F5F0] dark:bg-[#12100E] text-[#2F2926] dark:text-[#F5EFEB] selection:bg-[#A67C6B]/20 selection:text-[#2F2926] dark:selection:text-[#F5EFEB] flex flex-col font-sans transition-colors duration-300">
@@ -233,25 +248,7 @@ export const WeddingGalleryPage: React.FC<WeddingGalleryPageProps> = ({
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {weddingError && !effectiveWedding ? (
-          <div className="pt-32 pb-24 text-center px-4 max-w-md mx-auto space-y-4">
-            <h2 className="font-serif text-3xl font-normal text-[#2F2926] dark:text-[#F5EFEB]">
-              Gallery Not Found
-            </h2>
-            <p className="text-xs text-[#7A7069] dark:text-[#A89F97] leading-relaxed">
-              This wedding gallery link does not exist or the URL slug has been updated. Please verify that the wedding slug is correct.
-            </p>
-            {onNavigateToLanding && (
-              <button
-                type="button"
-                onClick={onNavigateToLanding}
-                className="mt-4 px-6 py-2.5 rounded-full border border-[#D5CCC2] dark:border-[#3D352E] hover:border-[#2F2926] dark:hover:border-[#F5EFEB] text-xs font-medium cursor-pointer transition-colors"
-              >
-                Back to Home
-              </button>
-            )}
-          </div>
-        ) : isLoadingWedding && !effectiveWedding ? (
+        {isLoadingWedding && !effectiveWedding ? (
           <div className="pt-20 pb-16 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-[#7A7069] dark:text-[#A89F97] animate-pulse">
               Loading Wedding Archive...

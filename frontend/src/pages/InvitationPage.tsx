@@ -10,6 +10,7 @@ import { getFontFamilyCss } from "@/lib/typography";
 import { InvitationCover } from "@/components/invitation/InvitationCover";
 import { InvitationFrame } from "@/components/invitation/InvitationFrame";
 import { MusicToggle } from "@/components/invitation/MusicToggle";
+import { NotFoundPage } from "@/pages/error/404_NotFoundPage";
 import {
   AddToCalendar,
   InvitationContacts,
@@ -59,12 +60,11 @@ export const InvitationPage: React.FC<Props> = ({ slug }) => {
 
   if (isError || !inv) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-medium">Jemputan tidak ditemui</p>
-        <a className="text-sm underline" href={`/${slug}`}>
-          Lihat galeri majlis
-        </a>
-      </div>
+      <NotFoundPage
+        weddingSlug={slug}
+        title="Digital Invitation Not Found"
+        description={`The digital wedding invitation for "${slug}" has not been registered or the link may have been updated. Please verify the link with the hosts or visit the wedding gallery.`}
+      />
     );
   }
 
