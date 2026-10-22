@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useLocation } from "@tanstack/react-router";
 import { trackAnalyticsSession, type TrackPayload } from "@/api/admin";
 
 function getOrCreateSessionId(): string {
@@ -49,7 +50,7 @@ function detectOS(): string {
 }
 
 function extractWeddingSlugFromPath(pathname: string): string | null {
-  // Matches /w/slug or /slug (ignoring known admin/demo routes)
+  // Matches /w/slug or /slug (ignoring known system routes)
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) return null;
 
@@ -66,30 +67,47 @@ function extractWeddingSlugFromPath(pathname: string): string | null {
 }
 
 export function useAnalyticsTracker() {
+  const location = useLocation();
+  const currentPath = location.pathname;
   const lastPathnameRef = useRef<string>("");
   const activeSecondsRef = useRef<number>(0);
   const sessionIdRef = useRef<string>("");
 
+  // Ignore admin pages so platform administration doesn't pollute analytics
+  const isAdminPage = currentPath.startsWith("/admin") || currentPath.startsWith("/adminfotokita");
+
   useEffect(() => {
+    if (isAdminPage) return;
+
     sessionIdRef.current = getOrCreateSessionId();
-    const currentPath = window.location.pathname;
     const weddingSlug = extractWeddingSlugFromPath(currentPath);
 
-    // Initial pageview tracking
-    const payload: TrackPayload = {
-      sessionId: sessionIdRef.current,
-      weddingSlug,
-      pagePath: currentPath,
-      durationIncrement: 0,
-      isNewPageview: true,
-      device: detectDevice(),
-      browser: detectBrowser(),
-      os: detectOS(),
-      referrer: document.referrer || "",
-    };
+    // Initial or route-change pageview tracking
+    if (lastPathnameRef.current !== currentPath) {
+      lastPathnameRef.current = currentPath;
 
-    trackAnalyticsSession(payload);
-    lastPathnameRef.current = currentPath;
+      const payload: TrackPayload = {
+        sessionId: sessionIdRef.current,
+        weddingSlug,
+        pagePath: currentPath,
+        durationIncrement: 0,
+        isNewPageview: true,
+        device: detectDevice(),
+        browser: detectBrowser(),
+        os: detectOS(),
+        referrer: document.referrer || "",
+      };
+
+      trackAnalyticsSession(payload);
+    }
+  }, [currentPath, isAdminPage]);
+
+  // Heartbeat ticker & visibility flush
+  useEffect(() => {
+    if (isAdminPage) return;
+
+    sessionIdRef.current = getOrCreateSessionId();
+    const weddingSlug = extractWeddingSlugFromPath(window.location.pathname);
 
     // Heartbeat ticker: records time active every 15 seconds
     const interval = setInterval(() => {
@@ -106,9 +124,9 @@ export function useAnalyticsTracker() {
       }
     }, 15000);
 
-    // Final flush on unload / page switch
+    // Final flush on unload / tab close
     const flushSessionTime = () => {
-      if (activeSecondsRef.current > 0) {
+      if (activeSecondsRef.current > 0 && !window.location.pathname.startsWith("/admin")) {
         const leavePayload = JSON.stringify({
           sessionId: sessionIdRef.current,
           weddingSlug: extractWeddingSlugFromPath(window.location.pathname),
@@ -132,5 +150,5 @@ export function useAnalyticsTracker() {
       window.removeEventListener("beforeunload", flushSessionTime);
       window.removeEventListener("pagehide", flushSessionTime);
     };
-  }, []);
+  }, [isAdminPage]);
 }

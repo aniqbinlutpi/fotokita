@@ -192,6 +192,7 @@ export function AdminAnalyticsView({ weddings }: AdminAnalyticsViewProps) {
             className="text-xs bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg px-3 py-1.5 text-stone-700 dark:text-stone-200 focus:outline-hidden focus:ring-1 focus:ring-stone-400"
           >
             <option value="all">All visitors (Landing &amp; All Weddings)</option>
+            <option value="landing">Main Landing Page only (/)</option>
             {weddings.map((w) => (
               <option key={w.id} value={w.slug}>
                 {w.name} ({w.slug})
