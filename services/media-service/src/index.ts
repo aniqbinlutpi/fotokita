@@ -8,12 +8,15 @@ const app = new Hono();
 
 app.use("*", cors());
 
-app.get("/health", (c) => {
+const healthHandler = (c: any) => {
   return c.json({
     status: "ok",
     service: "media-service",
   });
-});
+};
+
+app.get("/health", healthHandler);
+app.get("/media/health", healthHandler);
 
 app.route("/media", mediaRoutes);
 

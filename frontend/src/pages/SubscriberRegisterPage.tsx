@@ -28,6 +28,9 @@ import {
   EyeOff,
   Info,
   Mail,
+  Copy,
+  Check,
+  ExternalLink,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -228,6 +231,42 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
   // Success view state (NO AUTO LOGIN)
   const [registeredWedding, setRegisteredWedding] = useState<Wedding | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const fallbackCopyText = (text: string) => {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+      toast.success("Gallery link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link to clipboard");
+    }
+  };
+
+  const handleCopyLink = (urlToCopy: string) => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(urlToCopy)
+        .then(() => {
+          setCopiedLink(true);
+          setTimeout(() => setCopiedLink(false), 2000);
+          toast.success("Gallery link copied to clipboard!");
+        })
+        .catch(() => {
+          fallbackCopyText(urlToCopy);
+        });
+    } else {
+      fallbackCopyText(urlToCopy);
+    }
+  };
 
   // Slug check states
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
@@ -609,6 +648,11 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
   // State: Registration Success Screen (NO AUTO LOGIN -> Navigate to Sub-Admin Login)
   if (registeredWedding) {
+    const galleryFullUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/${registeredWedding.slug}`
+        : `https://${displayDomain}/${registeredWedding.slug}`;
+
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <motion.div
@@ -616,7 +660,7 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-lg w-full"
         >
-          <Card className="p-8 text-center border-accent/30 shadow-xl space-y-6">
+          <Card className="p-5 sm:p-8 text-center border-accent/30 shadow-xl space-y-6">
             <div className="size-16 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto">
               <CheckCircle2 className="size-9" />
             </div>
@@ -635,32 +679,59 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
             {/* Account Summary Card */}
             <div className="p-4 rounded-xl bg-card/60 border border-border text-left space-y-3 text-xs">
-              <div className="flex justify-between items-center pb-2 border-b border-border">
-                <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
+              <div className="flex justify-between items-center pb-2 border-b border-border gap-2">
+                <span className="text-muted-foreground uppercase text-[10px] tracking-wider shrink-0">
                   Couple Names
                 </span>
-                <span className="font-medium text-foreground">{registeredWedding.name}</span>
+                <span className="font-medium text-foreground text-right truncate">{registeredWedding.name}</span>
               </div>
 
-              <div className="flex justify-between items-center pb-2 border-b border-border">
-                <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 pb-2 border-b border-border">
+                <span className="text-muted-foreground uppercase text-[10px] tracking-wider shrink-0">
                   Official Gallery URL
                 </span>
-                <span className="font-mono text-accent">{displayDomain}/{registeredWedding.slug}</span>
+                <div className="flex items-center justify-between sm:justify-end gap-1.5 min-w-0">
+                  <a
+                    href={galleryFullUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-accent hover:underline inline-flex items-center gap-1.5 text-xs min-w-0 truncate group transition-colors"
+                    title={`Open ${displayDomain}/${registeredWedding.slug} in new tab`}
+                  >
+                    <span className="truncate">{displayDomain}/{registeredWedding.slug}</span>
+                    <ExternalLink className="size-3.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyLink(galleryFullUrl);
+                    }}
+                    className="shrink-0 inline-flex items-center justify-center size-7 rounded-md hover:bg-accent/10 text-muted-foreground hover:text-accent transition-colors cursor-pointer"
+                    title={copiedLink ? "Copied!" : "Copy gallery link"}
+                    aria-label="Copy gallery link"
+                  >
+                    {copiedLink ? (
+                      <Check className="size-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="size-3.5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
-              <div className="flex justify-between items-center pb-2 border-b border-border">
-                <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
+              <div className="flex justify-between items-center pb-2 border-b border-border gap-2">
+                <span className="text-muted-foreground uppercase text-[10px] tracking-wider shrink-0">
                   Sub-Admin Username
                 </span>
-                <span className="font-mono font-medium text-foreground">@{username}</span>
+                <span className="font-mono font-medium text-foreground text-right truncate">@{username}</span>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground uppercase text-[10px] tracking-wider">
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-muted-foreground uppercase text-[10px] tracking-wider shrink-0">
                   Subscription Package
                 </span>
-                <Badge variant="secondary" className="capitalize text-[10px]">
+                <Badge variant="secondary" className="capitalize text-[10px] shrink-0">
                   {PLAN_DETAILS[selectedPlan]?.title || selectedPlan} ({PLAN_DETAILS[selectedPlan]?.price || ""})
                 </Badge>
               </div>
@@ -944,19 +1015,19 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
 
               {/* Custom URL Slug */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5 shrink-0">
                     <span>Gallery URL Slug</span>
                     <span className="text-accent">*</span>
                     <InfoTooltip content="Unique web address for your wedding gallery to share with your guests." />
                   </label>
-                  <span className="text-[11px] text-accent font-mono truncate max-w-[220px]">
+                  <span className="text-[11px] text-accent font-mono truncate max-w-[140px] sm:max-w-[220px]">
                     {displayDomain}/{slug || "your-slug"}
                   </span>
                 </div>
 
                 <div className="relative flex rounded-lg shadow-2xs">
-                  <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-input bg-muted/50 text-xs font-mono text-muted-foreground select-none">
+                  <span className="inline-flex items-center px-2.5 sm:px-3 rounded-l-lg border border-r-0 border-input bg-muted/50 text-[11px] sm:text-xs font-mono text-muted-foreground select-none shrink-0 max-w-[140px] sm:max-w-none truncate">
                     {displayDomain}/
                   </span>
                   <input

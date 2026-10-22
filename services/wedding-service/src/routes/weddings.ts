@@ -12,6 +12,7 @@ import {
   createWeddingSchema,
   slugSchema,
   updateWeddingSchema,
+  weddingIdParamSchema,
 } from "../validators/wedding.validator";
 import { success, error } from "../lib/response";
 
@@ -87,8 +88,19 @@ app.get("/slug/:slug", async (c) => {
 });
 
 app.get("/:id", async (c) => {
-  const id = c.req.param("id");
+  const paramResult = weddingIdParamSchema.safeParse(c.req.param());
+  if (!paramResult.success) {
+    return c.json(
+      error(
+        "VALIDATION_ERROR",
+        "Invalid wedding ID format",
+        paramResult.error.flatten(),
+      ),
+      400,
+    );
+  }
 
+  const { id } = paramResult.data;
   const wedding = await getWeddingById(id);
 
   if (!wedding) {
@@ -152,7 +164,19 @@ app.post("/", async (c) => {
 });
 
 app.patch("/:id", async (c) => {
-  const id = c.req.param("id");
+  const paramResult = weddingIdParamSchema.safeParse(c.req.param());
+  if (!paramResult.success) {
+    return c.json(
+      error(
+        "VALIDATION_ERROR",
+        "Invalid wedding ID format",
+        paramResult.error.flatten(),
+      ),
+      400,
+    );
+  }
+
+  const { id } = paramResult.data;
   const body = await c.req.json();
 
   const result = updateWeddingSchema.safeParse(body);
@@ -198,22 +222,36 @@ app.patch("/:id", async (c) => {
 
 
 app.delete("/:id", async (c) => {
-  const id = c.req.param("id");
+  const paramResult = weddingIdParamSchema.safeParse(c.req.param());
+  if (!paramResult.success) {
+    return c.json(
+      error(
+        "VALIDATION_ERROR",
+        "Invalid wedding ID format",
+        paramResult.error.flatten(),
+      ),
+      400,
+    );
+  }
 
+  const { id } = paramResult.data;
   const wedding = await deleteWedding(id);
 
   if (!wedding) {
     return c.json(
-      {
-        error: "Wedding not found",
-      },
+      error(
+        "WEDDING_NOT_FOUND",
+        "Wedding not found",
+      ),
       404,
     );
   }
 
-  return c.json({
-    message: "Wedding deleted successfully",
-  });
+  return c.json(
+    success({
+      message: "Wedding deleted successfully",
+    }),
+  );
 });
 
 export default app;

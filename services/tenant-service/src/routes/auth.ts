@@ -364,7 +364,7 @@ authRoute.post("/login", async (c) => {
     return c.json(
       error(
         "PLAN_EXPIRED",
-        `Your Sub-Admin subscription plan expired on ${expiryFormatted}. Your gallery is preserved for 3 days. Please contact Super Admin to extend portal access.`
+        `Your Sub-Admin subscription plan expired on ${expiryFormatted}. Your gallery is preserved for 3 days. Please contact Admin to extend portal access.`
       ),
       403
     );
