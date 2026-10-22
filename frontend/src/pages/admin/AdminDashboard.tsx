@@ -40,6 +40,7 @@ import {
   Check,
   ExternalLink,
   TrendingUp,
+  Activity,
 } from "lucide-react";
 import type { Wedding } from "@/types/wedding";
 import type { AdminStats, AdminInvite, AdminTenantAccount, CustomerInquiry } from "@/api/admin";
@@ -120,7 +121,7 @@ interface AdminDashboardProps {
   copiedId: string | null;
   onCopyLink: (slug: string, id: string) => void;
   onViewGallery: (slug: string) => void;
-  onNavigateToTab: (tab: "overview" | "inquiries" | "invites" | "weddings" | "system") => void;
+  onNavigateToTab: (tab: "overview" | "analytics" | "inquiries" | "invites" | "weddings" | "system") => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -266,6 +267,38 @@ export function AdminDashboard({
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
           Business overview, revenue metrics, and wedding gallery analytics.
         </p>
+      </div>
+
+      {/* Real-time Visitor Insights Hero Link Banner */}
+      <div
+        onClick={() => onNavigateToTab("analytics")}
+        className="group relative overflow-hidden rounded-xl border border-[#C25E3E]/30 bg-linear-to-r from-amber-500/10 via-[#C25E3E]/10 to-transparent p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:border-[#C25E3E] transition-all shadow-xs"
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="size-10 rounded-xl bg-[#C25E3E]/20 text-[#C25E3E] flex items-center justify-center shrink-0">
+            <Activity className="size-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-stone-100">
+                Live Visitor Analytics &amp; Regional Heatmap
+              </h3>
+              <Badge className="bg-[#C25E3E] text-white text-[10px] py-0 px-1.5 font-semibold">
+                Live
+              </Badge>
+            </div>
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+              Observe guest traffic volume, session duration, and geographic origins across all weddings.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hidden sm:flex text-[#C25E3E] group-hover:translate-x-1 transition-transform"
+        >
+          Open Analytics &rarr;
+        </Button>
       </div>
 
       {/* Metric KPI Cards - 2x2 on mobile, 4 columns on desktop */}

@@ -21,6 +21,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 // Tab Sub-pages
 import { AdminDashboard } from "./AdminDashboard";
+import { AdminAnalyticsView } from "./AdminAnalyticsView";
 import { AdminWeddingsHub, type WeddingsHubSubTab } from "./AdminWeddingsHub";
 import { AdminVouchers } from "./AdminVouchers";
 import { AdminSystemServices } from "./AdminSystemServices";
@@ -83,11 +84,11 @@ export function AdminControlPage({
 
   // Navigation tab
   const [activeTab, setActiveTab] = useState<
-    "overview" | "weddings" | "vouchers" | "system"
+    "overview" | "analytics" | "weddings" | "vouchers" | "system"
   >("overview");
   const [weddingsSubTab, setWeddingsSubTab] = useState<WeddingsHubSubTab>("weddings");
 
-  const handleNavigateTab = (tab: "overview" | "inquiries" | "invites" | "weddings" | "system" | "vouchers") => {
+  const handleNavigateTab = (tab: "overview" | "analytics" | "inquiries" | "invites" | "weddings" | "system" | "vouchers") => {
     if (tab === "inquiries") {
       setActiveTab("weddings");
       setWeddingsSubTab("inquiries");
@@ -639,6 +640,7 @@ export function AdminControlPage({
               {/* Mobile concise label */}
               <span className="text-xs font-semibold truncate sm:hidden">
                 {activeTab === "overview" && "Dashboard"}
+                {activeTab === "analytics" && "Visitor Insights"}
                 {activeTab === "weddings" && (
                   weddingsSubTab === "weddings"
                     ? "Weddings"
@@ -668,6 +670,7 @@ export function AdminControlPage({
                   <BreadcrumbItem className="min-w-0">
                     <BreadcrumbPage className="capitalize text-xs truncate">
                       {activeTab === "overview" && "Dashboard Overview"}
+                      {activeTab === "analytics" && "Visitor Insights & Heatmap"}
                       {activeTab === "weddings" && (
                         <span>
                           Weddings &amp; Clients
@@ -732,6 +735,10 @@ export function AdminControlPage({
                 onViewGallery={handleViewGallery}
                 onNavigateToTab={handleNavigateTab}
               />
+            )}
+
+            {activeTab === "analytics" && (
+              <AdminAnalyticsView weddings={weddings} />
             )}
 
             {activeTab === "weddings" && (

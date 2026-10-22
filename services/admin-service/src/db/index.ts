@@ -162,6 +162,63 @@ export async function initDb(): Promise<void> {
       ON customer_inquiries (translate(phone, ' -()+.', ''));
     `;
 
+    // Analytics: Visitor Sessions Table
+    await client`
+      CREATE TABLE IF NOT EXISTS visitor_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id TEXT NOT NULL,
+        wedding_slug TEXT,
+        page_path TEXT NOT NULL DEFAULT '/',
+        referrer TEXT,
+        device TEXT DEFAULT 'desktop',
+        browser TEXT,
+        os TEXT,
+        ip_hash TEXT,
+        country TEXT DEFAULT 'Malaysia',
+        country_code TEXT DEFAULT 'MY',
+        region TEXT DEFAULT 'Kuala Lumpur',
+        city TEXT DEFAULT 'Kuala Lumpur',
+        latitude TEXT DEFAULT '3.1390',
+        longitude TEXT DEFAULT '101.6869',
+        duration_seconds INTEGER NOT NULL DEFAULT 0,
+        page_views_count INTEGER NOT NULL DEFAULT 1,
+        first_seen_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        last_seen_at TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `;
+
+    // Analytics: Events Table
+    await client`
+      CREATE TABLE IF NOT EXISTS analytics_events (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id TEXT NOT NULL,
+        wedding_slug TEXT,
+        event_name TEXT NOT NULL,
+        page_path TEXT,
+        metadata JSONB,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `;
+
+    await client`
+      CREATE INDEX IF NOT EXISTS idx_visitor_sessions_session_id ON visitor_sessions (session_id);
+    `;
+    await client`
+      CREATE INDEX IF NOT EXISTS idx_visitor_sessions_wedding_slug ON visitor_sessions (wedding_slug);
+    `;
+    await client`
+      CREATE INDEX IF NOT EXISTS idx_visitor_sessions_created_at ON visitor_sessions (first_seen_at DESC);
+    `;
+    await client`
+      CREATE INDEX IF NOT EXISTS idx_visitor_sessions_region ON visitor_sessions (region);
+    `;
+    await client`
+      CREATE INDEX IF NOT EXISTS idx_analytics_events_session_id ON analytics_events (session_id);
+    `;
+    await client`
+      CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events (created_at DESC);
+    `;
+
     console.log("✅ Admin database tables initialized successfully in PostgreSQL");
   } catch (err) {
     console.error("⚠️ Failed to initialize admin database tables:", err);

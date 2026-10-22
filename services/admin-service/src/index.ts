@@ -5,6 +5,7 @@ import dashboardRoute from "./routes/dashboard";
 import invitesRoute from "./routes/invites";
 import inquiriesRoute from "./routes/inquiries";
 import vouchersRoute from "./routes/vouchers";
+import analyticsRoute from "./routes/analytics";
 import { initDb, client } from "./db";
 import { error } from "./lib/response";
 
@@ -54,6 +55,7 @@ app.route("/admin/auth", authRoute);
 app.route("/admin/invites", invitesRoute);
 app.route("/admin/inquiries", inquiriesRoute);
 app.route("/admin/vouchers", vouchersRoute);
+app.route("/admin/analytics", analyticsRoute);
 app.route("/admin", dashboardRoute);
 
 const port = Number(process.env.PORT) || 3002;

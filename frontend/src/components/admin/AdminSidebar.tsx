@@ -20,13 +20,14 @@ import {
   Globe,
   ShieldCheck,
   Ticket,
+  Activity,
 } from "lucide-react";
 import { FotokitaLogo } from "@/components/common/FotokitaLogo";
 import type { AdminUser } from "@/api/admin";
 
 interface AdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  activeTab: "overview" | "weddings" | "vouchers" | "system" | "inquiries" | "invites";
-  onSelectTab: (tab: "overview" | "weddings" | "vouchers" | "system" | "inquiries" | "invites") => void;
+  activeTab: "overview" | "analytics" | "weddings" | "vouchers" | "system" | "inquiries" | "invites";
+  onSelectTab: (tab: "overview" | "analytics" | "weddings" | "vouchers" | "system" | "inquiries" | "invites") => void;
   adminUser: AdminUser | null;
   onLogout: () => void;
   onBackHome: () => void;
@@ -79,6 +80,20 @@ export function AdminSidebar({
                 >
                   <LayoutDashboard className="size-4" />
                   <span>Dashboard Overview</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeTab === "analytics"}
+                  onClick={() => onSelectTab("analytics")}
+                  tooltip="Visitor Analytics, Duration & Heatmap"
+                >
+                  <Activity className="size-4 text-[#C25E3E]" />
+                  <span className="flex-1">Visitor Insights</span>
+                  <span className="ml-auto flex h-5 px-1.5 items-center justify-center rounded-full bg-[#C25E3E]/10 text-[10px] font-bold text-[#C25E3E]">
+                    Live
+                  </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 

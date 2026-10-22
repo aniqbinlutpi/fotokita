@@ -594,4 +594,130 @@ export async function purgeEntireWedding(weddingId: string): Promise<void> {
   await handleApiResponse<{ message: string }>(res);
 }
 
+// ---------------------------------------------------------------------------
+// Analytics API
+// ---------------------------------------------------------------------------
+
+export interface DailyBarMetric {
+  date: string;
+  fullDate: string;
+  visitors: number;
+  joinedThisWeek: number;
+  pageviews: number;
+}
+
+export interface LocationMetric {
+  name: string;
+  city: string;
+  country: string;
+  countryCode: string;
+  count: number;
+  percentage: number;
+  latitude: string;
+  longitude: string;
+}
+
+export interface AnalyticsOverviewResponse {
+  timeRange: string;
+  weddingSlug?: string | null;
+  summary: {
+    totalVisitors: number;
+    totalPageViews: number;
+    totalDurationSeconds: number;
+    totalDurationFormatted: string;
+    averageDurationSeconds: number;
+    averageDurationFormatted: string;
+    activeDays: number;
+    engagementRate: number;
+    photosUploaded: number;
+    wishesLeft: number;
+    signaturesCreated: number;
+    qrScanned: number;
+    activeVisitorsToday: number;
+    todayDurationSeconds: number;
+    todayDurationFormatted: string;
+    lastEventReceivedAt: string | null;
+    headlineCount: number;
+    headlineDays: number;
+    joinedThisWeek: number;
+    joinedLastWeek: number;
+  };
+  chartData: DailyBarMetric[];
+  topLocations: LocationMetric[];
+  deviceBreakdown: {
+    mobile: number;
+    desktop: number;
+    tablet: number;
+  };
+}
+
+export interface TrackPayload {
+  sessionId: string;
+  weddingSlug?: string | null;
+  pagePath?: string;
+  durationIncrement?: number;
+  isNewPageview?: boolean;
+  device?: string;
+  browser?: string;
+  os?: string;
+  referrer?: string;
+}
+
+export interface TrackEventPayload {
+  sessionId: string;
+  weddingSlug?: string | null;
+  eventName: string;
+  pagePath?: string;
+  metadata?: Record<string, any>;
+}
+
+export async function getAnalyticsOverview(
+  timeRange: string = "30d",
+  weddingSlug?: string
+): Promise<AnalyticsOverviewResponse> {
+  const params = new URLSearchParams({ range: timeRange });
+  if (weddingSlug && weddingSlug !== "all") {
+    params.set("weddingSlug", weddingSlug);
+  }
+
+  const res = await fetch(`${ADMIN_BASE_URL}/analytics/overview?${params.toString()}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<AnalyticsOverviewResponse>(res);
+}
+
+export async function trackAnalyticsSession(payload: TrackPayload): Promise<void> {
+  try {
+    await fetch(`${ADMIN_BASE_URL}/analytics/track`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    });
+  } catch (err) {
+    console.debug("Silent analytics track error:", err);
+  }
+}
+
+export async function trackAnalyticsEvent(payload: TrackEventPayload): Promise<void> {
+  try {
+    await fetch(`${ADMIN_BASE_URL}/analytics/event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    });
+  } catch (err) {
+    console.debug("Silent analytics event error:", err);
+  }
+}
+
+export async function seedDemoAnalytics(): Promise<{ message: string; count: number }> {
+  const res = await fetch(`${ADMIN_BASE_URL}/analytics/seed-demo`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+  return handleApiResponse<{ message: string; count: number }>(res);
+}
+
 
