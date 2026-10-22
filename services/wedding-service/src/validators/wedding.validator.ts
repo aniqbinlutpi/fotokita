@@ -42,3 +42,7 @@ export const createWeddingSchema = z.object({
 
 export const updateWeddingSchema = createWeddingSchema.partial();
 
+export const weddingIdParamSchema = z.object({
+  id: z.string().uuid("Invalid wedding ID format"),
+});
+

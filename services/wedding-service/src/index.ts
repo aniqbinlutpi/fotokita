@@ -26,17 +26,25 @@ app.onError((err, c) => {
   );
 });
 
-app.get("/health", async (c) => {
-  await db.execute(sql`SELECT 1`);
+const healthHandler = async (c: any) => {
+  let dbStatus = "connected";
+  try {
+    await db.execute(sql`SELECT 1`);
+  } catch {
+    dbStatus = "disconnected";
+  }
 
   return c.json({
     data: {
       status: "ok",
       service: "wedding-service",
-      database: "connected",
+      database: dbStatus,
     },
   });
-});
+};
+
+app.get("/health", healthHandler);
+app.get("/weddings/health", healthHandler);
 
 app.route("/weddings", weddings);
 app.route("/", weddings);
