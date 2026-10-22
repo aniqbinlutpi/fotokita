@@ -23,15 +23,21 @@ import {
 } from "./pages/error";
 import { ErrorPage } from "./pages/ErrorPage";
 import { extractSlugFromSearch } from "@/lib/slug";
+import { useAnalyticsTracker } from "@/hooks/useAnalyticsTracker";
 
-// 1. Root Route
-const rootRoute = createRootRoute({
-  component: () => (
+function RootComponent() {
+  useAnalyticsTracker();
+  return (
     <>
       <Toaster />
       <Outlet />
     </>
-  ),
+  );
+}
+
+// 1. Root Route
+const rootRoute = createRootRoute({
+  component: RootComponent,
   notFoundComponent: () => <NotFoundPage />,
   errorComponent: ({ error, reset }) => (
     <ServerErrorPage error={error} onRetry={reset} />

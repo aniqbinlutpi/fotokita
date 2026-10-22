@@ -69,3 +69,35 @@ export const tenantInvites = pgTable("tenant_invites", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const visitorSessions = pgTable("visitor_sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessionId: text("session_id").notNull(),
+  weddingSlug: text("wedding_slug"),
+  pagePath: text("page_path").notNull().default("/"),
+  referrer: text("referrer"),
+  device: text("device").default("desktop"),
+  browser: text("browser"),
+  os: text("os"),
+  ipHash: text("ip_hash"),
+  country: text("country").default("Malaysia"),
+  countryCode: text("country_code").default("MY"),
+  region: text("region").default("Kuala Lumpur"),
+  city: text("city").default("Kuala Lumpur"),
+  latitude: text("latitude").default("3.1390"),
+  longitude: text("longitude").default("101.6869"),
+  durationSeconds: integer("duration_seconds").notNull().default(0),
+  pageViewsCount: integer("page_views_count").notNull().default(1),
+  firstSeenAt: timestamp("first_seen_at").defaultNow().notNull(),
+  lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
+});
+
+export const analyticsEvents = pgTable("analytics_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessionId: text("session_id").notNull(),
+  weddingSlug: text("wedding_slug"),
+  eventName: text("event_name").notNull(),
+  pagePath: text("page_path"),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
