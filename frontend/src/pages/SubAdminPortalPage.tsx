@@ -21,9 +21,6 @@ import {
   Lock,
   RotateCcw,
   QrCode,
-  Copy,
-  Check,
-  X,
   HelpCircle,
   Sliders,
 } from "lucide-react";
@@ -36,6 +33,7 @@ import { SubAdminDesktopCanvas } from "@/components/tenant/SubAdminDesktopCanvas
 import { SubAdminMobileCanvas } from "@/components/tenant/SubAdminMobileCanvas";
 import { SubAdminLayoutGuideModal } from "@/components/tenant/SubAdminLayoutGuideModal";
 import { SubAdminMediaDashboard } from "@/components/tenant/SubAdminMediaDashboard";
+import { SubAdminTableQrModal } from "@/components/tenant/SubAdminTableQrModal";
 import { useMedia } from "@/hooks/queries/useMedia";
 import { formatBytes } from "@/lib/mediaZip";
 import {
@@ -175,7 +173,6 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [copiedQrLink, setCopiedQrLink] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -664,6 +661,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
           onSelectView={setActiveView}
           mediaCount={mediaCount}
           totalMediaSize={totalMediaSize}
+          onOpenQrModal={() => setIsQrModalOpen(true)}
         />
 
         {/* Main Content Area */}
@@ -721,6 +719,19 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                   >
                     <Sliders className="size-3.5 text-muted-foreground" />
                     <span>Live Editor</span>
+                  </Button>
+
+                  {/* Table QR Standee for guest tables */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsQrModalOpen(true)}
+                    title="Wedding Table QR Standee & Print Card"
+                    className="text-xs h-8 cursor-pointer gap-1.5 shrink-0 bg-primary/5 hover:bg-primary/10 border-primary/25 text-foreground font-medium"
+                  >
+                    <QrCode className="size-3.5 text-primary" />
+                    <span className="hidden sm:inline">Table QR Standee</span>
+                    <span className="sm:hidden">QR Standee</span>
                   </Button>
 
                   {/* View as Guest link */}
@@ -786,16 +797,16 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
                     <RotateCcw className="size-3.5" />
                   </Button>
 
-                  {/* Scan on Phone / QR Code */}
+                  {/* Table QR Standee for Guest Tables */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setIsQrModalOpen(true)}
-                    title="Scan QR code to test on real phone"
-                    className="hidden md:inline-flex text-xs h-8 cursor-pointer gap-1.5 shrink-0"
+                    title="Wedding Table QR Standee & Print Card"
+                    className="text-xs h-8 cursor-pointer gap-1.5 shrink-0 bg-primary/5 hover:bg-primary/10 border-primary/25 text-foreground font-medium shadow-2xs px-2 sm:px-2.5"
                   >
-                    <QrCode className="size-3.5 text-muted-foreground" />
-                    <span>Test Phone</span>
+                    <QrCode className="size-3.5 text-primary shrink-0" />
+                    <span className="hidden sm:inline">Table QR</span>
                   </Button>
 
                   {/* View as Guest link */}
@@ -879,64 +890,15 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
           </main>
         </SidebarInset>
 
-        {/* Test on Phone QR Modal */}
-        {isQrModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-50">
-            <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl relative space-y-4">
-              <button
-                type="button"
-                onClick={() => setIsQrModalOpen(false)}
-                className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
-              <div className="text-center space-y-1">
-                <h3 className="font-serif text-lg font-medium text-foreground">
-                  Test on Real Phone
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Scan the QR code below with your phone camera to preview live guest view directly on your device.
-                </p>
-              </div>
-              <div className="flex justify-center p-3 bg-white rounded-xl border border-border shadow-inner">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(guestPublicUrl)}`}
-                  alt="Guest Gallery QR Code"
-                  className="size-48 object-contain"
-                />
-              </div>
-              <div className="flex items-center gap-1.5 p-2 rounded-lg bg-muted/40 border border-border text-xs">
-                <span className="truncate flex-1 font-mono text-[11px] text-muted-foreground">
-                  {guestPublicUrl}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(guestPublicUrl);
-                    setCopiedQrLink(true);
-                    setTimeout(() => setCopiedQrLink(false), 2000);
-                    toast.success("Link copied to clipboard!");
-                  }}
-                  className="shrink-0 p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                >
-                  {copiedQrLink ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-                </button>
-              </div>
-              <Button
-                type="button"
-                onClick={() => {
-                  window.open(guestPublicUrl, "_blank", "noopener,noreferrer");
-                  setIsQrModalOpen(false);
-                }}
-                variant="outline"
-                className="w-full text-xs cursor-pointer"
-              >
-                <Eye className="size-3.5 mr-1.5" />
-                Open in New Tab
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Wedding Table QR Standee & Print Card Modal */}
+        <SubAdminTableQrModal
+          isOpen={isQrModalOpen}
+          onClose={() => setIsQrModalOpen(false)}
+          guestPublicUrl={guestPublicUrl}
+          customization={customization}
+          weddingName={dbWedding?.name || tenant?.weddingName}
+          uploadedPhotos={mediaList.map((m) => ({ url: m.url || "", id: m.id }))}
+        />
 
         {/* Post-Save Double-Check Review Modal */}
         <SubAdminLayoutGuideModal
