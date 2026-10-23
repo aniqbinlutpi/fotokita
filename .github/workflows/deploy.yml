@@ -6,35 +6,159 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: Deploy Fotokita
     runs-on: self-hosted
 
     steps:
-      - name: Deploy Fotokita Application
+      - name: Sync repository to deployment revision
         run: |
-          set -e
-          export PATH="/home/ubuntu/.bun/bin:$HOME/.bun/bin:$PATH"
-
-          echo "🚀 Starting automated deployment on self-hosted server..."
+          set -Eeuo pipefail
+          echo "🚀 Preparing deployment to target commit: ${{ github.sha }}"
           cd /home/ubuntu/apps/fotokita
 
-          echo "📥 Fetching latest updates from git..."
-          git pull origin main
+          export PATH="/home/ubuntu/.bun/bin:$HOME/.bun/bin:$PATH"
 
-          echo "📦 Updating backend microservices dependencies..."
-          cd services/wedding-service && bun install
-          cd ../media-service && bun install
-          cd ../admin-service && bun install
-          cd ../tenant-service && bun install
+          # Safety check: if uncommitted modifications exist on server, stash them safely
+          if [ -n "$(git status --porcelain | grep -v '^\?\?')" ]; then
+            echo "⚠️ Warning: Tracked files have uncommitted changes on server. Stashing safely..."
+            git stash push -m "pre-deploy-stash-$(date +%Y%m%d%H%M%S)"
+          fi
 
-          echo "🔨 Building frontend assets..."
-          cd ../../frontend
-          bun install
+          echo "📥 Fetching latest commits from origin..."
+          git fetch origin main
+
+          CURRENT_HEAD=$(git rev-parse HEAD 2>/dev/null || echo "")
+          TARGET_SHA="${{ github.sha }}"
+
+          if [ "$CURRENT_HEAD" != "$TARGET_SHA" ]; then
+            if [ -n "$CURRENT_HEAD" ] && ! git merge-base --is-ancestor "$CURRENT_HEAD" "$TARGET_SHA"; then
+              BACKUP_BRANCH="backup-server-$(date +%Y%m%d%H%M%S)-$CURRENT_HEAD"
+              echo "ℹ️ Preserving diverged server commit $CURRENT_HEAD on branch $BACKUP_BRANCH"
+              git branch "$BACKUP_BRANCH" "$CURRENT_HEAD" || true
+            fi
+            echo "🔄 Checking out target commit $TARGET_SHA on main branch..."
+            git checkout -B main "$TARGET_SHA"
+          else
+            echo "✅ Server is already on target commit $TARGET_SHA."
+          fi
+
+          echo "📌 Verified deployed revision: $(git rev-parse --short HEAD)"
+
+      - name: Install dependencies & run pre-flight checks
+        run: |
+          set -Eeuo pipefail
+          export PATH="/home/ubuntu/.bun/bin:$HOME/.bun/bin:$PATH"
+          cd /home/ubuntu/apps/fotokita
+
+          echo "📦 Installing backend microservices dependencies (--frozen-lockfile)..."
+          for svc in wedding-service media-service admin-service tenant-service; do
+            echo "  ➜ Installing services/$svc..."
+            (cd "services/$svc" && bun install --frozen-lockfile)
+          done
+
+          echo "🧪 Running backend test suites..."
+          (cd services/media-service && bun test)
+
+          echo "🔍 Running backend TypeScript type checks..."
+          for svc in wedding-service media-service admin-service tenant-service; do
+            echo "  ➜ Typechecking services/$svc..."
+            (cd "services/$svc" && bunx tsc --noEmit)
+          done
+
+      - name: Build frontend assets
+        run: |
+          set -Eeuo pipefail
+          export PATH="/home/ubuntu/.bun/bin:$HOME/.bun/bin:$PATH"
+          cd /home/ubuntu/apps/fotokita/frontend
+
+          echo "📦 Installing frontend dependencies (--frozen-lockfile)..."
+          bun install --frozen-lockfile
+
+          echo "🔨 Building frontend application..."
           bun run build
+          echo "✅ Frontend build completed successfully."
 
-          echo "🔄 Restarting microservices..."
+      - name: Apply Docker Compose updates (PostgreSQL localhost binding)
+        run: |
+          set -Eeuo pipefail
+          cd /home/ubuntu/apps/fotokita
+
+          echo "🐘 Checking and updating PostgreSQL container..."
+          if docker compose version >/dev/null 2>&1; then
+            docker compose up -d postgres
+          elif docker-compose version >/dev/null 2>&1; then
+            docker-compose up -d postgres
+          else
+            echo "⚠️ Neither 'docker compose' nor 'docker-compose' found, skipping compose step."
+          fi
+
+          echo "🔍 Inspecting PostgreSQL container port binding..."
+          docker ps --filter "name=fotokita-postgres" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+
+      - name: Restart microservices
+        run: |
+          set -Eeuo pipefail
+          echo "🔄 Restarting Fotokita microservices via systemctl..."
           sudo systemctl restart fotokita-wedding fotokita-media fotokita-admin fotokita-tenant
 
-          echo "🎉 Deployment successfully completed!"
+          echo "📋 Microservices active status:"
+          for s in fotokita-wedding fotokita-media fotokita-admin fotokita-tenant; do
+            systemctl is-active --quiet "$s" && echo "  ✅ $s is active" || { echo "  ❌ $s failed to start"; exit 1; }
+          done
+
+      - name: Verify post-deployment health and port security
+        run: |
+          set -Eeuo pipefail
+          echo "⏳ Waiting for services to become healthy (retrying up to 30s)..."
+
+          HEALTH_ENDPOINTS=(
+            "http://127.0.0.1/api/weddings/health"
+            "http://127.0.0.1/api/admin/health"
+            "http://127.0.0.1/api/media/health"
+            "http://127.0.0.1/api/tenant/health"
+          )
+
+          for endpoint in "${HEALTH_ENDPOINTS[@]}"; do
+            echo "Checking $endpoint..."
+            SUCCESS=0
+            for i in $(seq 1 15); do
+              HTTP_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "$endpoint" || echo "FAILED\nHTTP_STATUS:000")
+              STATUS_CODE=$(echo "$HTTP_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+              BODY=$(echo "$HTTP_RESPONSE" | grep -v "HTTP_STATUS:")
+              if [ "$STATUS_CODE" = "200" ]; then
+                echo "  ✅ $endpoint responded with HTTP 200: $BODY"
+                SUCCESS=1
+                break
+              fi
+              echo "  ⏳ attempt $i: got HTTP $STATUS_CODE, retrying in 2s..."
+              sleep 2
+            done
+
+            if [ "$SUCCESS" -ne 1 ]; then
+              echo "❌ Health check failed for $endpoint after 30 seconds."
+              exit 1
+            fi
+          done
+
+          echo "🔒 Verifying listener bindings (only 127.0.0.1 for backend services and PostgreSQL)..."
+          if command -v ss >/dev/null 2>&1; then
+            LISTENERS=$(ss -tlnp '( sport = :3001 or sport = :3002 or sport = :3003 or sport = :3004 or sport = :5433 )' || true)
+            echo "$LISTENERS"
+
+            if echo "$LISTENERS" | grep -E '0\.0\.0\.0:(3001|3002|3003|3004|5433)|\*:(3001|3002|3003|3004|5433)'; then
+              echo "❌ Security Alert: Protected services are still bound to public interfaces!"
+              exit 1
+            fi
+            echo "✅ All protected ports are securely bound to localhost."
+          fi
+
+          echo "🎉 Deployment, service restarts, and health verifications successfully completed!"

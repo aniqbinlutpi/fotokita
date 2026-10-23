@@ -50,6 +50,7 @@ app.route("/weddings", weddings);
 app.route("/", weddings);
 
 export default {
+  hostname: "127.0.0.1",
   port: 3001,
   fetch: app.fetch,
 };

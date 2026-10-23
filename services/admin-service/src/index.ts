@@ -63,6 +63,7 @@ const port = Number(process.env.PORT) || 3002;
 console.log(`🛡️ Fotokita Admin Service running on port ${port}`);
 
 export default {
+  hostname: "127.0.0.1",
   port,
   fetch: app.fetch,
 };

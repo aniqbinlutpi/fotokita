@@ -20,4 +20,8 @@ app.get("/media/health", healthHandler);
 
 app.route("/media", mediaRoutes);
 
-export default app;
+export default {
+  hostname: "127.0.0.1",
+  port: Number(process.env.PORT) || 3003,
+  fetch: app.fetch,
+};
