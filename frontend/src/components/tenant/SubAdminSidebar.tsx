@@ -39,6 +39,7 @@ import {
   AlignRight,
   LayoutDashboard,
   Mail,
+  QrCode,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -82,6 +83,7 @@ interface SubAdminSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onSelectView?: (view: "editor" | "dashboard" | "invitation") => void;
   mediaCount?: number;
   totalMediaSize?: string;
+  onOpenQrModal?: () => void;
 }
 
 const THEME_OPTIONS = [
@@ -548,6 +550,7 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
   onSelectView,
   mediaCount,
   totalMediaSize,
+  onOpenQrModal,
   collapsible = "offcanvas",
   ...props
 }) => {
@@ -689,6 +692,32 @@ export const SubAdminSidebar: React.FC<SubAdminSidebarProps> = ({
               <span className="text-[10px] text-muted-foreground block truncate">Kad digital, lokasi & atur cara</span>
             </div>
           </button>
+
+          {/* Table QR Standee Navigation Item */}
+          {onOpenQrModal && (
+            <button
+              type="button"
+              onClick={onOpenQrModal}
+              className="w-full flex items-center justify-between p-2.5 rounded-lg border border-sidebar-border hover:border-primary/40 hover:bg-primary/5 text-left transition-all cursor-pointer group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-1.5 rounded-md shrink-0 bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                  <QrCode className="size-4" />
+                </div>
+                <div className="min-w-0 truncate">
+                  <span className="text-xs font-semibold block text-foreground truncate">
+                    Table QR Standee
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block truncate">
+                    Kad cetak meja A5/A6 tetamu
+                  </span>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-[10px] shrink-0 ml-1.5 border-primary/30 text-primary font-normal">
+                Print
+              </Badge>
+            </button>
+          )}
 
           {/* Editing Accordion Header */}
           <div className="pt-1">
