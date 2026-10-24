@@ -26,6 +26,7 @@ interface SubAdminTableQrModalProps {
   guestPublicUrl: string;
   customization: TenantCustomization;
   weddingName?: string;
+  weddingDate?: string;
   uploadedPhotos?: { url: string; id?: string }[];
 }
 
@@ -92,181 +93,192 @@ const StandeeCardInner: React.FC<StandeeCardInnerProps> = ({
         }`}
       />
 
-      {/* 1. Header: S H A R E — the love — with fotokita.com */}
-      <div className="w-full text-center pt-0.5 sm:pt-1 relative z-10">
-        <h4
-          className={`font-semibold tracking-[0.28em] text-neutral-800 uppercase font-sans ${
-            isA5 ? "text-[9px] sm:text-xs md:text-sm" : "text-[8px] sm:text-[10px] md:text-xs"
-          }`}
-        >
-          S H A R E
-        </h4>
-
-        {/* Decorative Horizontal Rule & Calligraphy: Wedding style cursive "the love" */}
-        <div className="relative flex items-center justify-center my-0.5 sm:my-1">
-          <div className="absolute inset-x-2 sm:inset-x-4 md:inset-x-5 h-px bg-neutral-300" />
-          <span
-            className={`relative px-2 sm:px-3 text-neutral-900 font-normal leading-none tracking-wide ${
-              isA5
-                ? "text-3xl sm:text-5xl md:text-6xl print:text-[54px]"
-                : "text-2xl sm:text-4xl md:text-5xl print:text-[44px]"
+      {/* Main Centered Content Wrapper: Evenly distributed from top to bottom */}
+      <div className="w-full flex-1 flex flex-col items-center justify-evenly z-10 py-1 sm:py-2 md:py-3">
+        {/* 1. Header: S H A R E — the love — with fotokita.com */}
+        <div className="w-full text-center relative z-10">
+          <h4
+            className={`font-semibold tracking-[0.28em] text-neutral-800 uppercase font-sans ${
+              isA5 ? "text-[9px] sm:text-xs md:text-sm" : "text-[8px] sm:text-[10px] md:text-xs"
             }`}
-            style={{
-              fontFamily: "'Alex Brush', 'Great Vibes', 'Parisienne', cursive",
-              backgroundColor:
-                cardTheme === "warm-ivory"
-                  ? "#FAF7F2"
-                  : cardTheme === "soft-blush"
-                  ? "#FAF4F2"
-                  : "#FFFFFF",
-            }}
           >
-            the love
-          </span>
-        </div>
+            S H A R E
+          </h4>
 
-        {/* Action Tagline */}
-        <p
-          className={`font-bold tracking-[0.14em] text-neutral-800 uppercase font-sans ${
-            isA5
-              ? "text-[8px] sm:text-[10px] md:text-xs mt-1 sm:mt-2 md:mt-2.5"
-              : "text-[7.5px] sm:text-[9px] md:text-[10.5px] mt-1 sm:mt-1.5 md:mt-2"
-          }`}
-        >
-          SHARE YOUR PHOTOS WITH US!
-        </p>
-        <p
-          className={`font-medium tracking-[0.12em] text-neutral-500 uppercase font-sans mt-0.5 ${
-            isA5
-              ? "text-[7px] sm:text-[8.5px] md:text-[10px]"
-              : "text-[6.5px] sm:text-[7.5px] md:text-[8.5px]"
-          }`}
-        >
-          SIMPLY SCAN THE QR CODE AND UPLOAD
-        </p>
-      </div>
-
-      {/* 2. Centerpiece: Main QR Code (Large & prominent) + 2 Flanking Portrait Photos */}
-      <div className="relative w-full my-0.5 sm:my-1 md:my-1.5 flex items-center justify-center z-10 px-1 sm:px-2 bg-transparent select-none">
-        {/* Left Portrait Photo Template (Snap photo) */}
-        <div
-          className={`-rotate-8 bg-white p-0.5 sm:p-1 rounded-md sm:rounded-lg border border-neutral-200/90 shrink-0 transition-transform hover:scale-105 z-0 photo-left-polaroid select-none ${
-            isA5
-              ? "w-13 sm:w-18 md:w-24 -mr-2.5 sm:-mr-4.5 md:-mr-6"
-              : "w-11 sm:w-15 md:w-20 -mr-2 sm:-mr-3.5 md:-mr-5"
-          }`}
-        >
-          <div className="aspect-[3/4] w-full rounded-xs sm:rounded-md overflow-hidden bg-white border border-neutral-200/60 select-none">
-            <img
-              src={photoLeft}
-              alt="Candid couple upload example"
-              draggable={false}
-              className="w-full h-full object-cover select-none pointer-events-none"
-            />
-          </div>
-          <div className="pt-0.5 text-center select-none">
+          {/* Decorative Horizontal Rule & Calligraphy: Wedding style cursive "the love" */}
+          <div className="relative flex items-center justify-center my-0.5 sm:my-1">
+            <div className="absolute inset-x-2 sm:inset-x-4 md:inset-x-5 h-px bg-neutral-300" />
             <span
-              className={`font-sans font-medium text-neutral-600 tracking-tight flex items-center justify-center gap-0.5 sm:gap-1 ${
+              className={`relative px-2 sm:px-3 text-neutral-900 font-normal leading-none tracking-wide ${
                 isA5
-                  ? "text-[6px] sm:text-[8px] md:text-[9px]"
-                  : "text-[5.5px] sm:text-[7px] md:text-[8px]"
+                  ? "text-3xl sm:text-5xl md:text-6xl print:text-[54px]"
+                  : "text-2xl sm:text-4xl md:text-5xl print:text-[44px]"
               }`}
+              style={{
+                fontFamily: "'Alex Brush', 'Great Vibes', 'Parisienne', cursive",
+                backgroundColor:
+                  cardTheme === "warm-ivory"
+                    ? "#FAF7F2"
+                    : cardTheme === "soft-blush"
+                    ? "#FAF4F2"
+                    : "#FFFFFF",
+              }}
             >
-              <Camera className="size-1.5 sm:size-2 text-neutral-500 shrink-0" />
-              <span>Snap photo</span>
+              the love
             </span>
           </div>
-        </div>
 
-        {/* Center Main QR Code (Pure clean square, matching downloaded card) */}
-        <div
-          className={`bg-white rounded-lg sm:rounded-xl border border-neutral-200/90 relative z-10 flex flex-col items-center justify-center shrink-0 select-none ${
-            isA5 ? "p-1.5 sm:p-2.5 md:p-3.5" : "p-1.5 sm:p-2 md:p-3"
-          }`}
-        >
-          <img
-            src={qrCodeUrl}
-            alt="Scan QR code to upload photos"
-            draggable={false}
-            className={`object-contain rounded-xs main-qr-img select-none pointer-events-none ${
+          {/* Action Tagline */}
+          <p
+            className={`font-bold tracking-[0.14em] text-neutral-800 uppercase font-sans ${
               isA5
-                ? "size-24 sm:size-36 md:size-46"
-                : "size-21 sm:size-30 md:size-38"
+                ? "text-[11px] sm:text-sm md:text-base print:text-[14px] mt-1 sm:mt-2 md:mt-2.5"
+                : "text-[9.5px] sm:text-xs md:text-sm print:text-[12px] mt-1 sm:mt-1.5 md:mt-2"
             }`}
-          />
+          >
+            SHARE YOUR PHOTOS WITH US!
+          </p>
+          <p
+            className={`font-medium tracking-[0.12em] text-neutral-500 uppercase font-sans mt-0.5 sm:mt-1 ${
+              isA5
+                ? "text-[9px] sm:text-xs md:text-sm print:text-[11px]"
+                : "text-[8px] sm:text-[10px] md:text-xs print:text-[9.5px]"
+            }`}
+          >
+            SIMPLY SCAN THE QR CODE AND UPLOAD
+          </p>
         </div>
 
-        {/* Right Portrait Photo Template (Share joy) */}
-        <div
-          className={`rotate-8 bg-white p-0.5 sm:p-1 rounded-md sm:rounded-lg border border-neutral-200/90 shrink-0 transition-transform hover:scale-105 z-0 photo-right-polaroid select-none ${
-            isA5
-              ? "w-13 sm:w-18 md:w-24 -ml-2.5 sm:-ml-4.5 md:-mr-6"
-              : "w-11 sm:w-15 md:w-20 -ml-2 sm:-ml-3.5 md:-mr-5"
-          }`}
-        >
-          <div className="aspect-[3/4] w-full rounded-xs sm:rounded-md overflow-hidden bg-white border border-neutral-200/60 select-none">
+        {/* 2. Centerpiece: Main QR Code (In front) + 2 Flanking Portrait Photos (Behind & blurred) */}
+        <div className="relative w-full flex items-center justify-center z-10 px-1 sm:px-2 bg-transparent select-none">
+          {/* Left Portrait Photo Template (Snap photo) - Behind QR & softly blurred */}
+          <div
+            className={`-rotate-8 bg-white p-0.5 sm:p-1 rounded-md sm:rounded-lg border border-neutral-200/90 shrink-0 transition-transform hover:scale-105 z-0 photo-left-polaroid select-none ${
+              isA5
+                ? "w-14 sm:w-20 md:w-26 -mr-4 sm:-mr-6 md:-mr-8"
+                : "w-12 sm:w-16 md:w-22 -mr-3 sm:-mr-5 md:-mr-7"
+            }`}
+          >
+            <div className="aspect-[3/4] w-full rounded-xs sm:rounded-md overflow-hidden bg-white border border-neutral-200/60 select-none">
+              <img
+                src={photoLeft}
+                alt="Candid couple upload example"
+                draggable={false}
+                className="w-full h-full object-cover select-none pointer-events-none blur-[1.5px] scale-105"
+              />
+            </div>
+            <div className="pt-0.5 text-center select-none">
+              <span
+                className={`font-sans font-medium text-neutral-600 tracking-tight flex items-center justify-center gap-0.5 sm:gap-1 ${
+                  isA5
+                    ? "text-[6px] sm:text-[8px] md:text-[9px]"
+                    : "text-[5.5px] sm:text-[7px] md:text-[8px]"
+                }`}
+              >
+                <Camera className="size-1.5 sm:size-2 text-neutral-500 shrink-0" />
+                <span>Snap photo</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Center Main QR Code (In front with solid bg, crisp border & delicate shadow) */}
+          <div
+            className={`bg-white rounded-lg sm:rounded-xl border border-neutral-200/90 relative z-10 shadow-lg shadow-neutral-900/10 flex flex-col items-center justify-center shrink-0 select-none ${
+              isA5 ? "p-1.5 sm:p-2.5 md:p-3.5" : "p-1.5 sm:p-2 md:p-3"
+            }`}
+          >
             <img
-              src={photoRight}
-              alt="Guest celebration upload example"
+              src={qrCodeUrl}
+              alt="Scan QR code to upload photos"
               draggable={false}
-              className="w-full h-full object-cover select-none pointer-events-none"
+              className={`object-contain rounded-xs main-qr-img select-none pointer-events-none ${
+                isA5
+                  ? "size-26 sm:size-38 md:size-48"
+                  : "size-22 sm:size-32 md:size-40"
+              }`}
             />
           </div>
-          <div className="pt-0.5 text-center select-none">
-            <span
-              className={`font-sans font-medium text-neutral-600 tracking-tight flex items-center justify-center gap-0.5 sm:gap-1 ${
+
+          {/* Right Portrait Photo Template (Share joy) - Behind QR & softly blurred */}
+          <div
+            className={`rotate-8 bg-white p-0.5 sm:p-1 rounded-md sm:rounded-lg border border-neutral-200/90 shrink-0 transition-transform hover:scale-105 z-0 photo-right-polaroid select-none ${
+              isA5
+                ? "w-14 sm:w-20 md:w-26 -ml-4 sm:-ml-6 md:-ml-8"
+                : "w-12 sm:w-16 md:w-22 -ml-3 sm:-ml-5 md:-ml-7"
+            }`}
+          >
+            <div className="aspect-[3/4] w-full rounded-xs sm:rounded-md overflow-hidden bg-white border border-neutral-200/60 select-none">
+              <img
+                src={photoRight}
+                alt="Guest celebration upload example"
+                draggable={false}
+                className="w-full h-full object-cover select-none pointer-events-none blur-[1.5px] scale-105"
+              />
+            </div>
+            <div className="pt-0.5 text-center select-none">
+              <span
+                className={`font-sans font-medium text-neutral-600 tracking-tight flex items-center justify-center gap-0.5 sm:gap-1 ${
+                  isA5
+                    ? "text-[6px] sm:text-[8px] md:text-[9px]"
+                    : "text-[5.5px] sm:text-[7px] md:text-[8px]"
+                }`}
+              >
+                <Heart className="size-1.5 sm:size-2 text-rose-500 fill-rose-500 shrink-0" />
+                <span>Share joy</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Who love Who & Wedding Date: Larger marriage names & love artwork */}
+        <div className="w-full text-center relative z-10 select-none">
+          <h5
+            className={`font-normal text-neutral-900 leading-none flex items-center justify-center gap-2 sm:gap-3 md:gap-4 ${
+              isA5
+                ? "text-xl sm:text-3xl md:text-5xl print:text-[34px]"
+                : "text-lg sm:text-2xl md:text-4xl print:text-[28px]"
+            }`}
+            style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+          >
+            <span className="italic font-normal tracking-tight">
+              {partner1}
+            </span>
+            <img
+              src={loveHandwritingImg}
+              alt="love"
+              draggable={false}
+              className={`inline-block object-contain select-none pointer-events-none shrink-0 -translate-x-0.5 sm:-translate-x-1 md:-translate-x-1.5 ${
                 isA5
-                  ? "text-[6px] sm:text-[8px] md:text-[9px]"
-                  : "text-[5.5px] sm:text-[7px] md:text-[8px]"
+                  ? "h-9 sm:h-15 md:h-24 print:h-[22mm]"
+                  : "h-8 sm:h-12 md:h-19 print:h-[18mm]"
+              }`}
+            />
+            <span className="italic font-normal tracking-tight">
+              {partner2}
+            </span>
+          </h5>
+          {formattedDate ? (
+            <p
+              className={`tracking-[0.25em] font-sans text-neutral-500 font-semibold uppercase mt-1 sm:mt-2 md:mt-2.5 ${
+                isA5
+                  ? "text-[8.5px] sm:text-xs md:text-sm print:text-[12px]"
+                  : "text-[7.5px] sm:text-[10px] md:text-xs print:text-[10px]"
               }`}
             >
-              <Heart className="size-1.5 sm:size-2 text-rose-500 fill-rose-500 shrink-0" />
-              <span>Share joy</span>
-            </span>
-          </div>
+              {formattedDate}
+            </p>
+          ) : null}
         </div>
       </div>
 
-      {/* 3. Who love Who & Wedding Date: Larger font & love artwork distinctly larger than text */}
-      <div className="w-full text-center mt-0.5 sm:mt-1 md:mt-1.5 mb-1 sm:mb-1.5 relative z-10 select-none">
-        <h5
-          className={`font-normal text-neutral-900 leading-none flex items-center justify-center gap-1.5 sm:gap-2.5 md:gap-3.5 ${
-            isA5
-              ? "text-base sm:text-2xl md:text-4xl print:text-[28px]"
-              : "text-sm sm:text-xl md:text-3xl print:text-[22px]"
-          }`}
-          style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
-        >
-          <span className="italic font-normal tracking-tight">
-            {partner1 || "hamidah"}
-          </span>
-          <img
-            src={loveHandwritingImg}
-            alt="love"
-            draggable={false}
-            className={`inline-block object-contain select-none pointer-events-none shrink-0 -translate-x-0.5 sm:-translate-x-1 md:-translate-x-1.5 ${
-              isA5
-                ? "h-7 sm:h-12 md:h-20 print:h-[17mm]"
-                : "h-6 sm:h-10 md:h-16 print:h-[13.5mm]"
-            }`}
-          />
-          <span className="italic font-normal tracking-tight">
-            {partner2 || "lutpi"}
-          </span>
-        </h5>
-        <p
-          className={`tracking-[0.25em] font-sans text-neutral-500 font-semibold uppercase mt-0.5 sm:mt-1.5 md:mt-2 ${
-            isA5
-              ? "text-[8px] sm:text-xs md:text-sm"
-              : "text-[7.5px] sm:text-[10px] md:text-[11px]"
-          }`}
-        >
-          {formattedDate}
-        </p>
-      </div>
-
-      {/* 4. Bottom Footer: Stacked ads at bottom right (QR above, icon + fotokita.com below) */}
-      <div className="w-full flex items-center justify-end pr-0.5 sm:pr-1 md:pr-2 pb-0 sm:pb-0.5 md:pb-1 relative z-10">
+      {/* 4. Bottom Footer: Pinned at bottom right */}
+      <div
+        className={`absolute z-10 select-none print-footer ${
+          isA5
+            ? "bottom-3 right-3 sm:bottom-4.5 sm:right-5 md:bottom-6 md:right-7"
+            : "bottom-2.5 right-2.5 sm:bottom-3.5 sm:right-4 md:bottom-5 md:right-5"
+        }`}
+      >
         <div className="flex flex-col items-center gap-0.5 sm:gap-1 text-neutral-800 select-none">
           <img
             src={FOTOKITA_MINI_QR_URL}
@@ -305,6 +317,7 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
   guestPublicUrl,
   customization,
   weddingName,
+  weddingDate,
   uploadedPhotos = [],
 }) => {
   const [activeTab, setActiveTab] = useState<"standee" | "quick">("standee");
@@ -335,14 +348,24 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
     }
   }
   if (!partner1 && !partner2) {
-    partner1 = "hamidah";
-    partner2 = "lutpi";
+    partner1 = "Groom";
+    partner2 = "Bride";
   }
 
-  // Format wedding date in dotted format: "30 . 10 . 2026"
+  // Format wedding date in dotted format: "DD . MM . YYYY"
   const formatCardDate = (dateString?: string) => {
-    if (!dateString) return "30 . 10 . 2026";
+    if (!dateString) return "";
     try {
+      const datePart = dateString.includes("T") ? dateString.split("T")[0] : dateString;
+      if (datePart && datePart.includes("-")) {
+        const parts = datePart.split("-").map(Number);
+        if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+          const year = parts[0];
+          const month = String(parts[1]).padStart(2, "0");
+          const day = String(parts[2]).padStart(2, "0");
+          return `${day} . ${month} . ${year}`;
+        }
+      }
       const d = new Date(dateString);
       if (isNaN(d.getTime())) return dateString;
       const day = String(d.getDate()).padStart(2, "0");
@@ -354,7 +377,15 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
     }
   };
 
-  const formattedDate = formatCardDate(customization.weddingDate);
+  // Prioritize real marriage date: ignore legacy hardcoded "2026-10-30" if other date sources exist
+  const effectiveRawDate =
+    (customization.weddingDate && customization.weddingDate !== "2026-10-30" ? customization.weddingDate : "") ||
+    (weddingDate && weddingDate !== "2026-10-30" ? weddingDate : "") ||
+    customization.weddingDate ||
+    weddingDate ||
+    "";
+
+  const formattedDate = formatCardDate(effectiveRawDate);
 
   // High-res main QR URL (600x600 for sharp print rendering)
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=8&data=${encodeURIComponent(
@@ -408,6 +439,10 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
   const handleDownloadCardPng = async () => {
     setIsDownloading(true);
     try {
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+
       const canvas = document.createElement("canvas");
       // Standard ISO 216 at 300 DPI:
       // A6: 105 × 148 mm = 1240 × 1748 px
@@ -449,81 +484,88 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
           img.src = src;
         });
 
-      // 1. Header "S H A R E"
+      // 1. Header "S H A R E" - Vertically centered balance
       ctx.textAlign = "center";
       ctx.fillStyle = "#1F1D1B";
       ctx.font = `600 ${Math.round(40 * scale)}px 'Montserrat', sans-serif`;
-      ctx.fillText("S H A R E", width / 2, 155 * scale);
+      ctx.fillText("S H A R E", width / 2, 190 * scale);
 
       // Fine horizontal rule behind "the love"
       ctx.strokeStyle = "#C9C0B7";
       ctx.lineWidth = 1.5 * scale;
       ctx.beginPath();
-      ctx.moveTo(130 * scale, 235 * scale);
-      ctx.lineTo(width - 130 * scale, 235 * scale);
+      ctx.moveTo(140 * scale, 275 * scale);
+      ctx.lineTo(width - 140 * scale, 275 * scale);
       ctx.stroke();
 
       // Mask background pill for "the love"
       ctx.fillStyle = cardTheme === "warm-ivory" ? "#FAF7F2" : cardTheme === "soft-blush" ? "#FAF4F2" : "#FFFFFF";
-      ctx.fillRect(width / 2 - 190 * scale, 180 * scale, 380 * scale, 105 * scale);
+      ctx.fillRect(width / 2 - 200 * scale, 218 * scale, 400 * scale, 115 * scale);
 
       // Script Calligraphy "the love": Wedding style, prominent & larger
       ctx.fillStyle = "#1F1D1B";
-      ctx.font = `italic 400 ${Math.round(130 * scale)}px 'Alex Brush', 'Great Vibes', cursive`;
-      ctx.fillText("the love", width / 2, 270 * scale);
+      ctx.font = `italic 400 ${Math.round(135 * scale)}px 'Alex Brush', 'Great Vibes', cursive`;
+      ctx.fillText("the love", width / 2, 310 * scale);
 
       // Subtitles directly below "the love"
-      ctx.font = `700 ${Math.round(23 * scale)}px 'Montserrat', 'Inter', sans-serif`;
+      ctx.font = `700 ${Math.round(32 * scale)}px 'Montserrat', 'Inter', sans-serif`;
       ctx.fillStyle = "#2D2926";
-      ctx.fillText("SHARE YOUR PHOTOS WITH US!", width / 2, 345 * scale);
+      ctx.fillText("SHARE YOUR PHOTOS WITH US!", width / 2, 395 * scale);
 
-      ctx.font = `500 ${Math.round(17 * scale)}px 'Inter', sans-serif`;
+      ctx.font = `500 ${Math.round(22 * scale)}px 'Inter', sans-serif`;
       ctx.fillStyle = "#6B635C";
-      ctx.fillText("SIMPLY SCAN THE QR CODE AND UPLOAD", width / 2, 380 * scale);
+      ctx.fillText("SIMPLY SCAN THE QR CODE AND UPLOAD", width / 2, 436 * scale);
 
-      // 2. Center QR Code (Large & prominent)
+      // 2. Centerpiece: Polaroids drawn BEHIND first, with gentle blur
       const qrImg = await loadImage(qrCodeUrl);
       const qrSize = Math.round(520 * scale);
       const qrX = width / 2 - qrSize / 2;
-      const qrY = 430 * scale;
+      const qrY = 530 * scale;
 
-      // QR container box (Pure clean border, zero shadow)
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(qrX - 16 * scale, qrY - 16 * scale, qrSize + 32 * scale, qrSize + 32 * scale);
-      ctx.strokeStyle = "#EBE5DF";
-      ctx.lineWidth = 2 * scale;
-      ctx.strokeRect(qrX - 16 * scale, qrY - 16 * scale, qrSize + 32 * scale, qrSize + 32 * scale);
+      const polW = Math.round(225 * scale);
+      const polH = Math.round(285 * scale);
+      const imgPadding = Math.round(11 * scale);
+      const imgW = polW - imgPadding * 2;
+      const imgH = polH - imgPadding * 2 - Math.round(30 * scale);
+      const blurRadius = Math.round(5 * scale);
+      const bleed = Math.round(6 * scale);
 
-      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-
-      // 3. Draw 2 Flanking Portrait Photos (Pure clean borders, zero grey shadow)
+      // 2A. Left Flanking Photo Template (Snap photo) - Behind QR & blurred
       try {
         const leftImg = await loadImage(photoLeft);
         ctx.save();
-        ctx.translate(qrX - 105 * scale, qrY + qrSize / 2);
+        ctx.translate(qrX - 45 * scale, qrY + qrSize / 2);
         ctx.rotate((-8 * Math.PI) / 180);
         ctx.shadowColor = "transparent";
         ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
 
-        const polW = 215 * scale;
-        const polH = 275 * scale;
+        // White polaroid frame
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(-polW / 2, -polH / 2, polW, polH);
         ctx.strokeStyle = "#E6E0D8";
         ctx.lineWidth = 1.5 * scale;
         ctx.strokeRect(-polW / 2, -polH / 2, polW, polH);
 
-        const imgPadding = 11 * scale;
-        const imgW = polW - imgPadding * 2;
-        const imgH = polH - imgPadding * 2 - 30 * scale;
-        ctx.drawImage(leftImg, -polW / 2 + imgPadding, -polH / 2 + imgPadding, imgW, imgH);
+        // Blurred photo clipped inside frame
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(-polW / 2 + imgPadding, -polH / 2 + imgPadding, imgW, imgH);
+        ctx.clip();
+        try {
+          ctx.filter = `blur(${blurRadius}px)`;
+        } catch {
+          // Fallback if ctx.filter is unavailable
+        }
+        ctx.drawImage(
+          leftImg,
+          -polW / 2 + imgPadding - bleed,
+          -polH / 2 + imgPadding - bleed,
+          imgW + bleed * 2,
+          imgH + bleed * 2
+        );
+        ctx.restore();
 
+        // Label
         ctx.font = `600 ${Math.round(12.5 * scale)}px 'Inter', sans-serif`;
         ctx.fillStyle = "#6B635C";
         ctx.textAlign = "center";
@@ -533,29 +575,42 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
         console.warn("Could not draw left example photo onto canvas:", err);
       }
 
+      // 2B. Right Flanking Photo Template (Share joy) - Behind QR & blurred
       try {
         const rightImg = await loadImage(photoRight);
         ctx.save();
-        ctx.translate(qrX + qrSize + 105 * scale, qrY + qrSize / 2);
+        ctx.translate(qrX + qrSize + 45 * scale, qrY + qrSize / 2);
         ctx.rotate((8 * Math.PI) / 180);
         ctx.shadowColor = "transparent";
         ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
 
-        const polW = 215 * scale;
-        const polH = 275 * scale;
+        // White polaroid frame
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(-polW / 2, -polH / 2, polW, polH);
         ctx.strokeStyle = "#E6E0D8";
         ctx.lineWidth = 1.5 * scale;
         ctx.strokeRect(-polW / 2, -polH / 2, polW, polH);
 
-        const imgPadding = 11 * scale;
-        const imgW = polW - imgPadding * 2;
-        const imgH = polH - imgPadding * 2 - 30 * scale;
-        ctx.drawImage(rightImg, -polW / 2 + imgPadding, -polH / 2 + imgPadding, imgW, imgH);
+        // Blurred photo clipped inside frame
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(-polW / 2 + imgPadding, -polH / 2 + imgPadding, imgW, imgH);
+        ctx.clip();
+        try {
+          ctx.filter = `blur(${blurRadius}px)`;
+        } catch {
+          // Fallback if ctx.filter is unavailable
+        }
+        ctx.drawImage(
+          rightImg,
+          -polW / 2 + imgPadding - bleed,
+          -polH / 2 + imgPadding - bleed,
+          imgW + bleed * 2,
+          imgH + bleed * 2
+        );
+        ctx.restore();
 
+        // Label
         ctx.font = `600 ${Math.round(12.5 * scale)}px 'Inter', sans-serif`;
         ctx.fillStyle = "#6B635C";
         ctx.textAlign = "center";
@@ -565,24 +620,39 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
         console.warn("Could not draw right example photo onto canvas:", err);
       }
 
-      // 4. Center Couple Names & Date (Love artwork distinctly larger than text, optically centered)
-      const p1 = partner1 || "hamidah";
-      const p2 = partner2 || "lutpi";
+      // 2C. Center QR Code (In front of polaroids, pure white container with subtle shadow)
+      ctx.save();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.08)";
+      ctx.shadowBlur = 20 * scale;
+      ctx.shadowOffsetY = 6 * scale;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(qrX - 16 * scale, qrY - 16 * scale, qrSize + 32 * scale, qrSize + 32 * scale);
+      ctx.restore();
+
+      ctx.strokeStyle = "#EBE5DF";
+      ctx.lineWidth = 2 * scale;
+      ctx.strokeRect(qrX - 16 * scale, qrY - 16 * scale, qrSize + 32 * scale, qrSize + 32 * scale);
+
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+      // 3. Center Couple Names & Date (Marriage names distinctly larger, optically centered)
+      const p1 = partner1 || "Groom";
+      const p2 = partner2 || "Bride";
       const coupleY = 1270 * scale;
 
-      ctx.font = `italic 400 ${Math.round(82 * scale)}px 'Cormorant Garamond', Georgia, serif`;
+      ctx.font = `italic 400 ${Math.round(108 * scale)}px 'Cormorant Garamond', Georgia, serif`;
       const p1W = ctx.measureText(p1).width;
       const p2W = ctx.measureText(p2).width;
 
-      const heartH = Math.round(124 * scale);
+      const heartH = Math.round(160 * scale);
       const heartW = Math.round(heartH * (612 / 408));
-      const spacing = 24 * scale;
+      const spacing = 28 * scale;
       const totalCoupleW = p1W + spacing + heartW + spacing + p2W;
       const startCoupleX = width / 2 - totalCoupleW / 2;
 
       // Draw partner1
       ctx.textAlign = "left";
-      ctx.font = `italic 400 ${Math.round(82 * scale)}px 'Cormorant Garamond', Georgia, serif`;
+      ctx.font = `italic 400 ${Math.round(108 * scale)}px 'Cormorant Garamond', Georgia, serif`;
       ctx.fillStyle = "#1F1D1B";
       ctx.fillText(p1, startCoupleX, coupleY);
 
@@ -618,17 +688,19 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
 
       // Draw partner2
       ctx.textAlign = "left";
-      ctx.font = `italic 400 ${Math.round(82 * scale)}px 'Cormorant Garamond', Georgia, serif`;
+      ctx.font = `italic 400 ${Math.round(108 * scale)}px 'Cormorant Garamond', Georgia, serif`;
       ctx.fillStyle = "#1F1D1B";
       ctx.fillText(p2, startCoupleX + p1W + spacing + heartW + spacing, coupleY);
 
-      // Date
-      ctx.textAlign = "center";
-      ctx.font = `600 ${Math.round(27 * scale)}px 'Montserrat', sans-serif`;
-      ctx.fillStyle = "#6B635C";
-      ctx.fillText(formattedDate, width / 2, coupleY + 76 * scale);
+      // Date (only render if real date exists)
+      if (formattedDate) {
+        ctx.textAlign = "center";
+        ctx.font = `600 ${Math.round(30 * scale)}px 'Montserrat', sans-serif`;
+        ctx.fillStyle = "#6B635C";
+        ctx.fillText(formattedDate, width / 2, coupleY + 88 * scale);
+      }
 
-      // 5. Bottom Right Ads: Mini QR above, Camera Icon & fotokita.com below that QR
+      // 4. Bottom Right Ads: Mini QR above, Camera Icon & fotokita.com below that QR
       try {
         const miniQrImg = await loadImage(FOTOKITA_MINI_QR_URL);
         const qrSize = Math.round(92 * scale);
@@ -645,7 +717,7 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
         const adBlockW = Math.max(qrSize, textRowW);
         const adBlockX = width - adBlockW - 54 * scale;
         const qrX = adBlockX + (adBlockW - qrSize) / 2;
-        const qrY = height - 190 * scale;
+        const qrY = height - 175 * scale;
 
         // Draw Mini QR above
         ctx.drawImage(miniQrImg, qrX, qrY, qrSize, qrSize);
@@ -791,7 +863,12 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
           }
           .print-card-a6 .photo-left-polaroid,
           .print-card-a6 .photo-right-polaroid {
-            width: 23mm !important;
+            width: 26mm !important;
+          }
+          .print-card-a6 .print-footer {
+            position: absolute !important;
+            bottom: 5mm !important;
+            right: 5mm !important;
           }
 
           /* A5 STAND DISPLAY: 148mm x 210mm (1 pc centered on A4 with cut line) */
@@ -818,7 +895,12 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
           }
           .print-card-a5 .photo-left-polaroid,
           .print-card-a5 .photo-right-polaroid {
-            width: 30mm !important;
+            width: 34mm !important;
+          }
+          .print-card-a5 .print-footer {
+            position: absolute !important;
+            bottom: 8mm !important;
+            right: 8mm !important;
           }
         }
       `}</style>
@@ -1031,34 +1113,36 @@ export const SubAdminTableQrModal: React.FC<SubAdminTableQrModalProps> = ({
 
                     {/* Action Buttons */}
                     <div className="space-y-2 pt-1 border-t border-border/60">
+                      {/* Priority Main Action: Black Primary Button */}
                       <Button
                         type="button"
-                        onClick={handlePrint}
-                        className="w-full text-xs font-semibold h-9.5 cursor-pointer shadow-sm bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 rounded-xl"
+                        onClick={handleDownloadCardPng}
+                        disabled={isDownloading}
+                        className="w-full text-xs font-semibold h-10 cursor-pointer shadow-sm bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 rounded-xl"
                       >
-                        <Printer className="size-3.5 mr-1.5" />
-                        Print (A4 Ready)
+                        <Download className="size-3.5 mr-1.5" />
+                        {isDownloading ? "Generating Standee..." : `Download ${cardSize.toUpperCase()} Standee`}
                       </Button>
 
+                      {/* Alternative Choices: Print A4 & QR Code Only */}
                       <div className="grid grid-cols-2 gap-2">
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={handleDownloadCardPng}
-                          disabled={isDownloading}
-                          className="text-xs h-8.5 cursor-pointer rounded-xl"
+                          onClick={handlePrint}
+                          className="text-xs h-8.5 cursor-pointer rounded-xl text-muted-foreground hover:text-foreground"
                         >
-                          <Download className="size-3 mr-1" />
-                          {isDownloading ? "Downloading..." : `Download ${cardSize.toUpperCase()}`}
+                          <Printer className="size-3 mr-1" />
+                          Print (A4 Ready)
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           onClick={handleDownloadQrOnly}
-                          className="text-xs h-8.5 cursor-pointer rounded-xl"
+                          className="text-xs h-8.5 cursor-pointer rounded-xl text-muted-foreground hover:text-foreground"
                         >
                           <QrCode className="size-3 mr-1" />
-                          QR Only
+                          QR Code Only
                         </Button>
                       </div>
                     </div>

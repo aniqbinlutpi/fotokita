@@ -36,7 +36,16 @@ const updateCustomizationSchema = z.object({
 // GET customization for a wedding (by weddingId or slug)
 customizationRoute.get("/:identifier", async (c) => {
   const param = c.req.param("identifier");
-  const { weddingId, slug: resolvedSlug, name: resolvedName } = await resolveWedding(param);
+  const { weddingId, slug: resolvedSlug, name: resolvedName, date: resolvedDate } = await resolveWedding(param);
+
+  let defaultWeddingDate = "";
+  if (resolvedDate) {
+    try {
+      defaultWeddingDate = new Date(resolvedDate).toISOString().split("T")[0] || "";
+    } catch {
+      defaultWeddingDate = resolvedDate.split("T")[0] || "";
+    }
+  }
 
   let customization: TenantCustomization | null = null;
   try {
@@ -81,7 +90,7 @@ customizationRoute.get("/:identifier", async (c) => {
           weddingId,
           partner1: defaultPartner1,
           partner2: defaultPartner2,
-          weddingDate: "2026-10-30",
+          weddingDate: defaultWeddingDate || "",
           eyebrow: "- WEDDING ARCHIVE -",
           tagline: "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
           themePalette: "warmGold",
@@ -109,7 +118,7 @@ customizationRoute.get("/:identifier", async (c) => {
         weddingId,
         partner1: defaultPartner1,
         partner2: defaultPartner2,
-        weddingDate: "2026-10-30",
+        weddingDate: defaultWeddingDate || "",
         eyebrow: "- WEDDING ARCHIVE -",
         tagline: "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
         themePalette: "warmGold",
@@ -136,7 +145,7 @@ customizationRoute.get("/:identifier", async (c) => {
     weddingId,
     partner1: defaultPartner1,
     partner2: defaultPartner2,
-    weddingDate: "2026-10-30",
+    weddingDate: defaultWeddingDate || "",
     eyebrow: "- WEDDING ARCHIVE -",
     tagline: "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
     themePalette: "warmGold",
@@ -156,12 +165,19 @@ customizationRoute.get("/:identifier", async (c) => {
     textPositions: null as string | null,
   };
 
+  // If saved weddingDate is the legacy placeholder "2026-10-30" but we have real resolvedDate, use real date
+  const finalWeddingDate =
+    (active.weddingDate && active.weddingDate !== "2026-10-30" ? active.weddingDate : "") ||
+    defaultWeddingDate ||
+    active.weddingDate ||
+    "";
+
   return c.json(
     success({
       weddingId: active.weddingId,
       partner1: active.partner1 || defaultPartner1,
       partner2: active.partner2 || defaultPartner2,
-      weddingDate: active.weddingDate || "2026-10-30",
+      weddingDate: finalWeddingDate,
       eyebrow: active.eyebrow || "- WEDDING ARCHIVE -",
       tagline: active.tagline || "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
       themePalette: active.themePalette || "warmGold",

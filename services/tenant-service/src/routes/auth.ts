@@ -182,13 +182,31 @@ authRoute.post("/register", async (c) => {
       if (parts[1]) p2 = parts[1];
     }
 
+    let initialWeddingDate = "";
+    try {
+      const weddingServiceUrl = process.env.WEDDING_SERVICE_URL || "http://localhost:3001";
+      const res = await fetch(`${weddingServiceUrl}/weddings/${encodeURIComponent(weddingId)}`);
+      if (res.ok) {
+        const body = (await res.json()) as any;
+        if (body?.data?.date) {
+          initialWeddingDate = new Date(body.data.date).toISOString().split("T")[0] || "";
+        }
+      }
+    } catch {
+      // non-blocking
+    }
+
+    if (!initialWeddingDate && planStartDate) {
+      initialWeddingDate = new Date(planStartDate).toISOString().split("T")[0] || "";
+    }
+
     await db
       .insert(tenantCustomizations)
       .values({
         weddingId,
         partner1: p1,
         partner2: p2,
-        weddingDate: "2026-10-30",
+        weddingDate: initialWeddingDate || "",
         eyebrow: "- WEDDING ARCHIVE -",
         tagline: "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
         themePalette: "warmGold",

@@ -509,11 +509,12 @@ export const SubscriberRegisterPage: React.FC<SubscriberRegisterPageProps> = ({
         console.warn("Could not register tenant account in tenant-service:", regErr);
       }
 
-      // 3. Initialize customization with separate partner names
+      // 3. Initialize customization with separate partner names and real wedding date
       try {
         await updateTenantCustomization(newWedding.id, {
           partner1: groomName.trim(),
           partner2: brideName.trim(),
+          weddingDate: weddingDate.trim(),
         });
       } catch {
         // non-blocking
