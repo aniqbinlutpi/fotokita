@@ -3,7 +3,7 @@ import { db } from "../db";
 import { tenantAccounts } from "../db/schema";
 
 // Helper to resolve an identifier (weddingId or slug) to actual weddingId & weddingSlug
-export async function resolveWedding(identifier: string): Promise<{ weddingId: string; slug?: string; name?: string }> {
+export async function resolveWedding(identifier: string): Promise<{ weddingId: string; slug?: string; name?: string; date?: string }> {
   let decoded = identifier;
   try {
     decoded = decodeURIComponent(identifier);
@@ -14,6 +14,7 @@ export async function resolveWedding(identifier: string): Promise<{ weddingId: s
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const isUuid = uuidRegex.test(identifier) || uuidRegex.test(decoded);
   const targetId = isUuid ? (uuidRegex.test(identifier) ? identifier : decoded) : identifier;
+  const weddingServiceUrl = process.env.WEDDING_SERVICE_URL || "http://localhost:3001";
 
   // 1. First check tenantAccounts in PostgreSQL
   try {
@@ -34,10 +35,24 @@ export async function resolveWedding(identifier: string): Promise<{ weddingId: s
 
     const matched = matchedTenants[0];
     if (matched) {
+      let weddingDate: string | undefined;
+      try {
+        const res = await fetch(`${weddingServiceUrl}/weddings/${encodeURIComponent(matched.weddingId)}`);
+        if (res.ok) {
+          const body = (await res.json()) as any;
+          if (body?.data?.date) {
+            weddingDate = body.data.date;
+          }
+        }
+      } catch {
+        // non-blocking
+      }
+
       return {
         weddingId: matched.weddingId,
         slug: matched.weddingSlug,
         name: matched.weddingName,
+        date: weddingDate,
       };
     }
   } catch (err) {
@@ -45,7 +60,6 @@ export async function resolveWedding(identifier: string): Promise<{ weddingId: s
   }
 
   // 2. Query wedding-service by slug or id
-  const weddingServiceUrl = process.env.WEDDING_SERVICE_URL || "http://localhost:3001";
   try {
     const endpoint = isUuid
       ? `${weddingServiceUrl}/weddings/${encodeURIComponent(targetId)}`
@@ -58,6 +72,7 @@ export async function resolveWedding(identifier: string): Promise<{ weddingId: s
           weddingId: body.data.id,
           slug: body.data.slug,
           name: body.data.name,
+          date: body.data.date,
         };
       }
     }

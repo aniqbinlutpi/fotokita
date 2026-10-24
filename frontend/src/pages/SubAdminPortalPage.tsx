@@ -256,7 +256,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
     weddingId: tenant?.weddingId || activeWeddingId || "",
     partner1: parsedPartnerNames.p1,
     partner2: parsedPartnerNames.p2,
-    weddingDate: "2026-10-30",
+    weddingDate: dbWedding?.date ? dbWedding.date.split("T")[0] : "",
     eyebrow: "- WEDDING ARCHIVE -",
     tagline: "Every candid smile, every heartfelt celebration — preserved for a lifetime.",
     themePalette: "warmGold",
@@ -342,14 +342,19 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
           if (hasUnsavedChanges) return prev;
           const fallbackP1 = parsedPartnerNames.p1 || "Afiq";
           const fallbackP2 = parsedPartnerNames.p2 || "Wieam";
+          const realDbDate = dbWedding?.date ? dbWedding.date.split("T")[0] : "";
+          const effectiveDate =
+            (data.weddingDate && data.weddingDate !== "2026-10-30" ? data.weddingDate : "") ||
+            realDbDate ||
+            data.weddingDate ||
+            prev.weddingDate ||
+            "";
+
           return {
             weddingId: dbWedding?.id || data.weddingId || prev.weddingId,
             partner1: data.partner1 || prev.partner1 || fallbackP1,
             partner2: data.partner2 || prev.partner2 || fallbackP2,
-            weddingDate:
-              data.weddingDate ||
-              (dbWedding?.date ? dbWedding.date.split("T")[0] : prev.weddingDate) ||
-              "2026-10-30",
+            weddingDate: effectiveDate,
             eyebrow: data.eyebrow || "- WEDDING ARCHIVE -",
             tagline:
               data.tagline ||
@@ -897,6 +902,7 @@ export const SubAdminPortalPage: React.FC<SubAdminPortalPageProps> = ({
           guestPublicUrl={guestPublicUrl}
           customization={customization}
           weddingName={dbWedding?.name || tenant?.weddingName}
+          weddingDate={customization.weddingDate || dbWedding?.date}
           uploadedPhotos={mediaList.map((m) => ({ url: m.url || "", id: m.id }))}
         />
 
